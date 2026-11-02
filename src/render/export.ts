@@ -1,7 +1,7 @@
 /**
  * Esportazione dell'etichetta a risoluzione di stampa e preparazione del lavoro.
  */
-import Konva from 'konva';
+import Konva from './konva';
 import type { LabelBitmap } from '@mbtech-nl/bitmap';
 import { documentGeometry, type HeadSpec, type LabelGeometry } from '@/model/geometry';
 import type { LabelDocument } from '@/model/types';
@@ -24,13 +24,15 @@ export async function renderPrintableRgba(doc: LabelDocument, head: HeadSpec): P
   const container = document.createElement('div');
   const stage = new Konva.Stage({ container, width: printable.width, height: printable.height });
   try {
-    const layer = new Konva.Layer({ imageSmoothingEnabled: false });
+    const layer = new Konva.Layer({ imageSmoothingEnabled: false, listening: false });
     stage.add(layer);
+    // La stampa è sempre a 1 pixel per punto, qualunque sia la densità dello schermo.
+    layer.getCanvas().setPixelRatio(1);
     layer.add(new Konva.Rect({ x: 0, y: 0, width: printable.width, height: printable.height, fill: '#fff' }));
     const content = buildContent(doc.elements);
     content.position({ x: -printable.x, y: -printable.y });
     layer.add(content);
-    layer.draw();
+    // Nessun layer.draw(): toCanvas disegna già la scena a 1 pixel per punto.
 
     const canvas = layer.toCanvas({ x: 0, y: 0, width: printable.width, height: printable.height, pixelRatio: 1 });
     const ctx = canvas.getContext('2d', { willReadFrequently: true });

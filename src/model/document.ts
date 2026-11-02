@@ -67,6 +67,7 @@ export function createTextElement(area: AreaMm, text = 'Testo'): TextElement {
     align: 'center',
     verticalAlign: 'middle',
     invert: false,
+    autoFit: true,
   };
 }
 

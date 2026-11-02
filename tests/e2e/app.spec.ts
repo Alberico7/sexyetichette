@@ -51,7 +51,7 @@ test('collegamento, testo, anteprima e stampa (simulata)', async ({ page }) => {
   await input.fill('Barattolo zucchero');
   await noHorizontalScroll(page);
   await page.screenshot({ path: 'test-results/03-testo.png' });
-  await page.getByRole('button', { name: 'Chiudi' }).tap();
+  await page.getByTestId('text-done').tap();
   await page.screenshot({ path: 'test-results/04-editor.png' });
 
   await page.getByTestId('open-print').tap();
@@ -97,7 +97,8 @@ test('coperchio aperto: stato in rosso e stampa disabilitata', async ({ page }) 
   await panel.getByLabel('Guasto').selectOption('cover-open');
   await expect(page.getByRole('status').first()).toContainText('Coperchio aperto');
   await page.getByTestId('add-text').tap();
-  await page.getByRole('button', { name: 'Chiudi' }).tap();
+  await page.getByTestId('text-input').fill('Prova');
+  await page.getByTestId('text-done').tap();
   await page.getByTestId('open-print').tap();
   await expect(page.getByTestId('print-button')).toBeDisabled();
   await page.screenshot({ path: 'test-results/06-coperchio.png' });
@@ -106,13 +107,14 @@ test('coperchio aperto: stato in rosso e stampa disabilitata', async ({ page }) 
 test('stampante occupata durante la stampa: errore e pulsante di ripristino', async ({ page }) => {
   await connectSimulated(page);
   await page.getByTestId('add-text').tap();
-  await page.getByRole('button', { name: 'Chiudi' }).tap();
+  await page.getByTestId('text-input').fill('Prova');
+  await page.getByTestId('text-done').tap();
   const panel = page.getByTestId('dev-panel');
   await panel.locator('summary').tap();
   await panel.getByLabel('Guasto').selectOption('busy');
   await page.getByTestId('open-print').tap();
   await page.getByTestId('print-button').tap();
-  await page.getByRole('button', { name: 'Chiudi' }).tap();
+  await page.getByRole('button', { name: 'Chiudi', exact: true }).tap();
   const alert = page.getByRole('alert');
   await expect(alert).toContainText('Stampante occupata');
   await alert.getByRole('button', { name: 'Ripristina stampante' }).tap();
@@ -141,7 +143,7 @@ test('tema: automatico → chiaro → scuro, la scelta resta dopo il ricaricamen
   await connectSimulated(page);
   await page.getByTestId('add-text').tap();
   await page.getByTestId('text-input').fill('Tubo Ø 20');
-  await page.getByRole('button', { name: 'Chiudi' }).tap();
+  await page.getByTestId('text-done').tap();
   await noHorizontalScroll(page);
   await page.screenshot({ path: 'test-results/07-tema-scuro.png' });
 
@@ -173,7 +175,46 @@ test('pulsante diametro: inserisce Ø nella posizione del cursore', async ({ pag
   await page.screenshot({ path: 'test-results/08-diametro.png' });
 
   // Il simbolo arriva nell'anteprima di stampa.
-  await page.getByRole('button', { name: 'Chiudi' }).tap();
+  await page.getByTestId('text-done').tap();
   await page.getByTestId('open-print').tap();
   await expect.poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width)).toBe(1051);
+});
+
+test('adattamento automatico: attivo sui nuovi testi, la dimensione segue il testo', async ({ page }) => {
+  await page.goto('/?sim');
+  await page.getByTestId('add-text').tap();
+  const toggle = page.getByTestId('auto-fit');
+  const size = page.getByTestId('font-size');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(size).toHaveAttribute('readonly', '');
+
+  await page.getByTestId('text-input').fill('Corto');
+  const short = Number(await size.inputValue());
+  await page.getByTestId('text-input').fill('Un testo decisamente più lungo');
+  await expect.poll(async () => Number(await size.inputValue())).toBeLessThan(short);
+  const fitted = Number(await size.inputValue());
+  await noHorizontalScroll(page);
+  await page.screenshot({ path: 'test-results/09-adatta.png' });
+
+  // Disattivando, la dimensione riparte da quella calcolata ed è modificabile.
+  await toggle.tap();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(size).not.toHaveAttribute('readonly', '');
+  expect(Number(await size.inputValue())).toBe(fitted);
+
+  await page.getByTestId('text-done').tap();
+  await page.getByTestId('open-print').tap();
+  await expect.poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width)).toBe(1051);
+});
+
+test('secondo simbolo del diametro (⌀)', async ({ page }) => {
+  await page.goto('/?sim');
+  await page.getByTestId('add-text').tap();
+  const input = page.getByTestId('text-input');
+  await input.fill('20');
+  await input.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(0, 0));
+  await page.getByTestId('insert-diameter-iso').tap();
+  await expect(input).toHaveValue('⌀20');
+  await page.getByTestId('insert-diameter').tap();
+  await expect(input).toHaveValue('⌀Ø20');
 });

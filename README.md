@@ -38,6 +38,7 @@ Con **`?sim`** in fondo all'indirizzo (`http://localhost:5173/?sim`) l'app usa u
 |---|---|
 | `npm test` | Test unitari (Node) e test di rendering (Chromium reale) |
 | `npm run test:e2e` | Test dell'interfaccia a 412×915 (Pixel 7a), con la stampante simulata |
+| `npm run test:perf` | Prestazioni sulla build di produzione con CPU rallentata 4×: digitazione e apertura dell'anteprima |
 | `npm run build` | Controllo dei tipi, build in `dist/` e controllo dell'assenza della simulazione |
 | `npm run preview` | Serve la build in locale |
 

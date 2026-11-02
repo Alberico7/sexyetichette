@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
-import { LW550_HEAD, sameMediaSize } from '@/printer/media';
+import { sameMediaSize } from '@/printer/media';
 import { MAX_COPIES, clampCopies } from '@/printer/print-flow';
-import { countBlack } from '@/printer/raster';
 import type { Density } from '@/printer/types';
-import { prepareLabel, type PreparedLabel } from '@/render/export';
 import { paintPreview } from '@/render/preview';
+import { resolveFontSize } from '@/render/scene';
 import { useDocumentStore } from '@/stores/document';
+import { usePreviewStore } from '@/stores/preview';
 import { usePrinterStore } from '@/stores/printer';
 import { dotsToMm } from '@/model/units';
 
@@ -15,10 +15,8 @@ const emit = defineEmits<{ printed: [] }>();
 
 const store = useDocumentStore();
 const printer = usePrinterStore();
+const preview = usePreviewStore();
 const canvas = ref<HTMLCanvasElement | null>(null);
-const prepared = ref<PreparedLabel | null>(null);
-const rendering = ref(false);
-const renderError = ref<string | null>(null);
 const actualSize = ref(false);
 
 const densities: { value: Density; label: string }[] = [
@@ -28,31 +26,31 @@ const densities: { value: Density; label: string }[] = [
   { value: 'high', label: 'Scura' },
 ];
 
-async function refresh(): Promise<void> {
-  rendering.value = true;
-  renderError.value = null;
-  try {
-    const result = await prepareLabel(store.doc, LW550_HEAD);
-    prepared.value = result;
-    await nextTick();
-    if (canvas.value) paintPreview(canvas.value, result.wireBitmap, result.geometry);
-  } catch (err) {
-    renderError.value = err instanceof Error ? err.message : String(err);
-  } finally {
-    rendering.value = false;
-  }
+/** L'anteprima è calcolata in sottofondo: qui la si disegna soltanto. */
+async function paint(): Promise<void> {
+  await nextTick();
+  const p = preview.prepared;
+  if (props.active && p && canvas.value) paintPreview(canvas.value, p.wireBitmap, p.geometry);
 }
 
 watch(
   () => props.active,
   (a) => {
-    if (a) void refresh();
+    if (!a) return;
+    void paint();
+    // Se il documento è cambiato da poco, completa subito il calcolo.
+    if (!preview.ready) void preview.ensure().catch(() => {});
   },
   { immediate: true },
 );
+watch(() => preview.prepared, () => void paint());
 
-const isEmpty = computed(() => (prepared.value ? countBlack(prepared.value.wireBitmap) === 0 : false));
+const rendering = computed(() => !preview.ready);
+const isEmpty = computed(() => preview.ready && preview.inkDots === 0);
 const mismatch = computed(() => printer.detected && !sameMediaSize(printer.detected.media, store.doc.media));
+const overflow = computed(() =>
+  store.doc.elements.some((el) => el.type === 'text' && el.autoFit && resolveFontSize(el).overflow),
+);
 const sizeText = computed(() => {
   const g = store.geometry;
   const mm = (d: number) => dotsToMm(d).toFixed(1).replace('.', ',');
@@ -60,11 +58,7 @@ const sizeText = computed(() => {
 });
 
 const canPrint = computed(
-  () =>
-    printer.state === 'connected' &&
-    printer.blockingProblems.length === 0 &&
-    !!prepared.value &&
-    !rendering.value,
+  () => printer.state === 'connected' && printer.blockingProblems.length === 0 && preview.prepared !== null,
 );
 
 function step(delta: number): void {
@@ -72,7 +66,8 @@ function step(delta: number): void {
 }
 
 async function doPrint(): Promise<void> {
-  const ok = await printer.print(store.doc);
+  // Stampa esattamente il bitmap dell'anteprima (ricalcolato solo se il documento è cambiato).
+  const ok = await printer.print(store.doc, () => preview.ensure());
   if (ok) emit('printed');
 }
 </script>
@@ -80,8 +75,8 @@ async function doPrint(): Promise<void> {
 <template>
   <div class="preview-wrap" :class="{ actual: actualSize }">
     <canvas ref="canvas" class="preview" data-testid="preview-canvas" aria-label="Anteprima in bianco e nero" />
-    <p v-if="rendering" class="muted">Preparazione anteprima…</p>
-    <p v-if="renderError" class="error">Errore nell'anteprima: {{ renderError }}</p>
+    <p v-if="rendering" class="muted">Aggiornamento anteprima…</p>
+    <p v-if="preview.error" class="error">Errore nell'anteprima: {{ preview.error }}</p>
   </div>
   <div class="row meta">
     <small class="grow">{{ sizeText }}</small>
@@ -92,7 +87,8 @@ async function doPrint(): Promise<void> {
     non è raggiungibile dalla testina.
   </p>
 
-  <p v-if="isEmpty" class="warn">L'etichetta è vuota.</p>
+  <p v-if="isEmpty" class="warn" data-testid="empty-warning">L'etichetta è vuota.</p>
+  <p v-if="overflow" class="warn" data-testid="overflow-warning">Un testo non entra nel suo riquadro ed è stampato alla dimensione minima.</p>
   <p v-if="mismatch" class="warn" data-testid="mismatch-warning">
     Il formato scelto ({{ store.doc.media.name }}) non corrisponde al rotolo inserito
     ({{ printer.detected?.media.name }}).

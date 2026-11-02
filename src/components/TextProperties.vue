@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import type { HorizontalAlign, TextElement, VerticalAlign } from '@/model/types';
 import { useDocumentStore } from '@/stores/document';
-import { DIAMETER_SYMBOL, insertAtSelection } from '@/model/text';
+import { DIAMETER_SIGN, DIAMETER_SYMBOL, insertAtSelection } from '@/model/text';
+import { resolveFontSize } from '@/render/scene';
 
-const props = defineProps<{ element: TextElement }>();
+const props = defineProps<{ element: TextElement; autofocus?: boolean }>();
 const store = useDocumentStore();
 
 const FONTS = [
@@ -29,8 +30,20 @@ const vAligns: { value: VerticalAlign; label: string }[] = [
   { value: 'bottom', label: 'Basso' },
 ];
 
+/** Dimensione effettiva (calcolata se l'adattamento automatico è attivo). */
+const fitted = computed(() => resolveFontSize(props.element));
+
+function toggleAutoFit(): void {
+  if (props.element.autoFit) {
+    // Riparte dalla dimensione calcolata, così il testo non cambia di colpo.
+    update({ autoFit: false, fontSizePt: fitted.value.sizePt });
+  } else {
+    update({ autoFit: true });
+  }
+}
+
 const size = computed({
-  get: () => props.element.fontSizePt,
+  get: () => (props.element.autoFit ? fitted.value.sizePt : props.element.fontSizePt),
   set: (v: number) => {
     if (Number.isFinite(v) && v > 0) update({ fontSizePt: Math.min(200, Math.max(4, v)) });
   },
@@ -50,6 +63,15 @@ async function insertSymbol(symbol: string): Promise<void> {
   }
 }
 
+// Testo nuovo: la tastiera compare subito, senza un tocco in più sulla casella.
+onMounted(() => {
+  if (props.autofocus && textarea.value) {
+    textarea.value.focus();
+    const end = textarea.value.value.length;
+    textarea.value.setSelectionRange(end, end);
+  }
+});
+
 function rotate90(): void {
   update({ rotation: (Math.round(props.element.rotation / 90) * 90 + 90) % 360 });
 }
@@ -57,11 +79,13 @@ function rotate90(): void {
 
 <template>
   <label class="field">
-    Testo
+    <span class="visually-hidden">Testo</span>
     <textarea
       ref="textarea"
       :value="element.text"
-      rows="3"
+      rows="2"
+      placeholder="Scrivi il testo"
+      enterkeyhint="enter"
       data-testid="text-input"
       @input="update({ text: ($event.target as HTMLTextAreaElement).value })"
     />
@@ -77,8 +101,36 @@ function rotate90(): void {
     >
       <span class="symbol" aria-hidden="true">{{ DIAMETER_SYMBOL }}</span> Diametro
     </button>
+    <button
+      type="button"
+      data-testid="insert-diameter-iso"
+      aria-label="Inserisci il simbolo del diametro ISO (può risultare più piccolo)"
+      title="Simbolo ISO: con alcuni caratteri può risultare più piccolo"
+      @pointerdown.prevent
+      @click="insertSymbol(DIAMETER_SIGN)"
+    >
+      <span class="symbol" aria-hidden="true">{{ DIAMETER_SIGN }}</span> Diametro ISO
+    </button>
   </div>
 
+  <button
+    type="button"
+    class="toggle"
+    data-testid="auto-fit"
+    :aria-pressed="!!element.autoFit"
+    @click="toggleAutoFit"
+  >
+    <span class="check" aria-hidden="true">{{ element.autoFit ? '✓' : '' }}</span>
+    Adatta automaticamente
+    <small>riempie il riquadro, a capo solo con Invio</small>
+  </button>
+  <p v-if="element.autoFit && fitted.overflow" class="overflow" role="status" data-testid="fit-overflow">
+    Il testo non entra nel riquadro: allarga il riquadro o accorcia il testo.
+  </p>
+
+  <details class="more" data-testid="more-options">
+    <summary>Altre opzioni</summary>
+    <div class="more-body">
   <div class="row">
     <label class="field grow">
       Carattere
@@ -87,8 +139,18 @@ function rotate90(): void {
       </select>
     </label>
     <label class="field size">
-      Dimensione (pt)
-      <input v-model.number="size" type="number" inputmode="decimal" min="4" max="200" step="1" />
+      {{ element.autoFit ? 'Dimensione (auto)' : 'Dimensione (pt)' }}
+      <input
+        v-model.number="size"
+        type="number"
+        inputmode="decimal"
+        min="4"
+        max="200"
+        step="1"
+        data-testid="font-size"
+        :readonly="element.autoFit"
+        :aria-readonly="element.autoFit"
+      />
     </label>
   </div>
 
@@ -135,9 +197,45 @@ function rotate90(): void {
     </button>
     <button type="button" class="grow" @click="rotate90">Ruota 90°</button>
   </div>
+    </div>
+  </details>
 </template>
 
 <style scoped>
+.more {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.more summary {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.more summary::after {
+  content: '▾';
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.more[open] summary::after {
+  content: '▴';
+}
+
+.more summary::-webkit-details-marker {
+  display: none;
+}
+
+.more-body {
+  display: grid;
+  gap: 14px;
+  padding: 4px 12px 12px;
+}
+
 .symbols {
   margin-top: -6px;
 }
@@ -148,7 +246,51 @@ function rotate90(): void {
 }
 
 .size {
-  width: 120px;
+  width: 130px;
   flex: none;
+}
+
+.size input[readonly] {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.toggle {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  text-align: left;
+  column-gap: 8px;
+  padding: 8px 12px;
+}
+
+.toggle .check {
+  grid-row: span 2;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.toggle[aria-pressed='true'] .check {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.toggle small {
+  color: var(--muted);
+}
+
+.overflow {
+  margin: -6px 0 0;
+  color: var(--warn);
+}
+
+.symbols {
+  flex-wrap: wrap;
 }
 </style>
