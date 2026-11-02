@@ -24,29 +24,46 @@ export function toWireBitmap(image: RgbaImage, options: RasterOptions): LabelBit
   });
 }
 
+/**
+ * Chiama `visit(x, y)` per ogni punto nero, leggendo il bitmap un byte alla volta
+ * (i byte vuoti, la maggior parte, vengono saltati).
+ */
+export function forEachBlack(bitmap: LabelBitmap, visit: (x: number, y: number) => void): void {
+  const { widthPx, heightPx, data } = bitmap;
+  const rowBytes = Math.ceil(widthPx / 8);
+  for (let y = 0; y < heightPx; y++) {
+    const base = y * rowBytes;
+    for (let b = 0; b < rowBytes; b++) {
+      const byte = data[base + b]!;
+      if (byte === 0) continue;
+      const x0 = b * 8;
+      for (let bit = 0; bit < 8; bit++) {
+        if (byte & (0x80 >> bit)) {
+          const x = x0 + bit;
+          if (x < widthPx) visit(x, y);
+        }
+      }
+    }
+  }
+}
+
 /** Bitmap → RGBA bianco e nero (nero = 1). */
 export function bitmapToRgba(bitmap: LabelBitmap): RgbaImage {
   const { widthPx, heightPx } = bitmap;
-  const data = new Uint8Array(widthPx * heightPx * 4);
-  for (let y = 0; y < heightPx; y++) {
-    for (let x = 0; x < widthPx; x++) {
-      const v = getPixel(bitmap, x, y) ? 0 : 255;
-      const i = (y * widthPx + x) * 4;
-      data[i] = v;
-      data[i + 1] = v;
-      data[i + 2] = v;
-      data[i + 3] = 255;
-    }
-  }
+  const data = new Uint8Array(widthPx * heightPx * 4).fill(255);
+  forEachBlack(bitmap, (x, y) => {
+    const i = (y * widthPx + x) * 4;
+    data[i] = 0;
+    data[i + 1] = 0;
+    data[i + 2] = 0;
+  });
   return { width: widthPx, height: heightPx, data };
 }
 
 /** Numero di punti neri, utile per i test e per avvisare se l'etichetta è vuota. */
 export function countBlack(bitmap: LabelBitmap): number {
   let n = 0;
-  for (let y = 0; y < bitmap.heightPx; y++) {
-    for (let x = 0; x < bitmap.widthPx; x++) if (getPixel(bitmap, x, y)) n++;
-  }
+  forEachBlack(bitmap, () => n++);
   return n;
 }
 

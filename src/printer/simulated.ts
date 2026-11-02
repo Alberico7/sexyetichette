@@ -66,6 +66,11 @@ export class SimulatedPrinterPort implements PrinterPort {
   private printing = false;
   private statusListeners = new Set<(s: AppPrinterStatus) => void>();
   private disconnectListeners = new Set<() => void>();
+  private availableListeners = new Set<() => void>();
+  /** La stampante è stata autorizzata (selettore) almeno una volta. */
+  private authorized = false;
+  /** Il cavo è inserito. */
+  private plugged = true;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(config: Partial<SimulatedConfig> = {}) {
@@ -108,11 +113,16 @@ export class SimulatedPrinterPort implements PrinterPort {
       throw new AppErrorException(toAppError(err));
     }
     this.isConnected = true;
+    this.authorized = true;
+    this.plugged = true;
     return this.info();
   }
 
+  /** Come il browser: riapre senza selettore solo se già autorizzata e inserita. */
   async reconnect(): Promise<PrinterInfo | null> {
-    return null;
+    if (!this.authorized || !this.plugged) return null;
+    this.isConnected = true;
+    return this.info();
   }
 
   async disconnect(): Promise<void> {
@@ -122,6 +132,7 @@ export class SimulatedPrinterPort implements PrinterPort {
 
   /** Simula lo scollegamento fisico del cavo. */
   unplug(): void {
+    this.plugged = false;
     if (!this.isConnected) return;
     this.isConnected = false;
     this.stopPolling();
@@ -258,6 +269,18 @@ export class SimulatedPrinterPort implements PrinterPort {
   onDisconnect(cb: () => void): () => void {
     this.disconnectListeners.add(cb);
     return () => this.disconnectListeners.delete(cb);
+  }
+
+  /** Simula l'inserimento del cavo (evento `connect` di WebUSB). */
+  plugIn(): void {
+    this.plugged = true;
+    if (!this.authorized || this.isConnected) return;
+    for (const cb of this.availableListeners) cb();
+  }
+
+  onDeviceAvailable(cb: () => void): () => void {
+    this.availableListeners.add(cb);
+    return () => this.availableListeners.delete(cb);
   }
 }
 

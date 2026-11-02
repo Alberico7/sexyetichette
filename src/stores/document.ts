@@ -4,11 +4,16 @@ import { areaFromDots, createDocument, createTextElement, touch } from '@/model/
 import { defaultDirection, documentGeometry } from '@/model/geometry';
 import type { ContentDirection, LabelDocument, LabelElement, MediaFormat } from '@/model/types';
 import { LW550_HEAD, defaultMedia } from '@/printer/media';
+import { loadSettings, saveSettings } from '@/settings';
 
 type ElementPatch = Partial<Omit<LabelElement, 'id' | 'type'>>;
 
 export const useDocumentStore = defineStore('document', () => {
-  const doc = ref<LabelDocument>(createDocument(defaultMedia()));
+  // Si riparte dall'ultimo formato e verso usati su questo dispositivo.
+  const saved = loadSettings();
+  const initial = createDocument(saved.media ?? defaultMedia());
+  if (saved.direction) initial.direction = saved.direction;
+  const doc = ref<LabelDocument>(initial);
   const selectedId = ref<string | null>(null);
 
   const geometry = computed(() => documentGeometry(doc.value, LW550_HEAD));
@@ -23,11 +28,13 @@ export const useDocumentStore = defineStore('document', () => {
     doc.value.media = JSON.parse(JSON.stringify(media)) as MediaFormat;
     doc.value.direction = direction ?? defaultDirection(media);
     touch(doc.value);
+    saveSettings({ media: doc.value.media, direction: doc.value.direction });
   }
 
   function setDirection(direction: ContentDirection): void {
     doc.value.direction = direction;
     touch(doc.value);
+    saveSettings({ direction });
   }
 
   function setContinuousLength(mm: number): void {
@@ -35,7 +42,8 @@ export const useDocumentStore = defineStore('document', () => {
     touch(doc.value);
   }
 
-  function addText(text = 'Testo'): LabelElement {
+  /** Nuovo testo vuoto, pronto da scrivere. */
+  function addText(text = ''): LabelElement {
     const el = createTextElement(areaFromDots(geometry.value.printable), text);
     doc.value.elements.push(el);
     selectedId.value = el.id;
@@ -56,6 +64,13 @@ export const useDocumentStore = defineStore('document', () => {
     touch(doc.value);
   }
 
+  /** Elimina il testo se è rimasto vuoto (es. pannello chiuso senza scrivere). */
+  function removeIfEmpty(id: string | null): void {
+    if (!id) return;
+    const el = doc.value.elements.find((e) => e.id === id);
+    if (el?.type === 'text' && el.text.trim() === '') removeElement(id);
+  }
+
   function replaceDocument(next: LabelDocument): void {
     doc.value = next;
     selectedId.value = null;
@@ -73,6 +88,7 @@ export const useDocumentStore = defineStore('document', () => {
     addText,
     updateElement,
     removeElement,
+    removeIfEmpty,
     replaceDocument,
   };
 });

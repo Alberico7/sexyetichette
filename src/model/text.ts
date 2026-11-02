@@ -1,6 +1,12 @@
 /** Simbolo del diametro: O barrata (U+00D8), presente in tutti i font. */
 export const DIAMETER_SYMBOL = 'Ø';
 
+/**
+ * Simbolo del diametro ISO (U+2300). Molti font non lo contengono: il browser
+ * lo prende da un altro font e può risultare più piccolo o mancare.
+ */
+export const DIAMETER_SIGN = '⌀';
+
 export interface TextEdit {
   text: string;
   /** Posizione del cursore dopo l'inserimento. */

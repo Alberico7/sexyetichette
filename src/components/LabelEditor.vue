@@ -2,11 +2,14 @@
 /**
  * Editor touch dell'etichetta. Usa la stessa scena Konva della stampa
  * (`render/scene.ts`), mostrata in scala per adattarsi allo schermo.
+ *
+ * Per restare fluido mentre si scrive, l'editor ricostruisce solo i nodi
+ * degli elementi cambiati, al massimo una volta per fotogramma.
  */
-import Konva from 'konva';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import Konva, { type Group, type Layer, type Node, type Stage, type Transformer } from '@/render/konva';
 import { useDocumentStore } from '@/stores/document';
-import { ELEMENT_ID_ATTR, buildContent, waitForFonts } from '@/render/scene';
+import { ELEMENT_ID_ATTR, buildElementNode, elementSignature, waitForFonts } from '@/render/scene';
 import { dotsToMm } from '@/model/units';
 import { cssColor, effectiveTheme } from '@/theme';
 
@@ -15,14 +18,17 @@ const emit = defineEmits<{ edit: [id: string] }>();
 const store = useDocumentStore();
 const host = ref<HTMLDivElement | null>(null);
 
-let stage: Konva.Stage | null = null;
-let backgroundLayer: Konva.Layer;
-let contentLayer: Konva.Layer;
-let uiLayer: Konva.Layer;
-let transformer: Konva.Transformer;
+let stage: Stage | null = null;
+let backgroundLayer: Layer;
+let contentLayer: Layer;
+let uiLayer: Layer;
+let content: Group;
+let transformer: Transformer;
 let resizeObserver: ResizeObserver | null = null;
 let isTransforming = false;
-let lastTap = { id: '', at: 0 };
+let frame = 0;
+/** Nodo e firma di ogni elemento presente nella scena. */
+const nodes = new Map<string, { group: Group; signature: string }>();
 
 const PADDING = 16;
 
@@ -53,8 +59,6 @@ function fitStage(): void {
   stage.size({ width: w, height: h });
   stage.scale({ x: scale, y: scale });
   stage.position({ x: (w - label.width * scale) / 2, y: (h - label.height * scale) / 2 });
-  // Le maniglie restano della stessa dimensione sullo schermo.
-  transformer.anchorSize(22);
   stage.batchDraw();
 }
 
@@ -71,17 +75,15 @@ function drawBackground(): void {
       height: label.height,
       fill: '#fff',
       cornerRadius: radiusDots,
-      shadowColor: colors.shadow,
-      shadowBlur: 12,
-      shadowOpacity: 1,
-      shadowForStrokeEnabled: false,
+      // Bordo sottile invece di un'ombra sfocata: molto più leggero da ridisegnare.
+      stroke: colors.shadow,
+      strokeWidth: 1.5,
+      strokeScaleEnabled: false,
       name: 'paper',
     }),
   );
   for (const z of deadZones) {
-    backgroundLayer.add(
-      new Konva.Rect({ ...z, fill: colors.deadZone, listening: false }),
-    );
+    backgroundLayer.add(new Konva.Rect({ ...z, fill: colors.deadZone, listening: false }));
   }
   backgroundLayer.add(
     new Konva.Rect({
@@ -93,52 +95,82 @@ function drawBackground(): void {
       listening: false,
     }),
   );
+  // Il contenuto è ritagliato sui bordi dell'etichetta.
+  content.clip({ x: 0, y: 0, width: label.width, height: label.height });
 }
 
-function rebuildContent(): void {
+function attachEvents(group: Group): void {
+  const id = group.getAttr(ELEMENT_ID_ATTR) as string;
+  group.draggable(true);
+  group.on('dragstart', () => store.select(id));
+  group.on('dragend', () => commitNode(group));
+  group.on('transformstart', () => {
+    isTransforming = true;
+  });
+  group.on('transformend', () => {
+    isTransforming = false;
+    commitNode(group);
+  });
+  // Primo tocco: seleziona. Tocco su un elemento già selezionato: apre la modifica.
+  group.on('tap click', () => {
+    if (store.selectedId === id) emit('edit', id);
+    else store.select(id);
+  });
+}
+
+/** Allinea la scena al modello, ricostruendo solo gli elementi cambiati. */
+function syncContent(): void {
+  frame = 0;
   if (!stage || isTransforming) return;
-  contentLayer.destroyChildren();
-  const { label } = store.geometry;
-  const clip = new Konva.Group({ clip: { x: 0, y: 0, width: label.width, height: label.height } });
-  const content = buildContent(store.doc.elements);
-  clip.add(content);
-  contentLayer.add(clip);
-  for (const node of content.getChildren()) {
-    const group = node as Konva.Group;
-    group.draggable(true);
-    group.on('dragstart', () => {
-      store.select(group.getAttr(ELEMENT_ID_ATTR) as string);
-    });
-    group.on('dragend', () => commitNode(group));
-    group.on('transformstart', () => {
-      isTransforming = true;
-    });
-    group.on('transformend', () => {
-      isTransforming = false;
-      commitNode(group);
-    });
-    group.on('tap click', () => onTapElement(group.getAttr(ELEMENT_ID_ATTR) as string));
+  const seen = new Set<string>();
+  store.doc.elements.forEach((el, index) => {
+    seen.add(el.id);
+    const signature = elementSignature(el);
+    const existing = nodes.get(el.id);
+    if (existing && existing.signature === signature) {
+      existing.group.zIndex(index);
+      return;
+    }
+    const group = buildElementNode(el);
+    attachEvents(group);
+    content.add(group);
+    group.zIndex(index);
+    existing?.group.destroy();
+    nodes.set(el.id, { group, signature });
+  });
+  for (const [id, entry] of nodes) {
+    if (!seen.has(id)) {
+      entry.group.destroy();
+      nodes.delete(id);
+    }
   }
   attachTransformer();
   contentLayer.batchDraw();
 }
 
-function findNode(id: string | null): Konva.Group | null {
-  if (!id) return null;
-  return (
-    (contentLayer.findOne((n: Konva.Node) => n.getAttr(ELEMENT_ID_ATTR) === id) as Konva.Group | undefined) ??
-    null
-  );
+/** Raggruppa più modifiche ravvicinate (es. la digitazione) in un solo aggiornamento. */
+function scheduleSync(): void {
+  if (frame || typeof requestAnimationFrame === 'undefined') {
+    if (!frame) syncContent();
+    return;
+  }
+  frame = requestAnimationFrame(syncContent);
+}
+
+function rebuildAll(): void {
+  for (const entry of nodes.values()) entry.group.destroy();
+  nodes.clear();
+  syncContent();
 }
 
 function attachTransformer(): void {
-  const node = findNode(store.selectedId);
+  const node = store.selectedId ? (nodes.get(store.selectedId)?.group ?? null) : null;
   transformer.nodes(node ? [node] : []);
   uiLayer.batchDraw();
 }
 
 /** Riporta posizione, dimensioni e rotazione del nodo nel modello (in mm). */
-function commitNode(group: Konva.Group): void {
+function commitNode(group: Group): void {
   const id = group.getAttr(ELEMENT_ID_ATTR) as string;
   const w = Math.max(10, group.width() * Math.abs(group.scaleX()));
   const h = Math.max(10, group.height() * Math.abs(group.scaleY()));
@@ -154,23 +186,17 @@ function commitNode(group: Konva.Group): void {
   });
 }
 
-function onTapElement(id: string): void {
-  const now = Date.now();
-  if (lastTap.id === id && now - lastTap.at < 350) {
-    emit('edit', id);
-    lastTap = { id: '', at: 0 };
-    return;
-  }
-  lastTap = { id, at: now };
-  store.select(id);
-}
-
 onMounted(async () => {
   if (!host.value) return;
+  // Oltre 2× la differenza non si vede, ma i pixel da ridisegnare crescono molto (Pixel 7a: 2,625×).
+  // Non influisce sulla stampa, che esporta sempre a 1 pixel per punto.
+  Konva.pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
   stage = new Konva.Stage({ container: host.value, width: 1, height: 1 });
   backgroundLayer = new Konva.Layer();
   contentLayer = new Konva.Layer();
   uiLayer = new Konva.Layer();
+  content = new Konva.Group({ name: 'content' });
+  contentLayer.add(content);
   stage.add(backgroundLayer, contentLayer, uiLayer);
   transformer = new Konva.Transformer({
     rotateEnabled: true,
@@ -189,25 +215,27 @@ onMounted(async () => {
   applyTransformerColors();
 
   stage.on('click tap', (e) => {
-    const target = e.target;
-    if (target === stage || target.hasName('paper')) store.select(null);
+    const target = e.target as Node | Stage;
+    if (target === stage || (target as Node).hasName('paper')) store.select(null);
   });
 
   drawBackground();
-  rebuildContent();
+  syncContent();
   fitStage();
   resizeObserver = new ResizeObserver(() => fitStage());
   resizeObserver.observe(host.value);
 
   // I font possono arrivare dopo il primo disegno.
   await waitForFonts(store.doc.elements);
-  rebuildContent();
+  rebuildAll();
 });
 
 onBeforeUnmount(() => {
+  if (frame) cancelAnimationFrame(frame);
   resizeObserver?.disconnect();
   stage?.destroy();
   stage = null;
+  nodes.clear();
 });
 
 watch(
@@ -215,15 +243,21 @@ watch(
   () => {
     if (!stage) return;
     drawBackground();
-    rebuildContent();
     fitStage();
   },
 );
 
 watch(
   () => store.doc.elements,
-  () => rebuildContent(),
+  () => scheduleSync(),
   { deep: true },
+);
+
+watch(
+  () => store.selectedId,
+  () => {
+    if (stage) attachTransformer();
+  },
 );
 
 watch(effectiveTheme, () => {
@@ -232,13 +266,6 @@ watch(effectiveTheme, () => {
   applyTransformerColors();
   stage.batchDraw();
 });
-
-watch(
-  () => store.selectedId,
-  () => {
-    if (stage) attachTransformer();
-  },
-);
 </script>
 
 <template>
