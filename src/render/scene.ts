@@ -9,6 +9,8 @@ import Konva, { type Group } from './konva';
 import type { LabelElement, TextElement } from '@/model/types';
 import { mmToDotsExact, ptToMm } from '@/model/units';
 import { TEXT_LINE_HEIGHT, fitFontSize, type FitResult } from './fit';
+import { DIAMETER_SIGN } from '@/model/text';
+import { ensureDiameterFont, fontStack, onDiameterFontReady } from './diameter-font';
 
 /** Attributo che collega un nodo Konva all'elemento del modello. */
 export const ELEMENT_ID_ATTR = 'elementId';
@@ -25,10 +27,11 @@ const probes = new Map<string, InstanceType<typeof Konva.Text>>();
 
 /** Misura di una riga con lo stesso motore usato per disegnarla. */
 function measureWith(el: Pick<TextElement, 'fontFamily' | 'bold' | 'italic'>) {
-  const key = `${fontStyle(el)}|${el.fontFamily}`;
+  const family = fontStack(el.fontFamily);
+  const key = `${fontStyle(el)}|${family}`;
   let probe = probes.get(key);
   if (!probe) {
-    probe = new Konva.Text({ fontFamily: el.fontFamily, fontStyle: fontStyle(el), padding: 0 });
+    probe = new Konva.Text({ fontFamily: family, fontStyle: fontStyle(el), padding: 0 });
     probes.set(key, probe);
   }
   const p = probe;
@@ -52,6 +55,7 @@ export function clearFitCache(): void {
 // Se un font termina il caricamento, le misure precedenti possono essere cambiate.
 if (typeof document !== 'undefined' && 'fonts' in document) {
   document.fonts.addEventListener('loadingdone', clearFitCache);
+  onDiameterFontReady(clearFitCache);
 }
 
 /**
@@ -60,7 +64,7 @@ if (typeof document !== 'undefined' && 'fonts' in document) {
  */
 export function resolveFontSize(el: TextElement): FitResult {
   if (!el.autoFit) return { sizePt: el.fontSizePt, overflow: false };
-  const key = JSON.stringify([el.text, el.fontFamily, el.bold, el.italic, el.width, el.height]);
+  const key = JSON.stringify([el.text, fontStack(el.fontFamily), el.bold, el.italic, el.width, el.height]);
   const cached = fitCache.get(key);
   if (cached) return cached;
   const result = fitFontSize(el.text, mmToDotsExact(el.width), mmToDotsExact(el.height), measureWith(el));
@@ -70,6 +74,8 @@ export function resolveFontSize(el: TextElement): FitResult {
 }
 
 function buildText(group: Group, el: TextElement, w: number, h: number): void {
+  // Primo uso di ⌀ con questo carattere: prepara il mini-font (l'editor si ridisegna quando è pronto).
+  if (el.text.includes(DIAMETER_SIGN)) void ensureDiameterFont(el.fontFamily);
   const { sizePt } = resolveFontSize(el);
   if (el.invert) {
     group.add(new Konva.Rect({ x: 0, y: 0, width: w, height: h, fill: '#000', listening: false }));
@@ -81,7 +87,8 @@ function buildText(group: Group, el: TextElement, w: number, h: number): void {
       width: w,
       height: h,
       text: el.text,
-      fontFamily: el.fontFamily,
+      // Il simbolo ⌀ viene dal mini-font ISO, proporzionato al carattere scelto.
+      fontFamily: fontStack(el.fontFamily),
       fontSize: mmToDotsExact(ptToMm(sizePt)),
       fontStyle: fontStyle(el),
       align: el.align,
@@ -143,5 +150,9 @@ export async function waitForFonts(elements: readonly LabelElement[]): Promise<v
     if (el.type === 'text') loads.add(`${fontStyle(el).replace('normal', '')} 20px ${el.fontFamily}`.trim());
   }
   await Promise.all([...loads].map((f) => document.fonts.load(f).catch(() => [])));
+  // Mini-font del diametro ISO per i testi che contengono ⌀.
+  const families = new Set<string>();
+  for (const el of elements) if (el.type === 'text' && el.text.includes(DIAMETER_SIGN)) families.add(el.fontFamily);
+  await Promise.all([...families].map((f) => ensureDiameterFont(f)));
   await document.fonts.ready;
 }

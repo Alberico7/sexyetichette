@@ -98,3 +98,13 @@ describe('simbolo del diametro ISO', () => {
     expect(bitmapsEqual(iso.bitmap, o.bitmap)).toBe(false);
   });
 });
+
+describe('dimensione scelta dopo lo spegnimento dell’adattamento', () => {
+  it('stesso bitmap di un testo creato direttamente a 18 pt', async () => {
+    const turnedOff = docWith({ autoFit: false, fontSizePt: 18 }).doc;
+    const direct = docWith({ autoFit: undefined, fontSizePt: 18 }).doc;
+    const a = await prepareLabel(turnedOff, LW550_HEAD);
+    const b = await prepareLabel(direct, LW550_HEAD);
+    expect(bitmapsEqual(a.wireBitmap, b.wireBitmap)).toBe(true);
+  });
+});

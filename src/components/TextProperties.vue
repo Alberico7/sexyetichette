@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref } from 'vue';
 import type { HorizontalAlign, TextElement, VerticalAlign } from '@/model/types';
 import { useDocumentStore } from '@/stores/document';
-import { DIAMETER_SIGN, DIAMETER_SYMBOL, insertAtSelection } from '@/model/text';
+import { DIAMETER_SIGN, insertAtSelection } from '@/model/text';
 import { resolveFontSize } from '@/render/scene';
 
 const props = defineProps<{ element: TextElement; autofocus?: boolean }>();
@@ -42,12 +42,27 @@ function toggleAutoFit(): void {
   }
 }
 
-const size = computed({
-  get: () => (props.element.autoFit ? fitted.value.sizePt : props.element.fontSizePt),
-  set: (v: number) => {
-    if (Number.isFinite(v) && v > 0) update({ fontSizePt: Math.min(200, Math.max(4, v)) });
-  },
-});
+/** Dimensione mostrata: quella calcolata se l'adattamento è attivo, altrimenti quella scelta. */
+const size = computed(() => (props.element.autoFit ? fitted.value.sizePt : props.element.fontSizePt));
+
+const MIN_PT = 4;
+const MAX_PT = 200;
+
+/**
+ * Una dimensione scritta a mano spegne l'adattamento automatico.
+ * Valori non validi (vuoto, fuori da 4–200) vengono ignorati: così anche
+ * le cifre intermedie mentre si scrive (es. «1» prima di «18») non cambiano nulla.
+ */
+function onSizeInput(event: Event): void {
+  const v = Number((event.target as HTMLInputElement).value);
+  if (!Number.isFinite(v) || v < MIN_PT || v > MAX_PT) return;
+  update({ autoFit: false, fontSizePt: v });
+}
+
+/** All'uscita dal campo, un valore non valido torna a quello effettivo. */
+function onSizeBlur(event: Event): void {
+  (event.target as HTMLInputElement).value = String(size.value);
+}
 
 const textarea = ref<HTMLTextAreaElement | null>(null);
 
@@ -97,19 +112,9 @@ function rotate90(): void {
       data-testid="insert-diameter"
       aria-label="Inserisci il simbolo del diametro"
       @pointerdown.prevent
-      @click="insertSymbol(DIAMETER_SYMBOL)"
-    >
-      <span class="symbol" aria-hidden="true">{{ DIAMETER_SYMBOL }}</span> Diametro
-    </button>
-    <button
-      type="button"
-      data-testid="insert-diameter-iso"
-      aria-label="Inserisci il simbolo del diametro ISO (può risultare più piccolo)"
-      title="Simbolo ISO: con alcuni caratteri può risultare più piccolo"
-      @pointerdown.prevent
       @click="insertSymbol(DIAMETER_SIGN)"
     >
-      <span class="symbol" aria-hidden="true">{{ DIAMETER_SIGN }}</span> Diametro ISO
+      <span class="symbol iso" aria-hidden="true">{{ DIAMETER_SIGN }}</span> Diametro
     </button>
   </div>
 
@@ -141,15 +146,15 @@ function rotate90(): void {
     <label class="field size">
       {{ element.autoFit ? 'Dimensione (auto)' : 'Dimensione (pt)' }}
       <input
-        v-model.number="size"
+        :value="size"
         type="number"
         inputmode="decimal"
-        min="4"
-        max="200"
+        :min="MIN_PT"
+        :max="MAX_PT"
         step="1"
         data-testid="font-size"
-        :readonly="element.autoFit"
-        :aria-readonly="element.autoFit"
+        @input="onSizeInput"
+        @blur="onSizeBlur"
       />
     </label>
   </div>
@@ -245,15 +250,16 @@ function rotate90(): void {
   font-weight: 600;
 }
 
+/* Lo stesso simbolo ISO usato in stampa. */
+.symbol.iso {
+  font-family: 'Etichettatrice Diametro UI', inherit;
+}
+
 .size {
   width: 130px;
   flex: none;
 }
 
-.size input[readonly] {
-  background: var(--surface-2);
-  color: var(--muted);
-}
 
 .toggle {
   display: grid;

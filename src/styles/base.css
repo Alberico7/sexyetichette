@@ -3,6 +3,15 @@
  * Senza `data-theme` decide il sistema (color-scheme: light dark);
  * `data-theme="light"` o `"dark"` sull'elemento <html> forza la scelta.
  */
+/* Simbolo del diametro ISO (⌀) per l'interfaccia; nel disegno dell'etichetta
+   lo registra render/diameter-font.ts, scalato sul carattere scelto. */
+@font-face {
+  font-family: 'Etichettatrice Diametro UI';
+  src: url('../assets/fonts/diametro.otf') format('opentype');
+  unicode-range: U+2300;
+  font-display: swap;
+}
+
 :root {
   color-scheme: light dark;
   --bg: light-dark(#f3f4f6, #111318);

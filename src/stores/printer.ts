@@ -29,16 +29,20 @@ export const usePrinterStore = defineStore('printer', () => {
   const blockingProblems = computed(() => (status.value?.problems ?? []).filter((p) => !p.warning));
   const warnings = computed(() => (status.value?.problems ?? []).filter((p) => p.warning));
 
-  async function ensurePort(): Promise<PrinterPort> {
-    if (!port.value) {
-      const p = await createPrinterPort();
+  // Un solo collegamento per tutta l'app: se il ricollegamento automatico all'avvio
+  // e il tocco su «Collega» arrivano insieme, devono usare lo stesso oggetto.
+  let portPromise: Promise<PrinterPort> | null = null;
+
+  function ensurePort(): Promise<PrinterPort> {
+    portPromise ??= createPrinterPort().then((p) => {
       port.value = p;
       // Stampante già autorizzata inserita ad app aperta: collegamento automatico.
       p.onDeviceAvailable(() => {
         if (state.value === 'disconnected') void tryReconnect();
       });
-    }
-    return port.value;
+      return p;
+    });
+    return portPromise;
   }
 
   function clearError(): void {
@@ -106,8 +110,11 @@ export const usePrinterStore = defineStore('printer', () => {
   async function tryReconnect(): Promise<void> {
     try {
       const p = await ensurePort();
+      // Non interferisce con un collegamento manuale già avviato o riuscito.
+      if (state.value !== 'disconnected') return;
       const printerInfo = await p.reconnect();
-      if (!printerInfo) return;
+      // Nel frattempo l'utente potrebbe aver già collegato a mano.
+      if (!printerInfo || state.value !== 'disconnected') return;
       attach(p, printerInfo);
       error.value = null;
       await afterConnect(p);
