@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia';
-import { computed, ref, shallowRef } from 'vue';
+import { computed, ref, shallowRef, watch } from 'vue';
 import type { LabelDocument } from '@/model/types';
 import { createPrinterPort } from '@/printer';
 import { appError, unwrapError, type AppError } from '@/printer/errors';
 import { runPrint } from '@/printer/print-flow';
 import type { AppPrinterStatus, Density, DetectedMedia, PrinterInfo, PrinterPort } from '@/printer/types';
+import type { PreparedLabel } from '@/render/export';
+import { loadSettings, saveSettings } from '@/settings';
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'printing';
 
@@ -18,7 +20,8 @@ export const usePrinterStore = defineStore('printer', () => {
   const mediaReadFailed = ref(false);
   const error = ref<AppError | null>(null);
   const copies = ref(1);
-  const density = ref<Density>('normal');
+  const density = ref<Density>(loadSettings().density ?? 'normal');
+  watch(density, (d) => saveSettings({ density: d }));
   const lastPrintAt = ref<number | null>(null);
   let unsubscribeStatus: (() => void) | null = null;
   let unsubscribeDisconnect: (() => void) | null = null;
@@ -27,7 +30,14 @@ export const usePrinterStore = defineStore('printer', () => {
   const warnings = computed(() => (status.value?.problems ?? []).filter((p) => p.warning));
 
   async function ensurePort(): Promise<PrinterPort> {
-    if (!port.value) port.value = await createPrinterPort();
+    if (!port.value) {
+      const p = await createPrinterPort();
+      port.value = p;
+      // Stampante già autorizzata inserita ad app aperta: collegamento automatico.
+      p.onDeviceAvailable(() => {
+        if (state.value === 'disconnected') void tryReconnect();
+      });
+    }
     return port.value;
   }
 
@@ -99,6 +109,7 @@ export const usePrinterStore = defineStore('printer', () => {
       const printerInfo = await p.reconnect();
       if (!printerInfo) return;
       attach(p, printerInfo);
+      error.value = null;
       await afterConnect(p);
     } catch {
       reset();
@@ -130,7 +141,10 @@ export const usePrinterStore = defineStore('printer', () => {
     }
   }
 
-  async function print(doc: LabelDocument): Promise<boolean> {
+  async function print(
+    doc: LabelDocument,
+    prepare?: (doc: LabelDocument) => Promise<PreparedLabel>,
+  ): Promise<boolean> {
     const p = port.value;
     error.value = null;
     if (!p?.connected) {
@@ -139,8 +153,10 @@ export const usePrinterStore = defineStore('printer', () => {
     }
     state.value = 'printing';
     try {
-      await runPrint(p, doc, { copies: copies.value, density: density.value });
+      await runPrint(p, doc, { copies: copies.value, density: density.value }, prepare);
       lastPrintAt.value = Date.now();
+      // Le copie tornano a 1: evita di ristampare più copie per errore.
+      copies.value = 1;
       return true;
     } catch (err) {
       error.value = unwrapError(err);

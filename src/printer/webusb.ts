@@ -70,6 +70,12 @@ export class WebUsbPrinterPort implements PrinterPort {
   private printer: WebLabelWriterPrinter | null = null;
   private usbDevice: USBDevice | null = null;
   private disconnectListeners = new Set<() => void>();
+  private availableListeners = new Set<() => void>();
+  private readonly handleUsbConnect = (event: USBConnectionEvent) => {
+    // Il browser segnala solo i dispositivi già autorizzati per questo sito.
+    if (event.device.vendorId !== LW550_VENDOR_ID || this.printer) return;
+    for (const cb of this.availableListeners) cb();
+  };
   private readonly handleUsbDisconnect = (event: USBConnectionEvent) => {
     if (this.usbDevice && event.device !== this.usbDevice) return;
     // Se non conosco il dispositivo, verifico che sia una LabelWriter.
@@ -83,6 +89,7 @@ export class WebUsbPrinterPort implements PrinterPort {
   constructor() {
     if (typeof navigator !== 'undefined' && navigator.usb) {
       navigator.usb.addEventListener('disconnect', this.handleUsbDisconnect);
+      navigator.usb.addEventListener('connect', this.handleUsbConnect);
     }
   }
 
@@ -222,5 +229,10 @@ export class WebUsbPrinterPort implements PrinterPort {
   onDisconnect(cb: () => void): () => void {
     this.disconnectListeners.add(cb);
     return () => this.disconnectListeners.delete(cb);
+  }
+
+  onDeviceAvailable(cb: () => void): () => void {
+    this.availableListeners.add(cb);
+    return () => this.availableListeners.delete(cb);
   }
 }

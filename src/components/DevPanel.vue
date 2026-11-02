@@ -70,6 +70,7 @@ function set<K extends keyof SimulatedConfig>(key: K, value: SimulatedConfig[K])
         <input type="text" :value="sim.config.rollSku" @change="set('rollSku', ($event.target as HTMLInputElement).value)" />
       </label>
       <button type="button" @click="sim.unplug()">Scollega il cavo</button>
+      <button type="button" @click="sim.plugIn()">Inserisci il cavo</button>
     </div>
   </details>
 </template>

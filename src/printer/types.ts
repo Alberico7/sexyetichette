@@ -71,4 +71,6 @@ export interface PrinterPort {
   recover(): Promise<void>;
   /** Chiamata quando la stampante viene scollegata fisicamente. */
   onDisconnect(cb: () => void): () => void;
+  /** Chiamata quando viene inserita una stampante già autorizzata in passato. */
+  onDeviceAvailable(cb: () => void): () => void;
 }
