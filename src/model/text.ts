@@ -1,4 +1,7 @@
-/** Simbolo del diametro: O barrata (U+00D8), presente in tutti i font. */
+/**
+ * O barrata (U+00D8). Non ha più un pulsante (si usa il simbolo ISO ⌀),
+ * ma resta qui per riferimento e per i test.
+ */
 export const DIAMETER_SYMBOL = 'Ø';
 
 /**
