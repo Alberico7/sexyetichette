@@ -12,16 +12,20 @@ import { useDocumentStore } from '@/stores/document';
 import { usePreviewStore } from '@/stores/preview';
 import { usePrinterStore } from '@/stores/printer';
 
+// Diagnostica USB: caricata solo quando serve.
+const UsbDiagnostics = defineAsyncComponent(() => import('@/components/UsbDiagnostics.vue'));
+
 // Il pannello di simulazione esiste solo nella build di sviluppo.
 const DevPanel = import.meta.env.DEV ? defineAsyncComponent(() => import('@/components/DevPanel.vue')) : null;
 
-type Sheet = 'none' | 'text' | 'media' | 'print';
+type Sheet = 'none' | 'text' | 'media' | 'print' | 'diagnostics';
 
 const store = useDocumentStore();
 const printer = usePrinterStore();
 // Avvia il calcolo dell'anteprima in sottofondo fin dall'apertura.
 usePreviewStore();
-const sheet = ref<Sheet>('none');
+// Con «?diagnostica» nell'indirizzo si apre subito la diagnostica USB.
+const sheet = ref<Sheet>(new URLSearchParams(location.search).has('diagnostica') ? 'diagnostics' : 'none');
 /** Il pannello Testo è stato aperto da «+ Testo»: la tastiera compare subito. */
 const focusText = ref(false);
 const envError = checkEnvironment();
@@ -88,6 +92,7 @@ onMounted(() => {
     <div v-if="envError" class="env-error" role="alert">
       <strong>{{ envError.title }}</strong>
       <p>{{ envError.hint }}</p>
+      <button type="button" data-testid="open-diagnostics" @click="sheet = 'diagnostics'">Apri la diagnostica USB</button>
     </div>
     <ErrorBanner
       v-if="printer.error"
@@ -95,6 +100,7 @@ onMounted(() => {
       :can-recover="printer.state === 'connected'"
       @dismiss="printer.clearError()"
       @recover="printer.recover()"
+      @diagnostics="sheet = 'diagnostics'"
     />
     <component :is="DevPanel" v-if="DevPanel" />
 
@@ -136,6 +142,9 @@ onMounted(() => {
     </BottomSheet>
     <BottomSheet :open="sheet === 'print'" title="Anteprima e stampa" @close="sheet = 'none'">
       <PrintSheet :active="sheet === 'print'" @printed="onPrinted" />
+    </BottomSheet>
+    <BottomSheet :open="sheet === 'diagnostics'" title="Diagnostica USB" @close="sheet = 'none'">
+      <UsbDiagnostics v-if="sheet === 'diagnostics'" />
     </BottomSheet>
   </div>
 </template>

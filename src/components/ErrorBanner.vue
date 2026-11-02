@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import type { AppError } from '@/printer/errors';
 
-defineProps<{ error: AppError; canRecover: boolean }>();
-const emit = defineEmits<{ dismiss: []; recover: [] }>();
+const props = defineProps<{ error: AppError; canRecover: boolean }>();
+const emit = defineEmits<{ dismiss: []; recover: []; diagnostics: [] }>();
+
+/** Errori di collegamento per cui la diagnostica USB aiuta a capire dove si ferma. */
+const CONNECTION_CODES = new Set(['no-device-selected', 'access-denied', 'device-unknown', 'webusb-unsupported', 'insecure-context', 'disconnected']);
+const showDiagnostics = () => CONNECTION_CODES.has(props.error.code);
 </script>
 
 <template>
@@ -16,6 +20,9 @@ const emit = defineEmits<{ dismiss: []; recover: [] }>();
       </details>
     </div>
     <div class="actions">
+      <button v-if="showDiagnostics()" type="button" data-testid="open-diagnostics" @click="emit('diagnostics')">
+        Apri la diagnostica USB
+      </button>
       <button v-if="error.recoverable && canRecover" type="button" @click="emit('recover')">
         Ripristina stampante
       </button>
