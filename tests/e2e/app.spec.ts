@@ -161,7 +161,7 @@ test('tema automatico segue il sistema', async ({ page }) => {
   expect(dark).not.toBe(light);
 });
 
-test('pulsante diametro: inserisce Ø nella posizione del cursore', async ({ page }) => {
+test('pulsante diametro: inserisce ⌀ nella posizione del cursore', async ({ page }) => {
   await page.goto('/?sim');
   await page.getByTestId('add-text').tap();
   const input = page.getByTestId('text-input');
@@ -169,7 +169,9 @@ test('pulsante diametro: inserisce Ø nella posizione del cursore', async ({ pag
   // Cursore dopo "Tubo ".
   await input.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(5, 5));
   await page.getByTestId('insert-diameter').tap();
-  await expect(input).toHaveValue('Tubo Ø20 mm');
+  await expect(input).toHaveValue('Tubo ⌀20 mm');
+  // Un solo pulsante per il diametro: quello del simbolo ISO.
+  await expect(page.getByRole('button', { name: /diametro/i })).toHaveCount(1);
   expect(await input.evaluate((el: HTMLTextAreaElement) => el.selectionStart)).toBe(6);
   await noHorizontalScroll(page);
   await page.screenshot({ path: 'test-results/08-diametro.png' });
@@ -186,7 +188,6 @@ test('adattamento automatico: attivo sui nuovi testi, la dimensione segue il tes
   const toggle = page.getByTestId('auto-fit');
   const size = page.getByTestId('font-size');
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-  await expect(size).toHaveAttribute('readonly', '');
 
   await page.getByTestId('text-input').fill('Corto');
   const short = Number(await size.inputValue());
@@ -199,7 +200,6 @@ test('adattamento automatico: attivo sui nuovi testi, la dimensione segue il tes
   // Disattivando, la dimensione riparte da quella calcolata ed è modificabile.
   await toggle.tap();
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-  await expect(size).not.toHaveAttribute('readonly', '');
   expect(Number(await size.inputValue())).toBe(fitted);
 
   await page.getByTestId('text-done').tap();
@@ -207,14 +207,18 @@ test('adattamento automatico: attivo sui nuovi testi, la dimensione segue il tes
   await expect.poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width)).toBe(1051);
 });
 
-test('secondo simbolo del diametro (⌀)', async ({ page }) => {
+test('simbolo del diametro ISO nell’anteprima', async ({ page }) => {
   await page.goto('/?sim');
   await page.getByTestId('add-text').tap();
   const input = page.getByTestId('text-input');
   await input.fill('20');
   await input.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(0, 0));
-  await page.getByTestId('insert-diameter-iso').tap();
-  await expect(input).toHaveValue('⌀20');
   await page.getByTestId('insert-diameter').tap();
-  await expect(input).toHaveValue('⌀Ø20');
+  await expect(input).toHaveValue('⌀20');
+  await input.fill('⌀ 20 · H');
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: 'test-results/12-diametro-iso.png' });
+  await page.getByTestId('text-print').tap();
+  await expect(page.getByText('Aggiornamento anteprima')).toHaveCount(0);
+  await page.screenshot({ path: 'test-results/13-diametro-iso-anteprima.png' });
 });

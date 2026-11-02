@@ -111,3 +111,51 @@ test('densità e formato ricordati; copie che tornano a 1 dopo la stampa', async
   await expect(page.getByRole('button', { name: 'Scura' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('print-button')).toHaveText('Stampa');
 });
+
+test('«Collega» toccato subito all’apertura: un solo collegamento, la stampa funziona', async ({ page }) => {
+  await page.goto('/?sim');
+  // Tocco immediato, prima del ricollegamento automatico in sottofondo.
+  await page.getByRole('button', { name: 'Collega', exact: true }).tap();
+  await expect(page.getByRole('status').first()).toContainText('Pronta');
+  await page.getByTestId('add-text').tap();
+  await page.keyboard.type('Subito');
+  await page.getByTestId('text-print').tap();
+  await page.getByTestId('print-button').tap();
+  await expect(page.getByText('Etichetta inviata alla stampante')).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+test('scrivere una dimensione spegne l’adattamento automatico', async ({ page }) => {
+  await page.goto('/?sim');
+  await page.getByTestId('add-text').tap();
+  await page.keyboard.type('Dimensione');
+  await page.getByTestId('more-options').locator('summary').tap();
+  const toggle = page.getByTestId('auto-fit');
+  const size = page.getByTestId('font-size');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+
+  // Valore non valido: non cambia nulla.
+  await size.fill('2');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await size.blur();
+  expect(Number(await size.inputValue())).toBeGreaterThan(4);
+
+  // Valore valido: adattamento spento, dimensione scelta.
+  await size.fill('18');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByText('Dimensione (pt)')).toBeVisible();
+  await size.blur();
+  await expect(size).toHaveValue('18');
+
+  // L'anteprima si genera con la nuova dimensione.
+  await page.getByTestId('text-print').tap();
+  await expect(page.getByText('Aggiornamento anteprima')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Chiudi', exact: true }).tap();
+
+  // Riattivando l'interruttore la dimensione torna calcolata.
+  await page.getByTestId('edit-selected').tap();
+  await page.getByTestId('more-options').locator('summary').tap();
+  await toggle.tap();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(async () => Number(await size.inputValue())).not.toBe(18);
+});
