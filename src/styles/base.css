@@ -1,0 +1,169 @@
+/*
+ * Tema: ogni colore è definito con light-dark(chiaro, scuro).
+ * Senza `data-theme` decide il sistema (color-scheme: light dark);
+ * `data-theme="light"` o `"dark"` sull'elemento <html> forza la scelta.
+ */
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#f3f4f6, #111318);
+  --surface: light-dark(#ffffff, #1c1f26);
+  --surface-2: light-dark(#f9fafb, #232730);
+  --text: light-dark(#111827, #f3f4f6);
+  --muted: light-dark(#6b7280, #9ca3af);
+  --border: light-dark(#d1d5db, #374151);
+  --accent: light-dark(#1d4ed8, #3b82f6);
+  --accent-text: #ffffff;
+  --ok: light-dark(#15803d, #22c55e);
+  --warn: light-dark(#b45309, #f59e0b);
+  --danger: light-dark(#b91c1c, #f87171);
+  /* Colori dell'editor (l'etichetta resta sempre bianca). */
+  --selection: light-dark(#1d4ed8, #60a5fa);
+  --printable-outline: light-dark(rgb(29 78 216 / 0.5), rgb(96 165 250 / 0.7));
+  --dead-zone: light-dark(rgb(200 60 60 / 0.12), rgb(248 113 113 / 0.22));
+  --paper-shadow: light-dark(rgb(0 0 0 / 0.25), rgb(255 255 255 / 0.18));
+  --radius: 12px;
+  --tap: 48px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--bg);
+}
+
+#app {
+  height: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  min-height: var(--tap);
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+button.danger {
+  color: var(--danger);
+}
+
+input[type='text'],
+input[type='number'],
+select,
+textarea {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+label.field {
+  display: grid;
+  gap: 4px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.grow {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.segmented {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.segmented button {
+  flex: 1 1 0;
+  border: 0;
+  border-radius: 0;
+  min-width: 0;
+  padding: 0 6px;
+}
+
+.segmented button + button {
+  border-left: 1px solid var(--border);
+}
+
+.segmented button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* I controlli dentro un campo usano il colore del testo, non quello grigio dell'etichetta. */
+label.field :is(input, select, textarea) {
+  color: var(--text);
+}

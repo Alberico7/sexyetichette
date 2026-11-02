@@ -1,0 +1,28 @@
+import type { PrinterPort } from './types';
+import { WebUsbPrinterPort } from './webusb';
+
+/** `true` se la build consente la stampante simulata (mai in produzione). */
+export const SIMULATION_AVAILABLE = import.meta.env.DEV || import.meta.env.MODE === 'test';
+
+export function simulationRequested(): boolean {
+  if (!SIMULATION_AVAILABLE || typeof location === 'undefined') return false;
+  return new URLSearchParams(location.search).has('sim');
+}
+
+/**
+ * Crea il collegamento alla stampante.
+ * In sviluppo, con `?sim` nell'indirizzo, usa la stampante simulata.
+ * La condizione su `import.meta.env.DEV` è costante: in produzione Vite elimina
+ * il ramo e il modulo simulato non entra nella build.
+ */
+export async function createPrinterPort(): Promise<PrinterPort> {
+  if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
+    if (simulationRequested()) {
+      const { SimulatedPrinterPort } = await import('./simulated');
+      return new SimulatedPrinterPort();
+    }
+  }
+  return new WebUsbPrinterPort();
+}
+
+export type { PrinterPort } from './types';
