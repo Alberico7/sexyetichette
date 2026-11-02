@@ -58,6 +58,11 @@ export interface TextElement extends BaseElement {
   verticalAlign: VerticalAlign;
   /** Testo bianco su fondo nero. */
   invert: boolean;
+  /**
+   * Dimensione calcolata per riempire il riquadro (a capo solo con Invio).
+   * Assente negli elementi creati prima di questa opzione = disattivo.
+   */
+  autoFit?: boolean;
 }
 
 export type LabelElement = TextElement;

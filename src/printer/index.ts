@@ -1,5 +1,4 @@
 import type { PrinterPort } from './types';
-import { WebUsbPrinterPort } from './webusb';
 
 /** `true` se la build consente la stampante simulata (mai in produzione). */
 export const SIMULATION_AVAILABLE = import.meta.env.DEV || import.meta.env.MODE === 'test';
@@ -22,6 +21,8 @@ export async function createPrinterPort(): Promise<PrinterPort> {
       return new SimulatedPrinterPort();
     }
   }
+  // Il driver della stampante è caricato a parte, dopo l'interfaccia.
+  const { WebUsbPrinterPort } = await import('./webusb');
   return new WebUsbPrinterPort();
 }
 

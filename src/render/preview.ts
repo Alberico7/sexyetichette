@@ -2,8 +2,9 @@
  * Anteprima fedele: disegna il bitmap che verrà inviato alla stampante,
  * riportato nel verso di lettura, sull'etichetta intera a 1 pixel per punto.
  */
-import { rotateBitmap, getPixel, type LabelBitmap } from '@mbtech-nl/bitmap';
+import { rotateBitmap, type LabelBitmap } from '@mbtech-nl/bitmap';
 import type { LabelGeometry } from '@/model/geometry';
+import { forEachBlack } from '@/printer/raster';
 
 /** Riporta il bitmap della testina nel verso di lettura. */
 export function wireToReading(bitmap: LabelBitmap, wireRotation: 0 | 90): LabelBitmap {
@@ -24,18 +25,19 @@ export function paintPreview(
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, label.width, label.height);
 
-  const reading = wireToReading(wireBitmap, geometry.wireRotation);
-  const img = ctx.createImageData(reading.widthPx, reading.heightPx);
-  for (let y = 0; y < reading.heightPx; y++) {
-    for (let x = 0; x < reading.widthPx; x++) {
-      const i = (y * reading.widthPx + x) * 4;
-      const v = getPixel(reading, x, y) ? 0 : 255;
-      img.data[i] = v;
-      img.data[i + 1] = v;
-      img.data[i + 2] = v;
-      img.data[i + 3] = 255;
-    }
-  }
+  // Il bitmap della testina viene riportato nel verso di lettura senza copie intermedie.
+  // Rotazione di 90° (vedi rotateBitmap): punto testina (x, y) ↔ lettura (y, larghezza − 1 − x).
+  const rotated = geometry.wireRotation === 90;
+  const rw = rotated ? wireBitmap.heightPx : wireBitmap.widthPx;
+  const rh = rotated ? wireBitmap.widthPx : wireBitmap.heightPx;
+  const img = ctx.createImageData(rw, rh);
+  const px = new Uint32Array(img.data.buffer);
+  px.fill(0xffffffff); // bianco opaco
+  const black = 0xff000000; // nero opaco (byte in ordine little-endian: R, G, B, A)
+  forEachBlack(wireBitmap, (x, y) => {
+    if (rotated) px[(rh - 1 - x) * rw + y] = black;
+    else px[y * rw + x] = black;
+  });
   ctx.putImageData(img, printable.x, printable.y);
 
   // Zone non stampabili tratteggiate.
