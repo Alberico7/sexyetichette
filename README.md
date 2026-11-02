@@ -82,6 +82,15 @@ L'indirizzo di rete locale (`http://192.168.x.x:5173`) **non** funziona per WebU
 - Se la stampante non compare nel selettore, controlla in GrapheneOS l'impostazione della **porta USB-C** (impostazioni di sicurezza): non deve essere limitata alla sola ricarica.
 - Tocca **Collega** e scegli la stampante dall'elenco. Al successivo avvio l'app prova a ricollegarsi da sola.
 
+## Diagnostica USB (anche senza LabelWriter)
+
+Aggiungendo **`?diagnostica`** all'indirizzo (es. `https://alberico7.github.io/sexyetichette/?diagnostica`) si apre una prova che funziona con **qualsiasi dispositivo USB**, per esempio una stampante di casa. La pagina:
+- verifica che telefono, cavo, impostazioni USB-C e browser permettano di vedere il dispositivo, aprirlo e prenderne il controllo;
+- **non invia nessun dato**: il dispositivo non stampa e non cambia stato;
+- con **«Copia risultati»** copia un testo da incollare in chat, e con **«Dimentica questo dispositivo»** revoca l'autorizzazione al termine della prova.
+
+La stessa pagina si apre dal link «Apri la diagnostica USB» nei messaggi d'errore di collegamento.
+
 ## Checklist per la prova con la stampante vera
 
 ### Già verificato da me, senza hardware
