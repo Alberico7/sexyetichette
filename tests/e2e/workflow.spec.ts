@@ -61,8 +61,8 @@ test('testo lasciato vuoto viene eliminato', async ({ page }) => {
   await page.getByTestId('add-text').tap();
   await page.getByTestId('text-done').tap();
   await expect(page.getByText('Tocca «+ Testo» per scrivere')).toBeVisible();
-  // Barra senza selezione: solo «+ Testo» e «Stampa».
-  await expect(page.getByRole('navigation', { name: 'Azioni' }).getByRole('button')).toHaveCount(2);
+  // Barra senza selezione: «+ Testo», «Recenti» e «Stampa».
+  await expect(page.getByRole('navigation', { name: 'Azioni' }).getByRole('button')).toHaveCount(3);
 });
 
 test('barra contestuale e secondo tocco per modificare', async ({ page }) => {
