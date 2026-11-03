@@ -4,7 +4,7 @@ import ShareActions from '@/components/ShareActions.vue';
 import { mediaReadToText } from '@/diagnostics/media-read';
 import { toHex } from '@/diagnostics/hex';
 import type { ContentDirection, MediaFormat } from '@/model/types';
-import { CATALOG, customMedia, sameMediaSize } from '@/printer/media';
+import { CATALOG, allSkus, customMedia, sameMediaSize } from '@/printer/media';
 import { useDocumentStore } from '@/stores/document';
 import { usePrinterStore } from '@/stores/printer';
 
@@ -20,7 +20,7 @@ const filtered = computed(() => {
   const q = query.value.trim().toLowerCase();
   if (!q) return CATALOG;
   return CATALOG.filter(
-    (m) => m.name.toLowerCase().includes(q) || m.skus?.some((s) => s.toLowerCase().includes(q)),
+    (m) => m.name.toLowerCase().includes(q) || allSkus(m).some((s) => s.toLowerCase().includes(q)),
   );
 });
 
