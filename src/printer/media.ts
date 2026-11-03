@@ -12,6 +12,7 @@ import {
 import type { HeadSpec } from '@/model/geometry';
 import type { MediaFormat } from '@/model/types';
 import { mmToDots } from '@/model/units';
+import { EU_CODES, EU_NEW_FORMATS } from './eu-skus';
 
 const LW_550 = DEVICES.LW_550;
 const LW_550_ENGINE = LW_550.engines[0]!;
@@ -80,14 +81,48 @@ function toMediaFormat(m: LabelWriterMedia): MediaFormat {
   return fmt;
 }
 
-/** Formati compatibili con la testina standard della 550. */
-export const CATALOG: readonly MediaFormat[] = (Object.values(MEDIA) as unknown as LabelWriterMedia[])
-  .filter(
-    (m) =>
-      (m.type === 'die-cut' || m.type === 'continuous') &&
-      (m.targetModels === undefined || m.targetModels.includes('lw')),
-  )
-  .map(toMediaFormat);
+/** Formati della tabella DYMO Europa assenti dalla libreria. */
+function newEuFormat(f: (typeof EU_NEW_FORMATS)[number]): MediaFormat {
+  return {
+    id: f.id,
+    name: `${f.base} ${formatMm(f.widthMm)}×${formatMm(f.lengthMm)} mm`,
+    widthMm: f.widthMm,
+    lengthMm: f.lengthMm,
+    lengthDots: mmToDots(f.lengthMm),
+  };
+}
+
+/** Aggiunge i codici europei mostrati (articolo e numero breve), senza doppioni. */
+function withEuCodes(fmt: MediaFormat): MediaFormat {
+  const extra = EU_CODES.filter((e) => e.mediaId === fmt.id).flatMap((e) => e.shown);
+  if (extra.length === 0) return fmt;
+  const all = [...(fmt.skus ?? [])];
+  for (const code of extra) if (!all.some((s) => normalizeSku(s) === normalizeSku(code))) all.push(code);
+  return { ...fmt, skus: all };
+}
+
+/** Formati compatibili con la testina standard della 550, con i codici europei. */
+export const CATALOG: readonly MediaFormat[] = [
+  ...(Object.values(MEDIA) as unknown as LabelWriterMedia[])
+    .filter(
+      (m) =>
+        (m.type === 'die-cut' || m.type === 'continuous') &&
+        (m.targetModels === undefined || m.targetModels.includes('lw')),
+    )
+    .map(toMediaFormat),
+  ...EU_NEW_FORMATS.map(newEuFormat),
+].map(withEuCodes);
+
+/** Codici delle confezioni multiple e varianti: cercabili ma non mostrati. */
+const HIDDEN_CODES: ReadonlyMap<string, string> = new Map(
+  EU_CODES.flatMap((e) => e.more.map((code) => [normalizeSku(code), e.mediaId] as const)),
+);
+
+/** Tutti i codici di un formato, compresi quelli non mostrati nell'elenco. */
+export function allSkus(media: MediaFormat): string[] {
+  const hidden = [...HIDDEN_CODES].filter(([, id]) => id === media.id).map(([code]) => code);
+  return [...(media.skus ?? []), ...hidden];
+}
 
 /** Formato predefinito: multiuso piccola 25×54 mm (SKU 30336). */
 export const DEFAULT_MEDIA_ID = 'multi-purpose-small';
@@ -107,7 +142,10 @@ export function normalizeSku(sku: string): string {
 export function findMediaBySku(sku: string): MediaFormat | undefined {
   const wanted = normalizeSku(sku);
   if (!wanted) return undefined;
-  return CATALOG.find((m) => m.skus?.some((s) => normalizeSku(s) === wanted));
+  const byShown = CATALOG.find((m) => m.skus?.some((s) => normalizeSku(s) === wanted));
+  if (byShown) return byShown;
+  const id = HIDDEN_CODES.get(wanted);
+  return id ? findMediaById(id) : undefined;
 }
 
 /** Formato personalizzato. `lengthMm` assente = continuo. */
