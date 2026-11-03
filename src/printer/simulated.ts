@@ -7,9 +7,22 @@
  * con lo stesso testo della libreria, dithering finale del driver.
  */
 import { renderImage, type LabelBitmap } from '@mbtech-nl/bitmap';
+import { parseSkuInfo } from '@thermal-label/labelwriter-core';
+import { diagLog } from '@/diagnostics/log';
+import { validateJob } from '@/diagnostics/job-check';
+import { classifyMediaRead, readWithRetry } from '@/diagnostics/media-read';
 import { AppErrorException, appError, fromStatusError, toAppError, type AppError } from './errors';
-import { LW550_HEAD, findMediaById, mediaFromSku } from './media';
-import type { AppPrinterStatus, DetectedMedia, PrintJob, PrinterInfo, PrinterPort } from './types';
+import { findMediaBySku } from './media';
+import { buildSkuBytes } from './sim-sku';
+import type {
+  AppPrinterStatus,
+  MediaReadResult,
+  PrintJob,
+  PrinterInfo,
+  PrinterPort,
+  PrinterProbe,
+  UsbDeviceSummary,
+} from './types';
 
 export type SimulatedFault =
   | 'none'
@@ -19,7 +32,16 @@ export type SimulatedFault =
   | 'busy'
   | 'timeout'
   | 'disconnect-on-print'
-  | 'nfc-unreadable';
+  /** Il tag del rotolo non è valido (codice iniziale errato). */
+  | 'nfc-unreadable'
+  /** La stampante non risponde a `ESC U`. */
+  | 'nfc-timeout'
+  /** Risposta a `ESC U` più corta di 63 byte. */
+  | 'nfc-short'
+  /** Una lettura sì e una no (la prima fallisce). */
+  | 'nfc-flaky'
+  /** Stato lento (1,5 s). */
+  | 'slow-status';
 
 export interface SimulatedConfig {
   /** Esito del selettore: dispositivo scelto, selettore chiuso o dispositivo non supportato. */
@@ -72,6 +94,8 @@ export class SimulatedPrinterPort implements PrinterPort {
   /** Il cavo è inserito. */
   private plugged = true;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
+  /** Letture del rotolo fatte finora (per il guasto «nfc-flaky»). */
+  private mediaReads = 0;
 
   constructor(config: Partial<SimulatedConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -161,6 +185,15 @@ export class SimulatedPrinterPort implements PrinterPort {
     return { ready: errors.length === 0 && !this.printing, mediaLoaded, errors };
   }
 
+  /** I 32 byte di stato come li manderebbe la 550. */
+  private statusBytes(): Uint8Array {
+    const b = new Uint8Array(32);
+    b[0] = this.printing ? 1 : 0;
+    const bay: Partial<Record<SimulatedFault, number>> = { 'no-media': 2, 'cover-open': 1, counterfeit: 10 };
+    b[10] = bay[this.config.fault] ?? 8;
+    return b;
+  }
+
   async getStatus(): Promise<AppPrinterStatus> {
     this.require();
     if (this.config.fault === 'timeout') {
@@ -211,18 +244,87 @@ export class SimulatedPrinterPort implements PrinterPort {
     };
   }
 
-  async readMedia(): Promise<DetectedMedia | null> {
+  async readMedia(): Promise<MediaReadResult> {
     this.require();
+    const result = await readWithRetry(() => this.mediaOnce(), { sleep: (ms) => sleep(Math.min(ms, 50)) });
+    diagLog.add(result.ok ? 'app' : 'warn', `Rotolo ${result.ok ? 'letto' : `non letto (${result.reason})`}, tentativi ${result.attempts}`);
+    return result;
+  }
+
+  /** Un tentativo di lettura del rotolo, con gli stessi esiti del driver reale. */
+  private async mediaOnce(): Promise<MediaReadResult> {
+    if (!this.isConnected) {
+      return { ok: false, reason: 'not-connected', message: 'Stampante non collegata.', detail: 'not-connected', attempts: 1 };
+    }
     await sleep(Math.min(this.config.delayMs, 50));
-    if (this.config.fault === 'nfc-unreadable' || this.config.fault === 'no-media') return null;
-    const fromCatalog = mediaFromSku({
+    this.mediaReads++;
+    const fault = this.config.fault;
+    if (fault === 'nfc-timeout' || fault === 'no-media') {
+      const e = new Error('Transfer timed out after 2000 ms');
+      e.name = 'TransportTimeoutError';
+      return classifyMediaRead({ error: e, readError: `${e.name}: ${e.message}` });
+    }
+    const entry = findMediaBySku(this.config.rollSku);
+    const bytes = buildSkuBytes({
       sku: this.config.rollSku,
-      labelWidthMm: 28,
-      labelLengthMm: 89,
-      labelType: 'die',
+      widthMm: entry?.widthMm ?? 28,
+      lengthMm: entry?.lengthMm ?? 89,
+      // «nfc-flaky»: una lettura sì e una no, a partire dalla prima.
+      magic: fault === 'nfc-unreadable' || (fault === 'nfc-flaky' && this.mediaReads % 2 === 1) ? 0x0000 : 0xcab6,
     });
-    if (!fromCatalog) return null;
-    return { sku: this.config.rollSku, media: fromCatalog.media, fromCatalog: fromCatalog.fromCatalog, totalLabels: 130 };
+    if (fault === 'nfc-short') return classifyMediaRead({ bytes: bytes.subarray(0, 20) });
+    const sku = parseSkuInfo(bytes);
+    return classifyMediaRead({ sku: sku.magic === 0xcab6 ? sku : undefined, bytes });
+  }
+
+  probe(): PrinterProbe | null {
+    if (!this.isConnected) return null;
+    const turbo = this.config.model === 'LW_550_TURBO';
+    const device: UsbDeviceSummary = {
+      productName: turbo ? 'LabelWriter 550 Turbo' : 'LabelWriter 550',
+      manufacturerName: 'Simulazione',
+      vendorId: 0x0922,
+      productId: turbo ? 0x0029 : 0x0028,
+      usbVersion: '2.0',
+      deviceVersion: '1.0.0',
+      serialTail: '…0001',
+      interfaces: [
+        {
+          number: 0,
+          classCode: 7,
+          className: 'stampante',
+          claimed: true,
+          endpoints: [
+            { number: 1, direction: 'out', type: 'bulk', packetSize: 64 },
+            { number: 2, direction: 'in', type: 'bulk', packetSize: 64 },
+          ],
+        },
+      ],
+    };
+    return {
+      device: () => device,
+      version: async () => {
+        await sleep(20);
+        return {
+          ok: true,
+          ms: 20,
+          value: { hardware: 'SIM-HW', firmwareKind: 'application', firmware: '1.0', firmwareDate: '2026', pid: device.productId },
+          bytes: new Uint8Array(34),
+        };
+      },
+      status: async () => {
+        const ms = this.config.fault === 'slow-status' ? 1500 : 20;
+        await sleep(ms);
+        try {
+          const status = await this.getStatus();
+          const bytes = this.statusBytes();
+          return { ok: true, ms, value: { status, printStatus: bytes[0]! }, bytes };
+        } catch (err) {
+          return { ok: false, ms, error: err instanceof Error ? err.message : String(err) };
+        }
+      },
+      media: () => this.mediaOnce(),
+    };
   }
 
   async print(job: PrintJob): Promise<void> {
@@ -284,17 +386,4 @@ export class SimulatedPrinterPort implements PrinterPort {
   }
 }
 
-/** Controlli di coerenza sul lavoro: aiutano a trovare errori nel rendering. */
-export function validateJob(job: PrintJob): void {
-  const { image } = job;
-  if (image.width <= 0 || image.height <= 0) throw new Error('Immagine vuota');
-  if (image.width > LW550_HEAD.headDots) {
-    throw new Error(`Immagine larga ${image.width} punti: la testina ne ha ${LW550_HEAD.headDots}`);
-  }
-  if (image.data.length !== image.width * image.height * 4) throw new Error('Dimensione dati RGBA errata');
-  if (job.copies < 1 || !Number.isInteger(job.copies)) throw new Error('Numero di copie non valido');
-  if (job.labelLengthDots < image.height) throw new Error('Lunghezza etichetta minore dell’immagine');
-  if (!findMediaById(job.media.id) && !job.media.id.startsWith('custom') && !job.media.id.startsWith('nfc')) {
-    throw new Error(`Formato sconosciuto: ${job.media.id}`);
-  }
-}
+export { validateJob };

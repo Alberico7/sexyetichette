@@ -82,14 +82,28 @@ L'indirizzo di rete locale (`http://192.168.x.x:5173`) **non** funziona per WebU
 - Se la stampante non compare nel selettore, controlla in GrapheneOS l'impostazione della **porta USB-C** (impostazioni di sicurezza): non deve essere limitata alla sola ricarica.
 - Tocca **Collega** e scegli la stampante dall'elenco. Al successivo avvio l'app prova a ricollegarsi da sola.
 
-## Diagnostica USB (anche senza LabelWriter)
+## Diagnostica
 
-Aggiungendo **`?diagnostica`** all'indirizzo (es. `https://alberico7.github.io/sexyetichette/?diagnostica`) si apre una prova che funziona con **qualsiasi dispositivo USB**, per esempio una stampante di casa. La pagina:
-- verifica che telefono, cavo, impostazioni USB-C e browser permettano di vedere il dispositivo, aprirlo e prenderne il controllo;
-- **non invia nessun dato**: il dispositivo non stampa e non cambia stato;
-- con **«Copia risultati»** copia un testo da incollare in chat, e con **«Dimentica questo dispositivo»** revoca l'autorizzazione al termine della prova.
+Si apre aggiungendo **`?diagnostica`** all'indirizzo (es. `https://alberico7.github.io/sexyetichette/?diagnostica`), dal pulsante **«Diagnostica»** in *Formato etichetta* (con la stampante collegata) o dal link nei messaggi d'errore di collegamento. Ha tre schede:
 
-La stessa pagina si apre dal link «Apri la diagnostica USB» nei messaggi d'errore di collegamento.
+- **USB**: prova con **qualsiasi dispositivo USB**, per esempio una stampante di casa. Verifica che telefono, cavo, impostazioni USB-C e browser permettano di vedere il dispositivo, aprirlo e prenderne il controllo, e mostra gli endpoint. **Non invia nessun dato.** «Dimentica questo dispositivo» revoca l'autorizzazione al termine.
+- **LabelWriter 550**: prova della stampante collegata con **soli comandi di lettura**:
+  - versione (`ESC V`);
+  - stato (`ESC A`) e dati del rotolo (`ESC U`), ciascuno letto tre volte, con byte grezzi e tempi;
+  - tutti i campi del tag NFC confrontati con il catalogo;
+  - geometria del formato;
+  - controllo del lavoro di stampa dell'etichetta attuale **senza inviarlo**.
+
+  In cima c'è un riepilogo con i problemi in ordine di gravità.
+- **Stampa di prova**: su richiesta e dopo una conferma, stampa **una** etichetta con bordo sul limite stampabile, tacche ogni millimetro, «ALTO», angoli numerati e un triangolo sul lato che dovrebbe uscire per primo. Poi chiede come è uscita.
+
+**«Copia tutto» / «Condividi»** raccolgono in un unico testo:
+- riepilogo;
+- prove;
+- risposte sulla stampa di prova;
+- **registro degli eventi** della sessione: collegamento, errori con il messaggio originale e traffico USB con la stampante.
+
+Il registro sta solo in memoria. Il testo non contiene dati personali: il numero di serie è troncato e i testi delle etichette sono esclusi. Se il rotolo non si legge, *Formato etichetta* mostra la causa precisa e i byte ricevuti, con «Copia dettagli» e «Condividi».
 
 ## Checklist per la prova con la stampante vera
 
@@ -101,22 +115,29 @@ La stessa pagina si apre dal link «Apri la diagnostica USB» nei messaggi d'err
 - [x] Interfaccia a 412×915 senza scorrimento orizzontale. Collegamento, testo, anteprima e stampa con la stampante simulata, più i messaggi d'errore. Test Playwright.
 - [x] La build di produzione non contiene la stampante simulata.
 
+### Verificato sull'hardware dall'utente
+
+- [x] **2026-11-03 – WebUSB su Pixel 7a con GrapheneOS e Vanadium**, provato con la diagnostica USB e una stampante HP a getto d'inchiostro. Il selettore mostra il dispositivo, Android concede il permesso, il browser apre la stampante e prende il controllo dell'interfaccia di tipo **stampante**, la stessa classe della LabelWriter 550. Porta USB-C e cavo/adattatore funzionano come host USB.
+  Questa prova **non** verifica il protocollo della 550: comandi, lock di stampa e lettura NFC.
+
 ### Da provare con la stampante (non confermato)
 
 Annota per ogni punto ✅ / ❌ e, se qualcosa non va, una foto dell'etichetta.
 
 1. **Rilevamento su Android/GrapheneOS.** Con il telefono sbloccato, tocca *Collega*: la LabelWriter 550 compare nel selettore? Dopo la scelta, l'indicatore diventa verde «Pronta»?
 2. **Accesso USB.** Compaiono errori come «Accesso USB negato»? Se sì, copia i *Dettagli tecnici*.
-3. **Lettura NFC.** Il formato in alto passa da solo a quello del rotolo inserito? In *Formato etichetta* compare «Rotolo rilevato» con il codice giusto?
-4. **Prima stampa.** Etichetta con un testo corto e grande al centro, 1 copia, densità Normale. Esce un'etichetta sola? Il testo è leggibile?
-5. **Allineamento lungo il rotolo.** Aggiungi un testo vicino al bordo sinistro dell'area tratteggiata e uno vicino al bordo destro. Sono entrambi stampati interi? Il bordo sinistro è il primo che esce dalla stampante?
-6. **Allineamento attraverso il rotolo.** Con un'etichetta stretta (es. 28×89), metti un rettangolo «bianco su nero» in alto e uno in basso. Sono stampati sull'etichetta e non fuori? Il testo è dritto o capovolto?
-7. **Verso «Attraverso il rotolo».** Ripeti la prova 4 con questo verso.
-8. **Copie.** Stampa 3 copie: escono 3 etichette e la stampante si ferma correttamente?
-9. **Densità.** Confronta Chiara e Scura.
-10. **Errori.** Apri il coperchio: compare «Coperchio aperto»? Togli il rotolo: compare «Rotolo assente»? Stacca il cavo: compare «Stampante scollegata»?
-11. **Ricollegamento.** Ricarica la pagina con la stampante collegata: torna «Pronta» senza toccare *Collega*?
-12. **550 Turbo** (solo se ne hai una): deve comparire «non verificata». Riporta l'esito di tutte le prove.
+3. **Lettura NFC.** Il formato in alto passa da solo a quello del rotolo inserito? In *Formato etichetta* compare «Rotolo rilevato» con il codice giusto? Se no, apri *Diagnostica → LabelWriter 550*, avvia la prova e condividi il risultato con «Condividi».
+   - 2026-11-03, prima prova con la 550 reale: collegamento e stato ok, **rotolo 25×54 non letto**. Causa ancora da capire con la diagnostica.
+4. **Stampa di prova.** In *Diagnostica → Stampa di prova* stampa l'etichetta di prova, rispondi alle domande e condividi «Tutti i risultati». Questa prova da sola verifica verso, zona non stampabile e allineamento.
+5. **Prima stampa.** Etichetta con un testo corto e grande al centro, 1 copia, densità Normale. Esce un'etichetta sola? Il testo è leggibile?
+6. **Allineamento lungo il rotolo.** Aggiungi un testo vicino al bordo sinistro dell'area tratteggiata e uno vicino al bordo destro. Sono entrambi stampati interi? Il bordo sinistro è il primo che esce dalla stampante?
+7. **Allineamento attraverso il rotolo.** Con un'etichetta stretta (es. 28×89), metti un rettangolo «bianco su nero» in alto e uno in basso. Sono stampati sull'etichetta e non fuori? Il testo è dritto o capovolto?
+8. **Verso «Attraverso il rotolo».** Ripeti la prova 5 con questo verso.
+9. **Copie.** Stampa 3 copie: escono 3 etichette e la stampante si ferma correttamente?
+10. **Densità.** Confronta Chiara e Scura.
+11. **Errori.** Apri il coperchio: compare «Coperchio aperto»? Togli il rotolo: compare «Rotolo assente»? Stacca il cavo: compare «Stampante scollegata»?
+12. **Ricollegamento.** Ricarica la pagina con la stampante collegata: torna «Pronta» senza toccare *Collega*?
+13. **550 Turbo** (solo se ne hai una): deve comparire «non verificata». Riporta l'esito di tutte le prove.
 
 ## Licenza
 

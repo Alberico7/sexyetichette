@@ -38,13 +38,22 @@ export async function runPrint(
   prepare: (doc: LabelDocument) => Promise<PreparedLabel> = async (d) =>
     (await import('@/render/export')).prepareLabel(d, LW550_HEAD),
 ): Promise<PrintJob> {
-  // Controllo preventivo: messaggi più chiari di quelli del driver.
-  const status = await port.getStatus();
-  const blocking = status.problems.find((p) => !p.warning);
-  if (blocking) throw new AppErrorException(blocking);
-
+  await precheck(port);
   const prepared = await prepare(doc);
   const job = buildJob(doc, prepared, settings);
   await port.print(job);
   return job;
+}
+
+/** Controllo preventivo: messaggi più chiari di quelli del driver. */
+async function precheck(port: PrinterPort): Promise<void> {
+  const status = await port.getStatus();
+  const blocking = status.problems.find((p) => !p.warning);
+  if (blocking) throw new AppErrorException(blocking);
+}
+
+/** Stampa un lavoro già pronto (per esempio l'etichetta di prova). */
+export async function runJob(port: PrinterPort, job: PrintJob): Promise<void> {
+  await precheck(port);
+  await port.print(job);
 }

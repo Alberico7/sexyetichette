@@ -179,7 +179,7 @@ test('pulsante diametro: inserisce ⌀ nella posizione del cursore', async ({ pa
   // Il simbolo arriva nell'anteprima di stampa.
   await page.getByTestId('text-done').tap();
   await page.getByTestId('open-print').tap();
-  await expect.poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width)).toBe(1051);
+  await expect.poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width)).toBe(638);
 });
 
 test('adattamento automatico: attivo sui nuovi testi, la dimensione segue il testo', async ({ page }) => {
@@ -204,7 +204,7 @@ test('adattamento automatico: attivo sui nuovi testi, la dimensione segue il tes
 
   await page.getByTestId('text-done').tap();
   await page.getByTestId('open-print').tap();
-  await expect.poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width)).toBe(1051);
+  await expect.poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width)).toBe(638);
 });
 
 test('simbolo del diametro ISO nell’anteprima', async ({ page }) => {

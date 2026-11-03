@@ -8,6 +8,7 @@
  * isochronousTransferOut o reset (verificato dai test).
  */
 import { LW550_PRODUCT_ID, LW550_TURBO_PRODUCT_ID, LW550_VENDOR_ID } from './media';
+import type { EndpointInfo, UsbDeviceSummary } from './types';
 
 export type StepState = 'ok' | 'fail' | 'skip' | 'info';
 
@@ -23,6 +24,8 @@ export interface InterfaceInfo {
   number: number;
   classCode: number;
   className: string;
+  /** Endpoint dell'interfaccia: direzione, tipo e dimensione del pacchetto. */
+  endpoints: EndpointInfo[];
 }
 
 export interface DeviceInfo {
@@ -31,6 +34,8 @@ export interface DeviceInfo {
   vendorId: string;
   productId: string;
   usbVersion: string;
+  /** Versione del dispositivo (`bcdDevice`), di solito quella del firmware. */
+  deviceVersion: string;
   serialTail?: string;
   interfaces: InterfaceInfo[];
   /** Descrizione se è una LabelWriter. */
@@ -106,16 +111,58 @@ export function labelWriterName(vendorId: number, productId: number): string | u
   return 'Dispositivo del produttore delle LabelWriter (modello non supportato da questa app)';
 }
 
+function endpointsOf(alt: USBAlternateInterface | undefined): EndpointInfo[] {
+  return (alt?.endpoints ?? []).map((e) => ({
+    number: e.endpointNumber,
+    direction: e.direction,
+    type: e.type,
+    packetSize: e.packetSize,
+  }));
+}
+
 /** Interfacce della configurazione attiva (o della prima, se nessuna è attiva). */
-function interfacesOf(device: USBDevice): InterfaceInfo[] {
+function interfacesOf(device: USBDevice): (InterfaceInfo & { claimed: boolean })[] {
   const config = device.configuration ?? device.configurations[0];
   if (!config) return [];
   return config.interfaces.map((itf) => {
     const alt = itf.alternate ?? itf.alternates[0];
     const code = alt?.interfaceClass ?? 0;
-    return { number: itf.interfaceNumber, classCode: code, className: className(code) };
+    return {
+      number: itf.interfaceNumber,
+      classCode: code,
+      className: className(code),
+      claimed: Boolean(itf.claimed),
+      endpoints: endpointsOf(alt),
+    };
   });
 }
+
+function deviceVersionOf(device: USBDevice): string {
+  const { deviceVersionMajor: a, deviceVersionMinor: b, deviceVersionSubminor: c } = device;
+  return a === undefined ? '–' : `${a}.${b ?? 0}.${c ?? 0}`;
+}
+
+/** Descrizione del dispositivo per la diagnostica della stampante collegata. */
+export function summarizeUsbDevice(device: USBDevice): UsbDeviceSummary {
+  const s: UsbDeviceSummary = {
+    productName: device.productName || '(nome non disponibile)',
+    manufacturerName: device.manufacturerName || '(produttore non disponibile)',
+    vendorId: device.vendorId,
+    productId: device.productId,
+    usbVersion: `${device.usbVersionMajor}.${device.usbVersionMinor}`,
+    deviceVersion: deviceVersionOf(device),
+    interfaces: interfacesOf(device),
+  };
+  if (device.serialNumber) s.serialTail = `…${device.serialNumber.slice(-4)}`;
+  return s;
+}
+
+/** Endpoint in forma leggibile: «IN 2 bulk 64 B». */
+export function endpointText(e: EndpointInfo): string {
+  return `${e.direction.toUpperCase()} ${e.number} ${e.type} ${e.packetSize} B`;
+}
+
+export const hex4Id = (n: number) => `0x${n.toString(16).padStart(4, '0')}`;
 
 export function describeDevice(device: USBDevice): DeviceInfo {
   const info: DeviceInfo = {
@@ -124,7 +171,8 @@ export function describeDevice(device: USBDevice): DeviceInfo {
     vendorId: hex4(device.vendorId),
     productId: hex4(device.productId),
     usbVersion: `${device.usbVersionMajor}.${device.usbVersionMinor}`,
-    interfaces: interfacesOf(device),
+    deviceVersion: deviceVersionOf(device),
+    interfaces: interfacesOf(device).map(({ claimed: _c, ...i }) => i),
   };
   if (device.serialNumber) info.serialTail = `…${device.serialNumber.slice(-4)}`;
   const lw = labelWriterName(device.vendorId, device.productId);
@@ -246,7 +294,7 @@ export async function runDiagnostics(env: Environment, pre?: DiagnosticStep[]): 
     await closeQuietly(device, wasOpen, steps);
     return finish('open-failed', info);
   }
-  info.interfaces = interfacesOf(device);
+  info.interfaces = interfacesOf(device).map(({ claimed: _c, ...i }) => i);
 
   const target = info.interfaces.find((i) => i.classCode === PRINTER_CLASS) ?? info.interfaces[0];
   let outcome: Outcome = 'ok';
@@ -305,9 +353,12 @@ export function reportToText(report: DiagnosticReport, when = new Date()): strin
     const d = report.device;
     lines.push('', 'Dispositivo:');
     lines.push(`  ${d.manufacturerName} – ${d.productName}`);
-    lines.push(`  ID ${d.vendorId}:${d.productId}, USB ${d.usbVersion}${d.serialTail ? `, serie ${d.serialTail}` : ''}`);
+    lines.push(`  ID ${d.vendorId}:${d.productId}, USB ${d.usbVersion}, versione ${d.deviceVersion}${d.serialTail ? `, serie ${d.serialTail}` : ''}`);
     if (d.labelWriter) lines.push(`  ${d.labelWriter}`);
-    for (const i of d.interfaces) lines.push(`  interfaccia ${i.number}: ${i.className}`);
+    for (const i of d.interfaces) {
+      const eps = i.endpoints.map(endpointText).join(', ');
+      lines.push(`  interfaccia ${i.number}: ${i.className}${eps ? ` · endpoint ${eps}` : ''}`);
+    }
   }
   return lines.join('\n');
 }
