@@ -244,3 +244,16 @@ test('simbolo del diametro ISO nell’anteprima', async ({ page }) => {
   await expect(page.getByText('Aggiornamento anteprima')).toHaveCount(0);
   await page.screenshot({ path: 'test-results/13-diametro-iso-anteprima.png' });
 });
+
+test('ricerca del codice europeo S0722520 nell’elenco dei formati', async ({ page }) => {
+  await page.goto('/?sim');
+  await page.getByTestId('media-chip').tap();
+  await page.getByLabel('Cerca formato o codice').fill('S0722520');
+  const options = page.getByRole('listbox', { name: 'Formati' }).getByRole('option');
+  await expect(options).toHaveCount(1);
+  await expect(options.first()).toContainText('Multiuso piccola 25×54 mm');
+  await expect(options.first()).toContainText('S0722520, 11352');
+  await page.getByLabel('Cerca formato o codice').fill('2223589');
+  await expect(options).toHaveCount(1);
+  await noHorizontalScroll(page);
+});
