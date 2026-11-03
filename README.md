@@ -119,6 +119,7 @@ Il registro sta solo in memoria. Il testo non contiene dati personali: il numero
 
 - [x] **2026-11-03 – WebUSB su Pixel 7a con GrapheneOS e Vanadium**, provato con la diagnostica USB e una stampante HP a getto d'inchiostro. Il selettore mostra il dispositivo, Android concede il permesso, il browser apre la stampante e prende il controllo dell'interfaccia di tipo **stampante**, la stessa classe della LabelWriter 550. Porta USB-C e cavo/adattatore funzionano come host USB.
   Questa prova **non** verifica il protocollo della 550: comandi, lock di stampa e lettura NFC.
+- [x] **2026-11-03 – Condivisione dei risultati della diagnostica** su Pixel 7a con Vanadium: «Condividi» apre il menu di Android e il testo arriva completo all'app scelta. Prova fatta con la stampante HP.
 
 ### Da provare con la stampante (non confermato)
 
