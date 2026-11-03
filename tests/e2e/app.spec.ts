@@ -182,6 +182,28 @@ test('pulsante diametro: inserisce ⌀ nella posizione del cursore', async ({ pa
   await expect.poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width)).toBe(638);
 });
 
+test('pulsante AFKEUR: inserisce la parola nella posizione del cursore', async ({ page }) => {
+  await page.goto('/?sim');
+  await page.getByTestId('add-text').tap();
+  const input = page.getByTestId('text-input');
+  await input.fill('Tubo 20 ');
+  await input.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(8, 8));
+  await page.getByTestId('insert-reject').tap();
+  await expect(input).toHaveValue('Tubo 20 AFKEUR');
+  expect(await input.evaluate((el: HTMLTextAreaElement) => el.selectionStart)).toBe(14);
+  // Accanto al pulsante del diametro, sulla stessa riga.
+  const d = await page.getByTestId('insert-diameter').boundingBox();
+  const r = await page.getByTestId('insert-reject').boundingBox();
+  expect(Math.abs((d?.y ?? 0) - (r?.y ?? 1))).toBeLessThan(2);
+  await noHorizontalScroll(page);
+  await page.screenshot({ path: 'test-results/18-afkeur.png' });
+
+  await page.getByTestId('text-done').tap();
+  await page.getByTestId('open-print').tap();
+  await expect.poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width)).toBe(638);
+  await expect(page.getByTestId('empty-warning')).toHaveCount(0);
+});
+
 test('adattamento automatico: attivo sui nuovi testi, la dimensione segue il testo', async ({ page }) => {
   await page.goto('/?sim');
   await page.getByTestId('add-text').tap();
