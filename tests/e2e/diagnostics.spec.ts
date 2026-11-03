@@ -54,7 +54,7 @@ async function noHorizontalScroll(page: Page): Promise<void> {
 test('?diagnostica: prova con una stampante HP, nessun dato inviato', async ({ page }) => {
   await fakeUsb(page);
   await page.goto('/?diagnostica');
-  const dialog = page.getByRole('dialog', { name: 'Diagnostica USB' });
+  const dialog = page.getByRole('dialog', { name: 'Diagnostica' });
   await expect(dialog).toBeVisible();
   await expect(page.getByTestId('diag-steps')).toContainText('WebUSB disponibile');
   await page.getByTestId('diag-start').tap();
@@ -85,5 +85,119 @@ test('link alla diagnostica dal messaggio «Nessuna stampante selezionata»', as
   await panel.getByLabel('Selettore USB').selectOption('cancel');
   await page.getByRole('button', { name: 'Collega', exact: true }).tap();
   await page.getByRole('alert').getByTestId('open-diagnostics').tap();
-  await expect(page.getByRole('dialog', { name: 'Diagnostica USB' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Diagnostica' })).toBeVisible();
+});
+
+/** navigator.share finto: registra titolo e testo; `cancel` simula la chiusura del menu. */
+async function fakeShare(page: Page, opts: { cancel?: boolean } = {}): Promise<void> {
+  await page.addInitScript((o) => {
+    const shared: { title?: string; text?: string }[] = [];
+    (window as unknown as { __shared: typeof shared }).__shared = shared;
+    Object.defineProperty(Navigator.prototype, 'share', {
+      configurable: true,
+      value: async (d: { title?: string; text?: string }) => {
+        if (o.cancel) throw new DOMException('Share canceled', 'AbortError');
+        shared.push(d);
+      },
+    });
+    Object.defineProperty(Navigator.prototype, 'canShare', { configurable: true, value: () => false });
+  }, opts);
+}
+
+const shared = (page: Page) => page.evaluate(() => (window as unknown as { __shared: { title?: string; text?: string }[] }).__shared);
+
+async function simWithFault(page: Page, fault: string): Promise<void> {
+  await page.goto('/?sim');
+  const panel = page.getByTestId('dev-panel');
+  await panel.locator('summary').tap();
+  await panel.getByLabel('Guasto').selectOption(fault);
+  await panel.locator('summary').tap();
+  await page.getByRole('button', { name: 'Collega', exact: true }).tap();
+  await expect(page.getByRole('status').first()).toContainText('Pronta');
+}
+
+test('rotolo che non risponde: causa, dettagli e condivisione', async ({ page }) => {
+  await fakeShare(page);
+  await simWithFault(page, 'nfc-timeout');
+  await page.getByTestId('media-chip').tap();
+  await expect(page.getByTestId('media-read-failed')).toBeVisible();
+  await expect(page.getByTestId('media-read-cause')).toContainText('non ha risposto');
+  await page.getByText('Dettagli', { exact: true }).tap();
+  await expect(page.getByRole('dialog', { name: 'Formato etichetta' })).toContainText('Tentativi');
+  await noHorizontalScroll(page);
+  await page.screenshot({ path: 'test-results/15-rotolo-non-letto.png' });
+
+  await page.getByTestId('media-read-share').tap();
+  const s = await shared(page);
+  expect(s[0]?.title).toBe('Etichettatrice – lettura del rotolo');
+  expect(s[0]?.text).toContain('Causa: timeout');
+  expect(s[0]?.text).toContain('Tentativi: 2');
+});
+
+test('prova LabelWriter 550 completa e «Condividi tutto»', async ({ page }) => {
+  await fakeShare(page);
+  await simWithFault(page, 'nfc-flaky');
+  await page.getByTestId('media-chip').tap();
+  await page.getByTestId('media-diagnostics').tap();
+  const dialog = page.getByRole('dialog', { name: 'Diagnostica' });
+  await expect(dialog).toBeVisible();
+  await expect(page.getByTestId('diag-tab-550')).toHaveAttribute('aria-selected', 'true');
+  await page.getByTestId('check-start').tap();
+  await expect(page.getByTestId('check-summary')).toContainText('avviso', { timeout: 15_000 });
+  await expect(page.getByTestId('check-summary')).toContainText('instabile');
+  await expect(page.getByTestId('check-steps')).toContainText('Lavoro di stampa (non inviato)');
+  await noHorizontalScroll(page);
+  await page.screenshot({ path: 'test-results/16-prova-550.png' });
+
+  await page.getByTestId('diag-all-share').tap();
+  const s = await shared(page);
+  expect(s[0]?.title).toMatch(/^Etichettatrice – diagnostica \d{4}-\d\d-\d\d \d\d:\d\d$/);
+  const text = s[0]?.text ?? '';
+  expect(text).toContain('RIEPILOGO');
+  expect(text).toContain('Prova LabelWriter 550');
+  expect(text).toContain('Registro degli eventi');
+  expect(text).toContain('Rotolo (ESC U) × 3');
+  expect(text.split('Prova LabelWriter 550:')[0]).not.toContain('Etichetta vuota');
+});
+
+test('stampa di prova: conferma, una etichetta e domande nel testo condiviso', async ({ page }) => {
+  await fakeShare(page);
+  await simWithFault(page, 'none');
+  await page.getByTestId('media-chip').tap();
+  await page.getByTestId('media-diagnostics').tap();
+  await page.getByTestId('diag-tab-test').tap();
+  await expect(page.getByTestId('test-format')).toContainText('letto dal rotolo');
+  await expect(page.getByTestId('test-preview')).toBeVisible();
+  await page.getByTestId('test-print').tap();
+  await page.getByTestId('test-print-confirm').tap();
+  await expect(page.getByTestId('test-questions')).toBeVisible();
+  await expect(page.getByTestId('dev-panel')).toContainText('lavori ricevuti: 1');
+  await page.getByTestId('answer-border').filter({ hasText: 'manca a sinistra' }).tap();
+  await page.getByTestId('answer-firstOut').filter({ hasText: /^\s*sì\s*$/ }).tap();
+  await page.getByTestId('ticks-left').fill('6');
+  await page.getByTestId('ticks-left').blur();
+  await noHorizontalScroll(page);
+  await page.screenshot({ path: 'test-results/17-stampa-di-prova.png' });
+
+  await page.getByTestId('diag-all-share').tap();
+  const text = (await shared(page))[0]?.text ?? '';
+  expect(text).toContain('Bordo esterno: manca a sinistra');
+  expect(text).toContain('Lato uscito per primo: sì');
+  expect(text).toContain('sinistra 6');
+});
+
+test('chiudere il menu di condivisione non mostra errori; senza supporto il pulsante non c’è', async ({ page, browser }) => {
+  await fakeShare(page, { cancel: true });
+  await page.goto('/?diagnostica');
+  await page.getByTestId('diag-all-share').tap();
+  await expect(page.getByRole('dialog', { name: 'Diagnostica' })).not.toContainText('non riuscita');
+
+  const other = await browser.newPage();
+  await other.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, 'share', { configurable: true, value: undefined });
+  });
+  await other.goto('/?diagnostica');
+  await expect(other.getByTestId('diag-all-copy')).toBeVisible();
+  await expect(other.getByTestId('diag-all-share')).toHaveCount(0);
+  await other.close();
 });

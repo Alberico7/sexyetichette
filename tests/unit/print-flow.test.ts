@@ -110,10 +110,30 @@ describe('collegamento simulato', () => {
     expect(info.productId).toBe(0x0029);
   });
 
-  it('lettura NFC: rotolo nel catalogo, oppure null se illeggibile', async () => {
+  it('lettura NFC: rotolo nel catalogo, oppure la causa se illeggibile', async () => {
     const port = await connected({ rollSku: '30252' });
-    expect((await port.readMedia())?.media.id).toBe('address-standard');
+    const ok = await port.readMedia();
+    expect(ok.ok && ok.detected.media.id).toBe('address-standard');
     port.configure({ fault: 'nfc-unreadable' });
-    expect(await port.readMedia()).toBeNull();
+    const bad = await port.readMedia();
+    expect(bad.ok).toBe(false);
+    expect(!bad.ok && bad.reason).toBe('bad-magic');
+    expect(bad.attempts).toBe(2);
+  });
+
+  it.each([
+    ['nfc-timeout', 'timeout'],
+    ['nfc-short', 'short'],
+  ] as const)('lettura NFC con guasto %s: causa %s', async (fault, reason) => {
+    const port = await connected({ fault });
+    const r = await port.readMedia();
+    expect(!r.ok && r.reason).toBe(reason);
+  });
+
+  it('lettura NFC instabile: il secondo tentativo riesce', async () => {
+    const port = await connected({ fault: 'nfc-flaky' });
+    const r = await port.readMedia();
+    expect(r.ok).toBe(true);
+    expect(r.attempts).toBe(2);
   });
 });

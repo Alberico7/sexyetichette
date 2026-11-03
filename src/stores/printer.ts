@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia';
 import { computed, ref, shallowRef, watch } from 'vue';
 import type { LabelDocument } from '@/model/types';
+import { diagLog } from '@/diagnostics/log';
 import { createPrinterPort } from '@/printer';
 import { appError, unwrapError, type AppError } from '@/printer/errors';
-import { runPrint } from '@/printer/print-flow';
-import type { AppPrinterStatus, Density, DetectedMedia, PrinterInfo, PrinterPort } from '@/printer/types';
+import { runJob, runPrint } from '@/printer/print-flow';
+import type { AppPrinterStatus, Density, DetectedMedia, MediaReadResult, PrintJob, PrinterInfo, PrinterPort } from '@/printer/types';
 import type { PreparedLabel } from '@/render/export';
 import { loadSettings, saveSettings } from '@/settings';
 
@@ -15,10 +16,20 @@ export const usePrinterStore = defineStore('printer', () => {
   const state = ref<ConnectionState>('disconnected');
   const info = ref<PrinterInfo | null>(null);
   const status = ref<AppPrinterStatus | null>(null);
-  const detected = ref<DetectedMedia | null>(null);
+  /** Ultimo esito della lettura del rotolo (NFC). */
+  const mediaRead = shallowRef<MediaReadResult | null>(null);
+  const detected = computed<DetectedMedia | null>(() => (mediaRead.value?.ok ? mediaRead.value.detected : null));
   /** `true` se la lettura NFC è stata tentata ed è fallita. */
-  const mediaReadFailed = ref(false);
+  const mediaReadFailed = computed(() => mediaRead.value !== null && !mediaRead.value.ok);
   const error = ref<AppError | null>(null);
+  // Ogni errore mostrato all'utente finisce nel registro, con il messaggio originale.
+  watch(error, (e) => {
+    if (e) diagLog.add('error', `${e.code}: ${e.title}`, e.detail);
+  });
+  watch(
+    () => state.value,
+    (s, before) => diagLog.add('app', `Stato del collegamento: ${before} → ${s}`),
+  );
   const copies = ref(1);
   const density = ref<Density>(loadSettings().density ?? 'normal');
   watch(density, (d) => saveSettings({ density: d }));
@@ -50,6 +61,7 @@ export const usePrinterStore = defineStore('printer', () => {
   }
 
   function attach(p: PrinterPort, printerInfo: PrinterInfo): void {
+    diagLog.add('app', `Collegata: ${printerInfo.model} (${printerInfo.key}), ID 0x${printerInfo.vendorId.toString(16)}:0x${printerInfo.productId.toString(16)}`);
     info.value = printerInfo;
     state.value = 'connected';
     unsubscribeStatus?.();
@@ -76,13 +88,14 @@ export const usePrinterStore = defineStore('printer', () => {
     state.value = 'disconnected';
     info.value = null;
     status.value = null;
-    detected.value = null;
-    mediaReadFailed.value = false;
+    mediaRead.value = null;
   }
 
   async function afterConnect(p: PrinterPort): Promise<void> {
     try {
       status.value = await p.getStatus();
+      const s = status.value;
+      diagLog.add('app', `Primo stato: ${s.ready ? 'pronta' : 'non pronta'}, rotolo ${s.mediaLoaded ? 'presente' : 'assente'}${s.problems.length ? `, ${s.problems.map((x) => x.code).join(', ')}` : ''}`);
     } catch (err) {
       error.value = unwrapError(err);
     }
@@ -110,6 +123,7 @@ export const usePrinterStore = defineStore('printer', () => {
   async function tryReconnect(): Promise<void> {
     try {
       const p = await ensurePort();
+      diagLog.add('app', 'Collegamento automatico: ricerca di una stampante già autorizzata');
       // Non interferisce con un collegamento manuale già avviato o riuscito.
       if (state.value !== 'disconnected') return;
       const printerInfo = await p.reconnect();
@@ -118,7 +132,8 @@ export const usePrinterStore = defineStore('printer', () => {
       attach(p, printerInfo);
       error.value = null;
       await afterConnect(p);
-    } catch {
+    } catch (err) {
+      diagLog.add('warn', 'Collegamento automatico non riuscito', unwrapError(err).detail ?? unwrapError(err).title);
       reset();
     }
   }
@@ -133,9 +148,8 @@ export const usePrinterStore = defineStore('printer', () => {
     const p = port.value;
     if (!p?.connected) return null;
     const result = await p.readMedia();
-    detected.value = result;
-    mediaReadFailed.value = result === null;
-    return result;
+    mediaRead.value = result;
+    return result.ok ? result.detected : null;
   }
 
   async function refreshStatus(): Promise<void> {
@@ -152,6 +166,19 @@ export const usePrinterStore = defineStore('printer', () => {
     doc: LabelDocument,
     prepare?: (doc: LabelDocument) => Promise<PreparedLabel>,
   ): Promise<boolean> {
+    return withPrinting(async (p) => {
+      await runPrint(p, doc, { copies: copies.value, density: density.value }, prepare);
+      // Le copie tornano a 1: evita di ristampare più copie per errore.
+      copies.value = 1;
+    });
+  }
+
+  /** Stampa un lavoro già pronto (etichetta di prova della diagnostica). */
+  async function printJob(job: PrintJob): Promise<boolean> {
+    return withPrinting((p) => runJob(p, job));
+  }
+
+  async function withPrinting(run: (p: PrinterPort) => Promise<void>): Promise<boolean> {
     const p = port.value;
     error.value = null;
     if (!p?.connected) {
@@ -160,10 +187,8 @@ export const usePrinterStore = defineStore('printer', () => {
     }
     state.value = 'printing';
     try {
-      await runPrint(p, doc, { copies: copies.value, density: density.value }, prepare);
+      await run(p);
       lastPrintAt.value = Date.now();
-      // Le copie tornano a 1: evita di ristampare più copie per errore.
-      copies.value = 1;
       return true;
     } catch (err) {
       error.value = unwrapError(err);
@@ -196,6 +221,7 @@ export const usePrinterStore = defineStore('printer', () => {
     info,
     status,
     detected,
+    mediaRead,
     mediaReadFailed,
     error,
     copies,
@@ -210,6 +236,7 @@ export const usePrinterStore = defineStore('printer', () => {
     readMedia,
     refreshStatus,
     print,
+    printJob,
     recover,
     clearError,
   };

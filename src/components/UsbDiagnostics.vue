@@ -3,15 +3,18 @@
  * Pannello «Diagnostica USB»: verifica con qualsiasi dispositivo che il browser
  * possa vederlo, aprirlo e prenderne il controllo. Non invia dati.
  */
-import { onMounted, ref, shallowRef } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import ShareActions from '@/components/ShareActions.vue';
+import { diagLog } from '@/diagnostics/log';
 import {
   checkBrowser,
+  endpointText,
   reportToText,
   runDiagnostics,
-  type DiagnosticReport,
   type DiagnosticStep,
   type Environment,
 } from '@/printer/usb-diagnostics';
+import { useDiagnosticsStore } from '@/stores/diagnostics';
 
 const env: Environment = {
   secureContext: window.isSecureContext,
@@ -19,8 +22,9 @@ const env: Environment = {
   usb: 'usb' in navigator && navigator.usb ? navigator.usb : null,
 };
 
+const diagnostics = useDiagnosticsStore();
 const preSteps = ref<DiagnosticStep[]>([]);
-const report = shallowRef<DiagnosticReport | null>(null);
+const report = computed(() => diagnostics.usbReport);
 const running = ref(false);
 const note = ref<string | null>(null);
 
@@ -36,21 +40,15 @@ async function start(): Promise<void> {
   try {
     // Nuova lettura dei passaggi preliminari: il selettore deve partire subito dal tocco.
     const pre = preSteps.value.map((s) => ({ ...s }));
-    report.value = await runDiagnostics(env, pre);
+    const result = await runDiagnostics(env, pre);
+    diagnostics.usbReport = result;
+    diagLog.add('app', `Diagnostica USB: ${result.outcome}`, result.device ? `${result.device.vendorId}:${result.device.productId}` : undefined);
   } finally {
     running.value = false;
   }
 }
 
-async function copy(): Promise<void> {
-  if (!report.value) return;
-  try {
-    await navigator.clipboard.writeText(reportToText(report.value));
-    note.value = 'Risultati copiati negli appunti.';
-  } catch {
-    note.value = 'Copia non riuscita: seleziona e copia il testo a mano.';
-  }
-}
+const reportText = () => (report.value ? reportToText(report.value) : '');
 
 async function forget(): Promise<void> {
   const device = report.value?.usbDevice;
@@ -99,11 +97,14 @@ const steps = () => report.value?.steps ?? preSteps.value;
     <h3>Dispositivo</h3>
     <p>
       {{ report.device.manufacturerName }} – {{ report.device.productName }}<br />
-      <small>ID {{ report.device.vendorId }}:{{ report.device.productId }} · USB {{ report.device.usbVersion }}</small>
+      <small>ID {{ report.device.vendorId }}:{{ report.device.productId }} · USB {{ report.device.usbVersion }} · versione {{ report.device.deviceVersion }}</small>
     </p>
     <p v-if="report.device.labelWriter" class="lw">{{ report.device.labelWriter }}</p>
     <ul>
-      <li v-for="i in report.device.interfaces" :key="i.number">Interfaccia {{ i.number }}: {{ i.className }}</li>
+      <li v-for="i in report.device.interfaces" :key="i.number">
+        Interfaccia {{ i.number }}: {{ i.className }}
+        <small v-if="i.endpoints.length"> · {{ i.endpoints.map(endpointText).join(', ') }}</small>
+      </li>
     </ul>
   </section>
 
@@ -113,12 +114,12 @@ const steps = () => report.value?.steps ?? preSteps.value;
     <button type="button" class="primary" data-testid="diag-start" :disabled="running || !env.usb" @click="start">
       {{ running ? 'Prova in corso…' : report ? 'Prova un altro dispositivo' : 'Scegli un dispositivo' }}
     </button>
-    <div v-if="report" class="row">
-      <button type="button" class="grow" data-testid="diag-copy" @click="copy">Copia risultati</button>
-      <button v-if="report.usbDevice" type="button" class="grow" data-testid="diag-forget" @click="forget">
+    <template v-if="report">
+      <ShareActions title="Etichettatrice – diagnostica USB" :text="reportText" copy-label="Copia risultati" testid="diag" />
+      <button v-if="report.usbDevice" type="button" data-testid="diag-forget" @click="forget">
         Dimentica questo dispositivo
       </button>
-    </div>
+    </template>
   </div>
 </template>
 
