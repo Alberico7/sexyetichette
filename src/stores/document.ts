@@ -1,19 +1,27 @@
 import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { areaFromDots, createDocument, createTextElement, touch } from '@/model/document';
 import { defaultDirection, documentGeometry } from '@/model/geometry';
 import type { ContentDirection, LabelDocument, LabelElement, MediaFormat } from '@/model/types';
 import { LW550_HEAD, defaultMedia } from '@/printer/media';
 import { loadSettings, saveSettings } from '@/settings';
+import { loadCurrentLabel, saveCurrentLabel } from '@/storage/label-store';
+
+/** Ritardo del salvataggio automatico dopo l'ultima modifica. */
+export const AUTOSAVE_DELAY_MS = 500;
 
 type ElementPatch = Partial<Omit<LabelElement, 'id' | 'type'>>;
 
-export const useDocumentStore = defineStore('document', () => {
-  // Si riparte dall'ultimo formato e verso usati su questo dispositivo.
+function initialDocument(): LabelDocument {
   const saved = loadSettings();
-  const initial = createDocument(saved.media ?? defaultMedia());
-  if (saved.direction) initial.direction = saved.direction;
-  const doc = ref<LabelDocument>(initial);
+  const doc = createDocument(saved.media ?? defaultMedia());
+  if (saved.direction) doc.direction = saved.direction;
+  return doc;
+}
+
+export const useDocumentStore = defineStore('document', () => {
+  // Si riparte dall'ultima etichetta; se non c'è, dall'ultimo formato e verso usati.
+  const doc = ref<LabelDocument>(loadCurrentLabel() ?? initialDocument());
   const selectedId = ref<string | null>(null);
 
   const geometry = computed(() => documentGeometry(doc.value, LW550_HEAD));
@@ -76,6 +84,30 @@ export const useDocumentStore = defineStore('document', () => {
     selectedId.value = null;
   }
 
+  // Salvataggio automatico: con un breve ritardo mentre si scrive, subito se l'app va in sottofondo.
+  let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  function saveNow(): void {
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+      saveTimer = null;
+    }
+    saveCurrentLabel(doc.value);
+  }
+  watch(
+    doc,
+    () => {
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveNow, AUTOSAVE_DELAY_MS);
+    },
+    { deep: true },
+  );
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pagehide', saveNow);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') saveNow();
+    });
+  }
+
   return {
     doc,
     selectedId,
@@ -90,5 +122,6 @@ export const useDocumentStore = defineStore('document', () => {
     removeElement,
     removeIfEmpty,
     replaceDocument,
+    saveNow,
   };
 });
