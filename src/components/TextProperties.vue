@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref } from 'vue';
 import type { HorizontalAlign, TextElement, VerticalAlign } from '@/model/types';
 import { useDocumentStore } from '@/stores/document';
-import { DIAMETER_SIGN, insertAtSelection } from '@/model/text';
+import { DIAMETER_SIGN, REJECT_WORD, insertAtSelection } from '@/model/text';
 import { resolveFontSize } from '@/render/scene';
 
 const props = defineProps<{ element: TextElement; autofocus?: boolean }>();
@@ -115,6 +115,15 @@ function rotate90(): void {
       @click="insertSymbol(DIAMETER_SIGN)"
     >
       <span class="symbol iso" aria-hidden="true">{{ DIAMETER_SIGN }}</span> Diametro
+    </button>
+    <button
+      type="button"
+      data-testid="insert-reject"
+      :aria-label="`Inserisci la parola ${REJECT_WORD}`"
+      @pointerdown.prevent
+      @click="insertSymbol(REJECT_WORD)"
+    >
+      {{ REJECT_WORD }}
     </button>
   </div>
 
@@ -298,5 +307,10 @@ function rotate90(): void {
 
 .symbols {
   flex-wrap: wrap;
+}
+
+.symbols button {
+  flex: 1 1 0;
+  min-width: 0;
 }
 </style>

@@ -10,6 +10,9 @@ export const DIAMETER_SYMBOL = 'Ø';
  */
 export const DIAMETER_SIGN = '⌀';
 
+/** Parola inserita dal pulsante «AFKEUR» (scarto), così com'è, senza spazi. */
+export const REJECT_WORD = 'AFKEUR';
+
 export interface TextEdit {
   text: string;
   /** Posizione del cursore dopo l'inserimento. */

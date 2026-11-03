@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DIAMETER_SYMBOL, insertAtSelection } from '@/model/text';
+import { DIAMETER_SYMBOL, REJECT_WORD, insertAtSelection } from '@/model/text';
 import { isThemePreference, nextPreference, resolveTheme } from '@/theme';
 
 describe('simbolo del diametro', () => {
@@ -23,6 +23,15 @@ describe('simbolo del diametro', () => {
     expect(insertAtSelection('ab', 'Ø', -3)).toEqual({ text: 'Øab', cursor: 1 });
     expect(insertAtSelection('ab', 'Ø', 2, 1)).toEqual({ text: 'abØ', cursor: 3 });
     expect(insertAtSelection('', 'Ø', null, null)).toEqual({ text: 'Ø', cursor: 1 });
+  });
+});
+
+describe('parola AFKEUR', () => {
+  it('inserita così com’è nel testo vuoto, a metà testo e al posto di una selezione', () => {
+    expect(REJECT_WORD).toBe('AFKEUR');
+    expect(insertAtSelection('', REJECT_WORD, null, null)).toEqual({ text: 'AFKEUR', cursor: 6 });
+    expect(insertAtSelection('Tubo 20 mm', REJECT_WORD, 8)).toEqual({ text: 'Tubo 20 AFKEURmm', cursor: 14 });
+    expect(insertAtSelection('Tubo 20 OK', REJECT_WORD, 8, 10)).toEqual({ text: 'Tubo 20 AFKEUR', cursor: 14 });
   });
 });
 
