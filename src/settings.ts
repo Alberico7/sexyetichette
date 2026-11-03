@@ -15,7 +15,7 @@ export interface SavedSettings {
 
 const DENSITIES: Density[] = ['light', 'medium', 'normal', 'high'];
 
-function isMedia(v: unknown): v is MediaFormat {
+export function isMedia(v: unknown): v is MediaFormat {
   if (typeof v !== 'object' || v === null) return false;
   const m = v as MediaFormat;
   return (

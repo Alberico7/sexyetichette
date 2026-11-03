@@ -12,6 +12,7 @@ Web app open source per progettare e stampare etichette su una **LabelWriter 550
 - elementi di testo (spostamento, ridimensionamento, rotazione, carattere, allineamento, bianco su nero);
 - anteprima a 300 dpi in bianco e nero;
 - stampa con copie e densità;
+- etichetta salvata da sola sul telefono, elenco delle ultime 20 etichette stampate, da riaprire o ristampare;
 - errori in italiano.
 
 Immagini, codici a barre e QR, modelli salvati e import/export JSON arriveranno nella fase 2 (vedi [docs/2026-11-02-app-etichette-webusb.md](docs/2026-11-02-app-etichette-webusb.md)).

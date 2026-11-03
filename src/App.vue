@@ -6,7 +6,9 @@ import LabelEditor from '@/components/LabelEditor.vue';
 import MediaPicker from '@/components/MediaPicker.vue';
 import PrintSheet from '@/components/PrintSheet.vue';
 import PrinterBar from '@/components/PrinterBar.vue';
+import RecentSheet from '@/components/RecentSheet.vue';
 import TextProperties from '@/components/TextProperties.vue';
+import type { LabelDocument } from '@/model/types';
 import { checkEnvironment } from '@/printer/errors';
 import { useDocumentStore } from '@/stores/document';
 import { usePreviewStore } from '@/stores/preview';
@@ -18,7 +20,10 @@ const DiagnosticsPanel = defineAsyncComponent(() => import('@/components/Diagnos
 // Il pannello di simulazione esiste solo nella build di sviluppo.
 const DevPanel = import.meta.env.DEV ? defineAsyncComponent(() => import('@/components/DevPanel.vue')) : null;
 
-type Sheet = 'none' | 'text' | 'media' | 'print' | 'diagnostics';
+type Sheet = 'none' | 'text' | 'media' | 'print' | 'recent' | 'diagnostics';
+
+/** Durata dell'avviso dopo la stampa. */
+const TOAST_MS = 3000;
 
 const store = useDocumentStore();
 const printer = usePrinterStore();
@@ -30,6 +35,7 @@ const sheet = ref<Sheet>(new URLSearchParams(location.search).has('diagnostica')
 const focusText = ref(false);
 const envError = checkEnvironment();
 const toast = ref<string | null>(null);
+let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
 const selectedText = computed(() => (store.selected?.type === 'text' ? store.selected : null));
 const textOpen = computed(() => sheet.value === 'text' && !!selectedText.value);
@@ -63,10 +69,33 @@ function removeSelected(): void {
   if (sheet.value === 'text') sheet.value = 'none';
 }
 
+function showToast(text: string | null): void {
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = null;
+  toast.value = text;
+  if (text) toastTimer = setTimeout(() => (toast.value = null), TOAST_MS);
+}
+
 function onPrinted(): void {
   sheet.value = 'none';
-  toast.value = 'Etichetta inviata alla stampante';
-  setTimeout(() => (toast.value = null), 3000);
+  // Lavoro finito: nessun testo selezionato, la barra mostra di nuovo «Recenti».
+  store.select(null);
+  showToast('Etichetta inviata alla stampante');
+}
+
+// Un pannello aperto copre l'avviso: lo tolgo.
+watch(sheet, (s) => {
+  if (s !== 'none') showToast(null);
+});
+
+function openRecent(doc: LabelDocument): void {
+  store.replaceDocument(doc);
+  sheet.value = 'none';
+}
+
+function reprintRecent(doc: LabelDocument): void {
+  store.replaceDocument(doc);
+  sheet.value = 'print';
 }
 
 // Se il rotolo viene rilevato e l'etichetta è ancora vuota, adotto il suo formato.
@@ -124,8 +153,9 @@ onMounted(() => {
       </div>
     </section>
 
-    <nav v-else class="actions" :class="{ two: !store.selectedId }" aria-label="Azioni">
+    <nav v-else class="actions" :class="{ three: !store.selectedId }" aria-label="Azioni">
       <button type="button" data-testid="add-text" @click="addText">＋ Testo</button>
+      <button v-if="!store.selectedId" type="button" data-testid="open-recent" @click="sheet = 'recent'">Recenti</button>
       <template v-if="store.selectedId">
         <button type="button" :disabled="!selectedText" data-testid="edit-selected" @click="openEdit(store.selectedId)">
           Modifica
@@ -135,13 +165,16 @@ onMounted(() => {
       <button type="button" class="primary" data-testid="open-print" @click="openPrint">Stampa</button>
     </nav>
 
-    <div v-if="toast" class="toast" role="status">{{ toast }}</div>
+    <div v-if="toast" class="toast" role="status" data-testid="toast">{{ toast }}</div>
 
     <BottomSheet :open="sheet === 'media'" title="Formato etichetta" @close="sheet = 'none'">
       <MediaPicker @diagnostics="sheet = 'diagnostics'" />
     </BottomSheet>
     <BottomSheet :open="sheet === 'print'" title="Anteprima e stampa" @close="sheet = 'none'">
       <PrintSheet :active="sheet === 'print'" @printed="onPrinted" />
+    </BottomSheet>
+    <BottomSheet :open="sheet === 'recent'" title="Recenti" @close="sheet = 'none'">
+      <RecentSheet @open="openRecent" @reprint="reprintRecent" />
     </BottomSheet>
     <BottomSheet :open="sheet === 'diagnostics'" title="Diagnostica" @close="sheet = 'none'">
       <DiagnosticsPanel v-if="sheet === 'diagnostics'" />
@@ -226,8 +259,8 @@ onMounted(() => {
   border-top: 1px solid var(--border);
 }
 
-.actions.two {
-  grid-template-columns: 1fr 1fr;
+.actions.three {
+  grid-template-columns: 1fr 1fr 1.2fr;
 }
 
 .actions button,
