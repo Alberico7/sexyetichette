@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import ShareActions from '@/components/ShareActions.vue';
+import { mediaReadToText } from '@/diagnostics/media-read';
+import { toHex } from '@/diagnostics/hex';
 import type { ContentDirection, MediaFormat } from '@/model/types';
 import { CATALOG, customMedia, sameMediaSize } from '@/printer/media';
 import { useDocumentStore } from '@/stores/document';
 import { usePrinterStore } from '@/stores/printer';
 
+const emit = defineEmits<{ diagnostics: [] }>();
 const store = useDocumentStore();
 const printer = usePrinterStore();
+const failure = computed(() => (printer.mediaRead && !printer.mediaRead.ok ? printer.mediaRead : null));
+const failureText = () => (printer.mediaRead ? mediaReadToText(printer.mediaRead) : '');
+const rereading = ref(false);
 const query = ref('');
 
 const filtered = computed(() => {
@@ -40,8 +47,13 @@ function setDirection(d: ContentDirection): void {
 }
 
 async function reread(): Promise<void> {
-  const found = await printer.readMedia();
-  if (found) choose(found.media);
+  rereading.value = true;
+  try {
+    const found = await printer.readMedia();
+    if (found) choose(found.media);
+  } finally {
+    rereading.value = false;
+  }
 }
 </script>
 
@@ -59,13 +71,35 @@ async function reread(): Promise<void> {
         Usa il rotolo rilevato
       </button>
     </template>
-    <template v-else-if="printer.state === 'connected' && printer.mediaReadFailed">
-      <p class="warn">Non è stato possibile leggere il rotolo: scegli il formato dall'elenco.</p>
+    <template v-else-if="printer.state === 'connected' && failure">
+      <p class="warn" data-testid="media-read-failed">Non è stato possibile leggere il rotolo: scegli il formato dall'elenco.</p>
+      <p class="cause" data-testid="media-read-cause">{{ failure.message }}</p>
+      <details>
+        <summary>Dettagli</summary>
+        <dl>
+          <dt>Causa</dt>
+          <dd>{{ failure.reason }}</dd>
+          <dt>Messaggio tecnico</dt>
+          <dd>{{ failure.detail }}</dd>
+          <dt>Tentativi</dt>
+          <dd>{{ failure.attempts }}</dd>
+          <template v-if="failure.bytes">
+            <dt>Byte ricevuti ({{ failure.bytes.length }})</dt>
+            <dd>{{ toHex(failure.bytes) }}</dd>
+          </template>
+        </dl>
+      </details>
+      <ShareActions title="Etichettatrice – lettura del rotolo" :text="failureText" copy-label="Copia dettagli" testid="media-read" />
     </template>
     <template v-else-if="printer.state === 'disconnected'">
       <p class="muted">Collega la stampante per rilevare il rotolo automaticamente, oppure scegli il formato qui sotto.</p>
     </template>
-    <button v-if="printer.state === 'connected'" type="button" @click="reread">Rileggi il rotolo</button>
+    <div v-if="printer.state === 'connected'" class="row">
+      <button type="button" class="grow" data-testid="media-reread" :disabled="rereading" @click="reread">
+        {{ rereading ? 'Lettura…' : 'Rileggi il rotolo' }}
+      </button>
+      <button type="button" class="grow" data-testid="media-diagnostics" @click="emit('diagnostics')">Diagnostica</button>
+    </div>
   </div>
 
   <div class="field">
@@ -144,6 +178,28 @@ async function reread(): Promise<void> {
 
 .warn {
   color: var(--warn);
+}
+
+.cause {
+  font-size: 0.92rem;
+}
+
+details {
+  font-size: 0.85rem;
+}
+
+dl {
+  margin: 4px 0 0;
+}
+
+dt {
+  color: var(--muted);
+}
+
+dd {
+  margin: 0 0 4px;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, monospace;
 }
 
 .muted {

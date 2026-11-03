@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CATALOG,
+  defaultMedia,
   findMediaBySku,
   mediaFromSku,
   sameMediaSize,
@@ -17,6 +18,8 @@ describe('catalogo formati 550', () => {
 
   it('ha nomi in italiano', () => {
     expect(CATALOG.find((m) => m.id === 'address-standard')?.name).toBe('Indirizzo 28×89 mm');
+    expect(defaultMedia().id).toBe('multi-purpose-small');
+    expect(defaultMedia().name).toBe('Multiuso piccola 25×54 mm');
     expect(CATALOG.find((m) => m.id === 'continuous-57')?.lengthMm).toBeUndefined();
   });
 });

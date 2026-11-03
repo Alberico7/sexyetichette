@@ -44,7 +44,7 @@ test('digitazione fluida e anteprima immediata', async ({ page }) => {
   await page.getByTestId('text-print').tap();
   await page.waitForFunction(() => {
     const c = document.querySelector('[data-testid=preview-canvas]') as HTMLCanvasElement | null;
-    return !!c && c.width === 1051 && !document.body.textContent?.includes('Aggiornamento anteprima');
+    return !!c && c.width === 638 && !document.body.textContent?.includes('Aggiornamento anteprima');
   });
   const openPreviewMs = Date.now() - t;
   const preview = await longTasks();

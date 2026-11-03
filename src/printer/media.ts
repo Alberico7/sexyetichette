@@ -89,7 +89,8 @@ export const CATALOG: readonly MediaFormat[] = (Object.values(MEDIA) as unknown 
   )
   .map(toMediaFormat);
 
-export const DEFAULT_MEDIA_ID = 'address-standard';
+/** Formato predefinito: multiuso piccola 25×54 mm (SKU 30336). */
+export const DEFAULT_MEDIA_ID = 'multi-purpose-small';
 
 export function defaultMedia(): MediaFormat {
   return structuredClone(CATALOG.find((m) => m.id === DEFAULT_MEDIA_ID) ?? CATALOG[0]!);
