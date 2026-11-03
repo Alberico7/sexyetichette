@@ -8,6 +8,9 @@ import { resolveFontSize } from '@/render/scene';
 import { useDocumentStore } from '@/stores/document';
 import { usePreviewStore } from '@/stores/preview';
 import { usePrinterStore } from '@/stores/printer';
+import { useRecentStore } from '@/stores/recent';
+import type { LabelDocument } from '@/model/types';
+import type { PreparedLabel } from '@/render/export';
 import { dotsToMm } from '@/model/units';
 
 const props = defineProps<{ active: boolean }>();
@@ -16,6 +19,7 @@ const emit = defineEmits<{ printed: [] }>();
 const store = useDocumentStore();
 const printer = usePrinterStore();
 const preview = usePreviewStore();
+const recent = useRecentStore();
 const canvas = ref<HTMLCanvasElement | null>(null);
 const actualSize = ref(false);
 
@@ -67,8 +71,12 @@ function step(delta: number): void {
 
 async function doPrint(): Promise<void> {
   // Stampa esattamente il bitmap dell'anteprima (ricalcolato solo se il documento è cambiato).
-  const ok = await printer.print(store.doc, () => preview.ensure());
-  if (ok) emit('printed');
+  let printed: PreparedLabel | null = null;
+  const snapshot = JSON.parse(JSON.stringify(store.doc)) as LabelDocument;
+  const ok = await printer.print(snapshot, async () => (printed = await preview.ensure()));
+  if (!ok) return;
+  recent.add(snapshot, printed);
+  emit('printed');
 }
 </script>
 
