@@ -13,7 +13,7 @@ import { usePreviewStore } from '@/stores/preview';
 import { usePrinterStore } from '@/stores/printer';
 
 // Diagnostica USB: caricata solo quando serve.
-const UsbDiagnostics = defineAsyncComponent(() => import('@/components/UsbDiagnostics.vue'));
+const DiagnosticsPanel = defineAsyncComponent(() => import('@/components/DiagnosticsPanel.vue'));
 
 // Il pannello di simulazione esiste solo nella build di sviluppo.
 const DevPanel = import.meta.env.DEV ? defineAsyncComponent(() => import('@/components/DevPanel.vue')) : null;
@@ -138,13 +138,13 @@ onMounted(() => {
     <div v-if="toast" class="toast" role="status">{{ toast }}</div>
 
     <BottomSheet :open="sheet === 'media'" title="Formato etichetta" @close="sheet = 'none'">
-      <MediaPicker />
+      <MediaPicker @diagnostics="sheet = 'diagnostics'" />
     </BottomSheet>
     <BottomSheet :open="sheet === 'print'" title="Anteprima e stampa" @close="sheet = 'none'">
       <PrintSheet :active="sheet === 'print'" @printed="onPrinted" />
     </BottomSheet>
-    <BottomSheet :open="sheet === 'diagnostics'" title="Diagnostica USB" @close="sheet = 'none'">
-      <UsbDiagnostics v-if="sheet === 'diagnostics'" />
+    <BottomSheet :open="sheet === 'diagnostics'" title="Diagnostica" @close="sheet = 'none'">
+      <DiagnosticsPanel v-if="sheet === 'diagnostics'" />
     </BottomSheet>
   </div>
 </template>

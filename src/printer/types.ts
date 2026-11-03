@@ -40,6 +40,103 @@ export interface DetectedMedia {
   totalLabels?: number;
 }
 
+/** Motivo per cui il rotolo non è stato letto. */
+export type MediaReadReason =
+  | 'timeout'
+  | 'short'
+  | 'bad-magic'
+  | 'no-size'
+  | 'invalid'
+  | 'error'
+  | 'unsupported'
+  | 'not-connected';
+
+/** Esito della lettura del rotolo via NFC. */
+export type MediaReadResult =
+  | {
+      ok: true;
+      detected: DetectedMedia;
+      /** Campi del tag, in italiano. */
+      fields: { label: string; value: string }[];
+      bytes?: Uint8Array;
+      attempts: number;
+    }
+  | {
+      ok: false;
+      reason: MediaReadReason;
+      /** Spiegazione in italiano. */
+      message: string;
+      /** Messaggio tecnico. */
+      detail: string;
+      bytes?: Uint8Array;
+      attempts: number;
+    };
+
+/** Una riga di dettaglio: etichetta e valore. */
+export interface DetailRow {
+  label: string;
+  value: string;
+}
+
+/** Endpoint USB di un'interfaccia. */
+export interface EndpointInfo {
+  number: number;
+  direction: 'in' | 'out';
+  type: string;
+  packetSize: number;
+}
+
+/** Descrizione del dispositivo USB aperto, per la diagnostica. */
+export interface UsbDeviceSummary {
+  productName: string;
+  manufacturerName: string;
+  vendorId: number;
+  productId: number;
+  usbVersion: string;
+  /** Versione del dispositivo (`bcdDevice`), di solito il firmware. */
+  deviceVersion: string;
+  serialTail?: string;
+  interfaces: { number: number; classCode: number; className: string; claimed: boolean; endpoints: EndpointInfo[] }[];
+}
+
+/** Risposta grezza di un comando di sola lettura. */
+export interface ProbeResult<T> {
+  ok: boolean;
+  value?: T;
+  /** Byte ricevuti, se disponibili. */
+  bytes?: Uint8Array;
+  error?: string;
+  ms: number;
+}
+
+export interface EngineVersionInfo {
+  hardware: string;
+  firmwareKind: string;
+  firmware: string;
+  firmwareDate: string;
+  pid: number;
+}
+
+export interface RawStatusInfo {
+  status: AppPrinterStatus;
+  /** Byte 0 della risposta: 0 inattiva, 1 in stampa, 2 errore, 5 lock di un altro host. */
+  printStatus?: number;
+}
+
+/**
+ * Comandi di sola lettura per la diagnostica. Nessuno stampa, fa avanzare
+ * la carta o cambia impostazioni.
+ */
+export interface PrinterProbe {
+  device(): UsbDeviceSummary | null;
+  /** `ESC V`. */
+  version(): Promise<ProbeResult<EngineVersionInfo>>;
+  /** `ESC A 0`. */
+  status(): Promise<ProbeResult<RawStatusInfo>>;
+  /** `ESC U`, un solo tentativo. */
+  media(): Promise<MediaReadResult>;
+}
+
 /**
  * Lavoro di stampa già pronto: immagine nell'orientamento della testina
  * (larghezza = punti attraverso il rotolo), solo pixel bianchi o neri.
@@ -65,8 +162,10 @@ export interface PrinterPort {
   getStatus(): Promise<AppPrinterStatus>;
   /** Restituisce la funzione per annullare l'iscrizione. */
   onStatus(cb: (status: AppPrinterStatus) => void, onError?: (err: AppError) => void): () => void;
-  /** Lettura del rotolo via NFC. `null` se la lettura non è disponibile o fallisce. */
-  readMedia(): Promise<DetectedMedia | null>;
+  /** Lettura del rotolo via NFC, con un secondo tentativo se la prima fallisce. */
+  readMedia(): Promise<MediaReadResult>;
+  /** Comandi di sola lettura per la diagnostica; `null` se non collegata. */
+  probe(): PrinterProbe | null;
   print(job: PrintJob): Promise<void>;
   recover(): Promise<void>;
   /** Chiamata quando la stampante viene scollegata fisicamente. */

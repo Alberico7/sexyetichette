@@ -24,7 +24,11 @@ const faults:{ value: SimulatedFault; label: string }[] = [
   { value: 'busy', label: 'Stampante occupata' },
   { value: 'timeout', label: 'Timeout' },
   { value: 'disconnect-on-print', label: 'Scollegamento in stampa' },
-  { value: 'nfc-unreadable', label: 'NFC illeggibile' },
+  { value: 'nfc-unreadable', label: 'NFC: tag non valido' },
+  { value: 'nfc-timeout', label: 'NFC: nessuna risposta' },
+  { value: 'nfc-short', label: 'NFC: risposta corta' },
+  { value: 'nfc-flaky', label: 'NFC: instabile' },
+  { value: 'slow-status', label: 'Stato lento' },
 ];
 
 function set<K extends keyof SimulatedConfig>(key: K, value: SimulatedConfig[K]): void {
