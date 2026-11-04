@@ -257,3 +257,43 @@ test('ricerca del codice europeo S0722520 nell’elenco dei formati', async ({ p
   await expect(options).toHaveCount(1);
   await noHorizontalScroll(page);
 });
+
+test('carattere «Tecnico ISO 3098»: predefinito, scaricato all’avvio e usato in stampa', async ({ page }) => {
+  const fontRequests: string[] = [];
+  page.on('request', (r) => {
+    if (r.url().includes('osifont')) fontRequests.push(r.url());
+  });
+  await connectSimulated(page);
+  await page.getByTestId('add-text').tap();
+  await page.keyboard.type('Tubo ⌀20 AFKEUR');
+  await page.getByTestId('more-options').locator('summary').tap();
+  const select = page.getByLabel('Carattere');
+  await expect(select.locator('option:checked')).toHaveText('Tecnico ISO 3098');
+  await noHorizontalScroll(page);
+  await page.screenshot({ path: 'test-results/40-carattere-iso.png' });
+  expect(fontRequests.length).toBeGreaterThan(0);
+  expect(await page.evaluate(() => document.fonts.check('20px "Etichettatrice ISO 3098"'))).toBe(true);
+
+  // Anteprima con il carattere ISO diversa da quella «Senza grazie».
+  const previewPixels = async () => {
+    await page.getByTestId('text-print').tap();
+    const canvas = page.getByTestId('preview-canvas');
+    await expect(page.getByText('Aggiornamento anteprima')).toHaveCount(0);
+    const data = await canvas.evaluate((c: HTMLCanvasElement) => c.toDataURL());
+    return data;
+  };
+  const iso = await previewPixels();
+  await page.screenshot({ path: 'test-results/41-anteprima-iso.png' });
+  await page.getByTestId('print-button').tap();
+  await expect(page.getByText('Etichetta inviata alla stampante')).toBeVisible();
+
+  // Dopo la stampa nessun testo è selezionato: un tocco lo seleziona, «Modifica» apre il pannello.
+  const box = (await page.getByTestId('editor').boundingBox())!;
+  await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+  await page.getByTestId('edit-selected').tap();
+  await expect(page.getByTestId('text-panel')).toBeVisible();
+  await page.getByTestId('more-options').locator('summary').tap();
+  await page.getByLabel('Carattere').selectOption({ label: 'Senza grazie' });
+  const sans = await previewPixels();
+  expect(sans).not.toBe(iso);
+});
