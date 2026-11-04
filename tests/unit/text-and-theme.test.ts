@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DIAMETER_SYMBOL, REJECT_WORD, insertAtSelection } from '@/model/text';
+import { DIAMETER_SYMBOL, REJECT_WORD, UNREPAIRABLE_TEXT, insertAtSelection } from '@/model/text';
 import { isThemePreference, nextPreference, resolveTheme } from '@/theme';
 
 describe('simbolo del diametro', () => {
@@ -53,5 +53,15 @@ describe('tema', () => {
     expect(isThemePreference('dark')).toBe(true);
     expect(isThemePreference('blu')).toBe(false);
     expect(isThemePreference(null)).toBe(false);
+  });
+});
+
+describe('NON RIPARABILE', () => {
+  it('su due righe, nel testo vuoto, dopo un testo e al posto di una selezione', () => {
+    expect(UNREPAIRABLE_TEXT).toBe('NON\nRIPARABILE');
+    expect(UNREPAIRABLE_TEXT.split('\n')).toHaveLength(2);
+    expect(insertAtSelection('', UNREPAIRABLE_TEXT, null, null)).toEqual({ text: 'NON\nRIPARABILE', cursor: 14 });
+    expect(insertAtSelection('Pompa\n', UNREPAIRABLE_TEXT)).toEqual({ text: 'Pompa\nNON\nRIPARABILE', cursor: 20 });
+    expect(insertAtSelection('OK', UNREPAIRABLE_TEXT, 0, 2)).toEqual({ text: 'NON\nRIPARABILE', cursor: 14 });
   });
 });
