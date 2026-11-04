@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getPixel, type LabelBitmap } from '@mbtech-nl/bitmap';
 import { createDocument, createTextElement } from '@/model/document';
 import { DIAMETER_SIGN } from '@/model/text';
+import { ISO_FONT } from '@/model/fonts';
 import { LW550_HEAD, findMediaById } from '@/printer/media';
 import { bitmapsEqual } from '@/printer/raster';
 import { prepareLabel } from '@/render/export';
@@ -52,7 +53,7 @@ function slashAngleDeg(b: LabelBitmap): number {
 }
 
 describe('⌀ proporzionato al testo (mini-font ISO)', () => {
-  it.each(['sans-serif', 'serif', 'monospace'])('%s: ⌀ alto come le maiuscole, barra a 75°', async (font) => {
+  it.each(['sans-serif', 'serif', 'monospace', ISO_FONT])('%s: ⌀ alto come le maiuscole, barra a 75°', async (font) => {
     const d = await reading(DIAMETER_SIGN, font);
     const H = await reading('H', font);
     const ratio = inkHeight(d) / inkHeight(H);

@@ -7,6 +7,7 @@ import {
   type MediaFormat,
   type TextElement,
 } from './types';
+import { DEFAULT_FONT } from './fonts';
 import { dotsToMm } from './units';
 
 export function newId(): string {
@@ -60,7 +61,7 @@ export function createTextElement(area: AreaMm, text = 'Testo'): TextElement {
     height: Math.max(3, area.height - margin * 2),
     rotation: 0,
     text,
-    fontFamily: 'sans-serif',
+    fontFamily: DEFAULT_FONT,
     fontSizePt: 14,
     bold: false,
     italic: false,
