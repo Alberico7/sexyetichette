@@ -17,7 +17,7 @@ Web app open source per progettare e stampare etichette su una **LabelWriter 550
 
 Immagini, codici a barre e QR, modelli salvati e import/export JSON arriveranno nella fase 2 (vedi [docs/2026-11-02-app-etichette-webusb.md](docs/2026-11-02-app-etichette-webusb.md)).
 
-La stampa sulla stampante vera **non è ancora stata provata** con questa app: vedi la [checklist](#checklist-per-la-prova-con-la-stampante-vera).
+Con la LabelWriter 550 vera sono stati provati il 2026-11-04 collegamento, lettura del rotolo e una prima stampa, tutti riusciti. Allineamento preciso, copie, densità ed errori sono **ancora da provare**: vedi la [checklist](#checklist-per-la-prova-con-la-stampante-vera).
 
 ## Requisiti
 
@@ -121,24 +121,32 @@ Il registro sta solo in memoria. Il testo non contiene dati personali: il numero
 - [x] **2026-11-03 – WebUSB su Pixel 7a con GrapheneOS e Vanadium**, provato con la diagnostica USB e una stampante HP a getto d'inchiostro. Il selettore mostra il dispositivo, Android concede il permesso, il browser apre la stampante e prende il controllo dell'interfaccia di tipo **stampante**, la stessa classe della LabelWriter 550. Porta USB-C e cavo/adattatore funzionano come host USB.
   Questa prova **non** verifica il protocollo della 550: comandi, lock di stampa e lettura NFC.
 - [x] **2026-11-03 – Condivisione dei risultati della diagnostica** su Pixel 7a con Vanadium: «Condividi» apre il menu di Android e il testo arriva completo all'app scelta. Prova fatta con la stampante HP.
+- [x] **2026-11-04 – LabelWriter 550 reale su Pixel 7a con Vanadium:**
+  - collegamento e collegamento automatico all'avvio;
+  - stato letto: pronta, rotolo presente;
+  - **lettura NFC del rotolo** al primo tentativo: il tag di un rotolo originale 25×54 contiene il codice europeo `S0722520`, larghezza 25,4 mm e lunghezza 54,0 mm;
+  - **prima stampa** di un'etichetta con testo: ne esce una sola, con il contenuto intero e centrato.
+
+  Restano da provare la *Stampa di prova* della diagnostica, che misura l'allineamento al millimetro, e i punti qui sotto.
 
 ### Da provare con la stampante (non confermato)
 
 Annota per ogni punto ✅ / ❌ e, se qualcosa non va, una foto dell'etichetta.
 
-1. **Rilevamento su Android/GrapheneOS.** Con il telefono sbloccato, tocca *Collega*: la LabelWriter 550 compare nel selettore? Dopo la scelta, l'indicatore diventa verde «Pronta»?
+1. ✅ 2026-11-04 – **Rilevamento su Android/GrapheneOS.** Con il telefono sbloccato, tocca *Collega*: la LabelWriter 550 compare nel selettore? Dopo la scelta, l'indicatore diventa verde «Pronta»?
 2. **Accesso USB.** Compaiono errori come «Accesso USB negato»? Se sì, copia i *Dettagli tecnici*.
 3. **Lettura NFC.** Il formato in alto passa da solo a quello del rotolo inserito? In *Formato etichetta* compare «Rotolo rilevato» con il codice giusto? Se no, apri *Diagnostica → LabelWriter 550*, avvia la prova e condividi il risultato con «Condividi».
-   - 2026-11-03, prima prova con la 550 reale: collegamento e stato ok, **rotolo 25×54 non letto**. Causa ancora da capire con la diagnostica.
+   - 2026-11-03, prima prova con la 550 reale: collegamento e stato ok, **rotolo 25×54 non letto**. La causa non è nota: la diagnostica non esisteva ancora.
+   - ✅ 2026-11-04: rotolo letto e riconosciuto (S0722520 → Multiuso piccola 25×54). Da verificare con la prova *LabelWriter 550* che dopo la lettura non resti un byte in coda: la risposta ha riempito esattamente 64 byte.
 4. **Stampa di prova.** In *Diagnostica → Stampa di prova* stampa l'etichetta di prova, rispondi alle domande e condividi «Tutti i risultati». Questa prova da sola verifica verso, zona non stampabile e allineamento.
-5. **Prima stampa.** Etichetta con un testo corto e grande al centro, 1 copia, densità Normale. Esce un'etichetta sola? Il testo è leggibile?
+5. ✅ 2026-11-04 – **Prima stampa.** Etichetta con un testo corto e grande al centro, 1 copia, densità Normale. Esce un'etichetta sola? Il testo è leggibile?
 6. **Allineamento lungo il rotolo.** Aggiungi un testo vicino al bordo sinistro dell'area tratteggiata e uno vicino al bordo destro. Sono entrambi stampati interi? Il bordo sinistro è il primo che esce dalla stampante?
 7. **Allineamento attraverso il rotolo.** Con un'etichetta stretta (es. 28×89), metti un rettangolo «bianco su nero» in alto e uno in basso. Sono stampati sull'etichetta e non fuori? Il testo è dritto o capovolto?
 8. **Verso «Attraverso il rotolo».** Ripeti la prova 5 con questo verso.
 9. **Copie.** Stampa 3 copie: escono 3 etichette e la stampante si ferma correttamente?
 10. **Densità.** Confronta Chiara e Scura.
 11. **Errori.** Apri il coperchio: compare «Coperchio aperto»? Togli il rotolo: compare «Rotolo assente»? Stacca il cavo: compare «Stampante scollegata»?
-12. **Ricollegamento.** Ricarica la pagina con la stampante collegata: torna «Pronta» senza toccare *Collega*?
+12. ✅ 2026-11-04 – **Ricollegamento.** Ricarica la pagina con la stampante collegata: torna «Pronta» senza toccare *Collega*?
 13. **550 Turbo** (solo se ne hai una): deve comparire «non verificata». Riporta l'esito di tutte le prove.
 
 ## Licenza
