@@ -51,6 +51,7 @@ const fitCache = new Map<string, FitResult>();
 
 export function clearFitCache(): void {
   fitCache.clear();
+  baselineShift.clear();
 }
 
 // Se un font termina il caricamento, le misure precedenti possono essere cambiate.
@@ -75,25 +76,54 @@ export function resolveFontSize(el: TextElement): FitResult {
   return result;
 }
 
+/**
+ * Correzione verticale, in em: quanto spostare in basso il testo perché le maiuscole
+ * siano centrate sulla riga. Konva centra lo spazio dichiarato dal font
+ * (ascendente e discendente), che in alcuni font è molto sbilanciato: osifont,
+ * il «Tecnico ISO 3098», senza correzione esce circa 0,16 em più in alto.
+ */
+const baselineShift = new Map<string, number>();
+
+export function verticalShiftEm(el: Pick<TextElement, 'fontFamily' | 'bold' | 'italic'>): number {
+  const family = fontStack(el.fontFamily);
+  const key = `${fontStyle(el)}|${family}`;
+  const cached = baselineShift.get(key);
+  if (cached !== undefined) return cached;
+  if (typeof document === 'undefined') return 0;
+  const ctx = document.createElement('canvas').getContext('2d');
+  if (!ctx) return 0;
+  const size = 100;
+  ctx.font = `${fontStyle(el).replace('normal', '')} ${size}px ${family}`.trim();
+  const m = ctx.measureText('H');
+  const ascent = m.fontBoundingBoxAscent;
+  const descent = m.fontBoundingBoxDescent;
+  const cap = m.actualBoundingBoxAscent;
+  const shift = [ascent, descent, cap].every(Number.isFinite) && cap > 0 ? (cap / 2 - (ascent - descent) / 2) / size : 0;
+  baselineShift.set(key, shift);
+  return shift;
+}
+
 function buildText(group: Group, el: TextElement, w: number, h: number): void {
   // Primo uso di ⌀ con questo carattere: prepara il mini-font (l'editor si ridisegna quando è pronto).
   if (el.text.includes(DIAMETER_SIGN)) void ensureDiameterFont(el.fontFamily);
   // Font scaricabile non ancora pronto: lo chiedo (l'editor si ridisegna quando arriva).
   requestFont(el.fontFamily, fontStyle(el));
   const { sizePt } = resolveFontSize(el);
+  const fontSize = mmToDotsExact(ptToMm(sizePt));
   if (el.invert) {
     group.add(new Konva.Rect({ x: 0, y: 0, width: w, height: h, fill: '#000', listening: false }));
   }
   group.add(
     new Konva.Text({
       x: 0,
-      y: 0,
+      // Maiuscole centrate sulla riga con ogni carattere (vedi verticalShiftEm).
+      y: verticalShiftEm(el) * fontSize,
       width: w,
       height: h,
       text: el.text,
       // Il simbolo ⌀ viene dal mini-font ISO, proporzionato al carattere scelto.
       fontFamily: fontStack(el.fontFamily),
-      fontSize: mmToDotsExact(ptToMm(sizePt)),
+      fontSize,
       fontStyle: fontStyle(el),
       align: el.align,
       verticalAlign: el.verticalAlign,
