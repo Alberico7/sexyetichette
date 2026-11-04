@@ -80,3 +80,15 @@ Non ho aperto il file specifico che hai visto. Se mi mandi il link lo controllo,
   - 1 e2e: predefinito, scaricato, anteprima diversa da «Senza grazie».
 
   Tutti i test passano, comprese le prestazioni. Il JavaScript principale cresce di 0,3 KB compressi; il font è un file a parte.
+
+## Correzione: testo ISO più in alto degli altri (2026-11-04)
+
+- **Problema segnalato:** a parità di riquadro, il «Tecnico ISO 3098» stava più in alto degli altri caratteri.
+- **Causa misurata:** osifont dichiara uno spazio sopra le lettere di 0,75 em e sotto di 0,34 em. È molto sbilanciato: per gli altri font è circa 0,9 e 0,2. Konva centra questo spazio, non le lettere, quindi con un testo a 40 pt le maiuscole uscivano **28 punti (≈ 2,4 mm) più in alto** del centro. Con gli altri caratteri lo scarto era di 1–3 punti.
+- **Correzione:** per ogni carattere e stile misuro altezza delle maiuscole e spazio dichiarato, e sposto il testo in modo che le **maiuscole** siano centrate sulla riga (`verticalShiftEm` in `src/render/scene.ts`). Vale per editor, anteprima e stampa, e per allineamento in alto, al centro e in basso.
+- La regola è la stessa per tutti i caratteri, quindi anche «Senza grazie», «Con grazie» e «Monospaziato» si spostano, di 1–2 punti al massimo (circa 0,1 mm).
+- **Test** in `tests/browser/vertical-center.test.ts`:
+  - con tutti i caratteri, normale e grassetto, le maiuscole sono al centro del riquadro entro 4 punti;
+  - allineando in alto e in basso, ISO e «Senza grazie» stanno alla stessa altezza entro 8 punti.
+
+  Dopo la correzione lo scarto misurato è di 1–1,5 punti per tutti i caratteri.
