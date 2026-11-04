@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref } from 'vue';
 import type { HorizontalAlign, TextElement, VerticalAlign } from '@/model/types';
 import { useDocumentStore } from '@/stores/document';
-import { DIAMETER_SIGN, REJECT_WORD, insertAtSelection } from '@/model/text';
+import { DIAMETER_SIGN, REJECT_WORD, UNREPAIRABLE_TEXT, insertAtSelection } from '@/model/text';
 import { resolveFontSize } from '@/render/scene';
 import { FONT_OPTIONS } from '@/model/fonts';
 
@@ -120,6 +120,16 @@ function rotate90(): void {
       @click="insertSymbol(REJECT_WORD)"
     >
       {{ REJECT_WORD }}
+    </button>
+    <button
+      type="button"
+      class="short"
+      data-testid="insert-unrepairable"
+      aria-label="Inserisci NON RIPARABILE su due righe"
+      @pointerdown.prevent
+      @click="insertSymbol(UNREPAIRABLE_TEXT)"
+    >
+      N. R.
     </button>
   </div>
 
@@ -308,5 +318,10 @@ function rotate90(): void {
 .symbols button {
   flex: 1 1 0;
   min-width: 0;
+}
+
+/* «N. R.» è corto: lascia più spazio agli altri due. */
+.symbols button.short {
+  flex: 0.6 1 0;
 }
 </style>
