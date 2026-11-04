@@ -204,6 +204,32 @@ test('pulsante AFKEUR: inserisce la parola nella posizione del cursore', async (
   await expect(page.getByTestId('empty-warning')).toHaveCount(0);
 });
 
+test('pulsante N. R.: inserisce NON RIPARABILE su due righe', async ({ page }) => {
+  await page.goto('/?sim');
+  await page.getByTestId('add-text').tap();
+  const input = page.getByTestId('text-input');
+  const button = page.getByTestId('insert-unrepairable');
+  await expect(button).toHaveText('N. R.');
+  await expect(button).toHaveAccessibleName('Inserisci NON RIPARABILE su due righe');
+  await button.tap();
+  await expect(input).toHaveValue('NON\nRIPARABILE');
+  expect(await input.evaluate((el: HTMLTextAreaElement) => el.selectionStart)).toBe(14);
+
+  // Tre pulsanti sulla stessa riga; la scritta non è tagliata.
+  const boxes = await Promise.all(
+    ['insert-diameter', 'insert-reject', 'insert-unrepairable'].map((id) => page.getByTestId(id).boundingBox()),
+  );
+  for (const b of boxes) expect(Math.abs((b?.y ?? 0) - (boxes[0]?.y ?? 1))).toBeLessThan(2);
+  expect(await button.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await noHorizontalScroll(page);
+  await page.screenshot({ path: 'test-results/19-non-riparabile.png' });
+
+  await page.getByTestId('text-done').tap();
+  await page.getByTestId('open-print').tap();
+  await expect(page.getByTestId('empty-warning')).toHaveCount(0);
+  await expect(page.getByTestId('preview-canvas')).toBeVisible();
+});
+
 test('adattamento automatico: attivo sui nuovi testi, la dimensione segue il testo', async ({ page }) => {
   await page.goto('/?sim');
   await page.getByTestId('add-text').tap();
