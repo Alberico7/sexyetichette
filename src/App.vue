@@ -10,6 +10,8 @@ import RecentSheet from '@/components/RecentSheet.vue';
 import TextProperties from '@/components/TextProperties.vue';
 import type { LabelDocument } from '@/model/types';
 import { checkEnvironment } from '@/printer/errors';
+import { DEFAULT_FONT } from '@/model/fonts';
+import { requestFont } from '@/render/web-fonts';
 import { useDocumentStore } from '@/stores/document';
 import { usePreviewStore } from '@/stores/preview';
 import { usePrinterStore } from '@/stores/printer';
@@ -108,7 +110,11 @@ watch(
 
 onMounted(() => {
   // Il driver della stampante si carica dopo il primo disegno dell'interfaccia.
-  const start = () => void printer.tryReconnect();
+  // Il carattere dei nuovi testi arriva in sottofondo, così è pronto al primo «+ Testo».
+  const start = () => {
+    void printer.tryReconnect();
+    requestFont(DEFAULT_FONT);
+  };
   if ('requestIdleCallback' in window) window.requestIdleCallback(start, { timeout: 1000 });
   else setTimeout(start, 0);
 });

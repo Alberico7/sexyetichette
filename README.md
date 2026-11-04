@@ -9,7 +9,7 @@ Web app open source per progettare e stampare etichette su una **LabelWriter 550
 **Versione minima (fase 1):**
 - collegamento e stato della stampante;
 - lettura del rotolo via NFC, con scelta manuale del formato se la lettura fallisce;
-- elementi di testo (spostamento, ridimensionamento, rotazione, carattere, allineamento, bianco su nero);
+- elementi di testo (spostamento, ridimensionamento, rotazione, carattere, allineamento, bianco su nero), con il carattere tecnico **ISO 3098** come predefinito;
 - anteprima a 300 dpi in bianco e nero;
 - stampa con copie e densità;
 - etichetta salvata da sola sul telefono, elenco delle ultime 20 etichette stampate, da riaprire o ristampare;
@@ -152,3 +152,5 @@ Annota per ogni punto ✅ / ❌ e, se qualcosa non va, una foto dell'etichetta.
 ## Licenza
 
 © 2026 Andrea Carletti. **MIT con [Commons Clause](https://commonsclause.com/)**: la vendita non è consentita. Vedi [LICENSE](LICENSE).
+
+Il carattere «Tecnico ISO 3098» è [osifont](https://github.com/hikikomori82/osifont), distribuito sotto GNU LGPL 3 con *font exception*. È incluso senza modifiche, con la licenza in [public/licenses/osifont](public/licenses/osifont). Le etichette stampate con questo carattere non hanno vincoli di licenza.

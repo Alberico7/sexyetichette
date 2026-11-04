@@ -4,16 +4,12 @@ import type { HorizontalAlign, TextElement, VerticalAlign } from '@/model/types'
 import { useDocumentStore } from '@/stores/document';
 import { DIAMETER_SIGN, REJECT_WORD, insertAtSelection } from '@/model/text';
 import { resolveFontSize } from '@/render/scene';
+import { FONT_OPTIONS } from '@/model/fonts';
 
 const props = defineProps<{ element: TextElement; autofocus?: boolean }>();
 const store = useDocumentStore();
 
-const FONTS = [
-  { value: 'sans-serif', label: 'Senza grazie' },
-  { value: 'serif', label: 'Con grazie' },
-  { value: 'monospace', label: 'Monospaziato' },
-  { value: 'system-ui', label: 'Di sistema' },
-];
+const FONTS = FONT_OPTIONS;
 
 function update(patch: Partial<TextElement>): void {
   store.updateElement(props.element.id, patch);
