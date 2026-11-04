@@ -13,6 +13,7 @@ import { ELEMENT_ID_ATTR, buildElementNode, elementSignature, waitForFonts } fro
 import { dotsToMm } from '@/model/units';
 import { cssColor, effectiveTheme } from '@/theme';
 import { onDiameterFontReady } from '@/render/diameter-font';
+import { onWebFontReady } from '@/render/web-fonts';
 
 const emit = defineEmits<{ edit: [id: string] }>();
 
@@ -29,6 +30,7 @@ let resizeObserver: ResizeObserver | null = null;
 let isTransforming = false;
 let frame = 0;
 let stopFontListener: (() => void) | null = null;
+let stopWebFontListener: (() => void) | null = null;
 /** Nodo e firma di ogni elemento presente nella scena. */
 const nodes = new Map<string, { group: Group; signature: string }>();
 
@@ -229,12 +231,14 @@ onMounted(async () => {
 
   // I font possono arrivare dopo il primo disegno.
   stopFontListener = onDiameterFontReady(() => rebuildAll());
+  stopWebFontListener = onWebFontReady(() => rebuildAll());
   await waitForFonts(store.doc.elements);
   rebuildAll();
 });
 
 onBeforeUnmount(() => {
   stopFontListener?.();
+  stopWebFontListener?.();
   if (frame) cancelAnimationFrame(frame);
   resizeObserver?.disconnect();
   stage?.destroy();

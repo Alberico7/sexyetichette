@@ -11,6 +11,7 @@ import { mmToDotsExact, ptToMm } from '@/model/units';
 import { TEXT_LINE_HEIGHT, fitFontSize, type FitResult } from './fit';
 import { DIAMETER_SIGN } from '@/model/text';
 import { ensureDiameterFont, fontStack, onDiameterFontReady } from './diameter-font';
+import { onWebFontReady, requestFont } from './web-fonts';
 
 /** Attributo che collega un nodo Konva all'elemento del modello. */
 export const ELEMENT_ID_ATTR = 'elementId';
@@ -56,6 +57,7 @@ export function clearFitCache(): void {
 if (typeof document !== 'undefined' && 'fonts' in document) {
   document.fonts.addEventListener('loadingdone', clearFitCache);
   onDiameterFontReady(clearFitCache);
+  onWebFontReady(clearFitCache);
 }
 
 /**
@@ -76,6 +78,8 @@ export function resolveFontSize(el: TextElement): FitResult {
 function buildText(group: Group, el: TextElement, w: number, h: number): void {
   // Primo uso di ⌀ con questo carattere: prepara il mini-font (l'editor si ridisegna quando è pronto).
   if (el.text.includes(DIAMETER_SIGN)) void ensureDiameterFont(el.fontFamily);
+  // Font scaricabile non ancora pronto: lo chiedo (l'editor si ridisegna quando arriva).
+  requestFont(el.fontFamily, fontStyle(el));
   const { sizePt } = resolveFontSize(el);
   if (el.invert) {
     group.add(new Konva.Rect({ x: 0, y: 0, width: w, height: h, fill: '#000', listening: false }));
