@@ -15,6 +15,7 @@ export interface TestPrintAnswers {
   density?: string;
   error?: string;
   border?: string;
+  edgeLine?: string;
   orientation?: string;
   firstOut?: string;
   missingTicks?: { left: string; right: string; top: string; bottom: string };
@@ -44,6 +45,7 @@ export function testPrintToText(t: TestPrintAnswers): string {
   if (t.error) lines.push(`  Errore: ${t.error}`);
   const ans = (label: string, v?: string) => lines.push(`  ${label}: ${v || '(senza risposta)'}`);
   ans('Bordo esterno', t.border);
+  ans('Linea sul bordo esatto', t.edgeLine);
   ans('Scritta «ALTO»', t.orientation);
   ans('Lato uscito per primo', t.firstOut);
   if (t.missingTicks) {

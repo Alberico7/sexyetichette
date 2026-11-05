@@ -3,7 +3,7 @@
  * (`ESC V`, `ESC A`, `ESC U`) e un controllo del lavoro di stampa che non viene
  * inviato. Logica pura: riceve la porta della stampante e il contesto dell'app.
  */
-import { computeGeometry, documentGeometry, type HeadSpec, type LabelGeometry } from '@/model/geometry';
+import { EDGE_SAFETY_DOTS, computeGeometry, documentGeometry, type HeadSpec, type LabelGeometry } from '@/model/geometry';
 import type { LabelDocument, MediaFormat } from '@/model/types';
 import { dotsToMm } from '@/model/units';
 import { LW550_PRODUCT_ID, LW550_TURBO_PRODUCT_ID, LW550_VENDOR_ID, findMediaBySku, sameMediaSize } from '@/printer/media';
@@ -85,6 +85,10 @@ export function geometryRows(prefix: string, g: LabelGeometry): DetailRow[] {
     {
       label: `${prefix}: zone non stampabili`,
       value: g.deadZones.length ? g.deadZones.map((z) => `${z.width}×${z.height} punti a x ${z.x}, y ${z.y}`).join('; ') : 'nessuna',
+    },
+    {
+      label: `${prefix}: area consigliata (margine di sicurezza ${EDGE_SAFETY_DOTS} punti sui bordi lunghi)`,
+      value: `x ${g.safe.x}, y ${g.safe.y}, ${g.safe.width}×${g.safe.height} punti`,
     },
     { label: `${prefix}: rotazione verso la testina`, value: `${g.wireRotation}°` },
     { label: `${prefix}: punti attraverso / lungo`, value: `${g.crossDots} / ${g.feedDots}` },

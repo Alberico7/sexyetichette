@@ -43,24 +43,41 @@ export function drawTestLabel(geometry: LabelGeometry, text: TestLabelText): Rgb
   const t1 = Math.max(6, Math.round(short * 0.035));
   const font = (px: number, bold = true) => `${bold ? 'bold ' : ''}${Math.max(9, Math.round(px))}px sans-serif`;
 
-  // Bordo esterno di 1 punto sul limite dell'area stampabile.
-  ctx.fillRect(0, 0, W, 1);
-  ctx.fillRect(0, H - 1, W, 1);
-  ctx.fillRect(0, 0, 1, H);
-  ctx.fillRect(W - 1, 0, 1, H);
+  // Area consigliata (stampabile meno il margine di sicurezza), nelle coordinate dell'immagine.
+  const sx = geometry.safe.x - printable.x;
+  const sy = geometry.safe.y - printable.y;
+  const SW = geometry.safe.width;
+  const SH = geometry.safe.height;
+
+  // Bordo esterno di 1 punto sul limite dell'area consigliata.
+  ctx.fillRect(sx, sy, SW, 1);
+  ctx.fillRect(sx, sy + SH - 1, SW, 1);
+  ctx.fillRect(sx, sy, 1, SH);
+  ctx.fillRect(sx + SW - 1, sy, 1, SH);
+
+  // Linea sul bordo esatto dell'etichetta, nel margine di sicurezza: mostra se il bordo vero si stampa.
+  if (geometry.safetyZones.length) {
+    if (geometry.wireRotation === 90) {
+      ctx.fillRect(0, 0, W, 1);
+      ctx.fillRect(0, H - 1, W, 1);
+    } else {
+      ctx.fillRect(0, 0, 1, H);
+      ctx.fillRect(W - 1, 0, 1, H);
+    }
+  }
 
   // Bordo tratteggiato 1 mm più all'interno.
   const inset = mmToLabelDot(1);
   const dash = 6;
-  for (let x = inset; x < W - inset; x += dash * 2) {
-    const w = Math.min(dash, W - inset - x);
-    ctx.fillRect(x, inset, w, 1);
-    ctx.fillRect(x, H - 1 - inset, w, 1);
+  for (let x = sx + inset; x < sx + SW - inset; x += dash * 2) {
+    const w = Math.min(dash, sx + SW - inset - x);
+    ctx.fillRect(x, sy + inset, w, 1);
+    ctx.fillRect(x, sy + SH - 1 - inset, w, 1);
   }
-  for (let y = inset; y < H - inset; y += dash * 2) {
-    const h = Math.min(dash, H - inset - y);
-    ctx.fillRect(inset, y, 1, h);
-    ctx.fillRect(W - 1 - inset, y, 1, h);
+  for (let y = sy + inset; y < sy + SH - inset; y += dash * 2) {
+    const h = Math.min(dash, sy + SH - inset - y);
+    ctx.fillRect(sx + inset, y, 1, h);
+    ctx.fillRect(sx + SW - 1 - inset, y, 1, h);
   }
 
   // Tacche ogni millimetro, misurate dal bordo dell'etichetta (zona non stampabile compresa).

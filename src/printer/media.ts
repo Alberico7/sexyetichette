@@ -174,7 +174,7 @@ export function mediaFromSku(sku: Pick<SkuInfo, 'sku' | 'labelWidthMm' | 'labelL
   fromCatalog: boolean;
 } | null {
   const fromCatalog = findMediaBySku(sku.sku);
-  if (fromCatalog) return { media: structuredClone(fromCatalog), fromCatalog: true };
+  if (fromCatalog) return { media: withRollSize(structuredClone(fromCatalog), sku), fromCatalog: true };
   if (!(sku.labelWidthMm > 0)) return null;
   const continuous = sku.labelType === 'continuous' || !(sku.labelLengthMm > 0);
   const media = customMedia(sku.labelWidthMm, continuous ? undefined : sku.labelLengthMm);
@@ -183,6 +183,28 @@ export function mediaFromSku(sku: Pick<SkuInfo, 'sku' | 'labelWidthMm' | 'labelL
   media.name = `${code ? `Rotolo ${code}` : 'Rotolo rilevato'} ${media.name.replace(/^(Personalizzato|Continuo) /, '')}`;
   if (code) media.skus = [code];
   return { media, fromCatalog: false };
+}
+
+/** Oltre questa differenza il dato del chip non è una correzione dell'arrotondamento: si tiene il catalogo. */
+const ROLL_SIZE_MAX_FIX_MM = 2;
+
+/**
+ * Il catalogo arrotonda molte misure in pollici (es. 25,4 → 25 mm). Il chip del rotolo
+ * dà la misura vera: con la larghezza arrotondata il contenuto usciva spostato
+ * di 0,4 mm (prova del 2026-11-05). Il nome del formato non cambia.
+ */
+export function withRollSize(
+  media: MediaFormat,
+  sku: Pick<SkuInfo, 'labelWidthMm' | 'labelLengthMm'>,
+): MediaFormat {
+  const fix = (catalog: number | undefined, roll: number) =>
+    catalog !== undefined && roll > 0 && Math.abs(roll - catalog) > 0.05 && Math.abs(roll - catalog) <= ROLL_SIZE_MAX_FIX_MM;
+  if (fix(media.widthMm, sku.labelWidthMm)) media.widthMm = sku.labelWidthMm;
+  if (fix(media.lengthMm, sku.labelLengthMm) && Math.abs(sku.labelLengthMm - media.lengthMm!) > 0.2) {
+    media.lengthMm = sku.labelLengthMm;
+    media.lengthDots = mmToDots(sku.labelLengthMm);
+  }
+  return media;
 }
 
 /** Confronto tra formato scelto e formato rilevato, a meno di mezzo millimetro. */

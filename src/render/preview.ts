@@ -16,7 +16,7 @@ export function paintPreview(
   wireBitmap: LabelBitmap,
   geometry: LabelGeometry,
 ): void {
-  const { label, printable, deadZones } = geometry;
+  const { label, printable, deadZones, safetyZones } = geometry;
   canvas.width = label.width;
   canvas.height = label.height;
   const ctx = canvas.getContext('2d');
@@ -39,6 +39,10 @@ export function paintPreview(
     else px[y * rw + x] = black;
   });
   ctx.putImageData(img, printable.x, printable.y);
+
+  // Margine di sicurezza: velatura leggera, senza tratteggio (lì si può stampare).
+  ctx.fillStyle = 'rgba(200, 60, 60, 0.1)';
+  for (const z of safetyZones) ctx.fillRect(z.x, z.y, z.width, z.height);
 
   // Zone non stampabili tratteggiate.
   for (const z of deadZones) {
