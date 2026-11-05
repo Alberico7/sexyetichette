@@ -138,3 +138,27 @@ test('dopo la stampa l’etichetta resta: ristampa con «Stampa» → «Stampa»
   await page.getByTestId('print-button').tap();
   await expect(jobs(page)).toContainText('lavori ricevuti: 2');
 });
+
+test('etichetta salvata con misura arrotondata: prende la misura vera del rotolo letto', async ({ page }) => {
+  // Il rotolo simulato è 30252 (indirizzo 28×89 mm).
+  await connect(page);
+  await expect(page.getByTestId('media-chip')).toContainText('Indirizzo 28×89 mm');
+  await page.getByTestId('add-text').tap();
+  await page.keyboard.type('Misura');
+  await page.getByTestId('text-done').tap();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('etichettatrice.etichetta') ?? '')).toContain('Misura');
+  // Come se fosse stata salvata con la misura arrotondata del catalogo.
+  await page.evaluate(() => {
+    const doc = JSON.parse(localStorage.getItem('etichettatrice.etichetta')!);
+    doc.media.widthMm = 27.6;
+    localStorage.setItem('etichettatrice.etichetta', JSON.stringify(doc));
+  });
+  await page.reload();
+  await page.getByRole('button', { name: 'Collega', exact: true }).tap();
+  await expect(page.getByRole('status').first()).toContainText('Pronta');
+  await expect
+    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('etichettatrice.etichetta')!).media.widthMm))
+    .toBe(28);
+  // Il testo resta e nessun avviso di rotolo diverso.
+  expect(await page.evaluate(() => localStorage.getItem('etichettatrice.etichetta'))).toContain('Misura');
+});

@@ -58,6 +58,11 @@ const QUESTIONS = [
     options: ['sì, completo', 'manca a sinistra', 'manca a destra', 'manca in alto', 'manca in basso', 'manca su più lati'],
   },
   {
+    key: 'edgeLine',
+    text: 'Fuori dal bordo esterno, proprio sul bordo dell’etichetta sui due lati lunghi, c’è una linea sottile. Si vede?',
+    options: ['sì, intera su entrambi i lati', 'solo da un lato', 'a tratti', 'no'],
+  },
+  {
     key: 'orientation',
     text: '',
     options: ['dritta', 'capovolta', 'girata di lato', 'specchiata', 'non stampata'],
@@ -120,7 +125,7 @@ async function print(): Promise<void> {
 
 <template>
   <p class="intro">
-    Stampa <strong>una</strong> etichetta con un bordo sul limite dell’area stampabile, tacche ogni millimetro, la
+    Stampa <strong>una</strong> etichetta con un bordo a 0,5 mm dai bordi lunghi (margine di sicurezza), una linea sul bordo esatto, tacche ogni millimetro, la
     scritta «ALTO», gli angoli numerati 1–4 e un triangolo sul lato che dovrebbe uscire per primo. Serve a verificare
     verso, margini e allineamento.
   </p>
