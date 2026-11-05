@@ -12,6 +12,15 @@ export interface HeadSpec {
   trailingDots: number;
 }
 
+/**
+ * Margine di sicurezza su ciascuno dei due bordi lunghi dell'etichetta (attraverso la testina).
+ * Stampare sul bordo esatto non è affidabile (tolleranza del taglio e della posizione):
+ * nella prova del 2026-11-05 la riga sul bordo si è persa. Qui si può stampare,
+ * ma i testi nuovi e la stampa di prova restano dentro.
+ * Vedi docs/2026-11-05-margine-bordo-testina.md.
+ */
+export const EDGE_SAFETY_DOTS = 6;
+
 export interface Rect {
   x: number;
   y: number;
@@ -32,6 +41,10 @@ export interface LabelGeometry {
   printable: Rect;
   /** Zona non stampabile (vuota se assente). */
   deadZones: Rect[];
+  /** Area consigliata: stampabile meno il margine di sicurezza sui bordi lunghi. */
+  safe: Rect;
+  /** Strisce del margine di sicurezza (stampabili, ma da evitare). */
+  safetyZones: Rect[];
   /** Rotazione da applicare all'immagine letta per ottenere l'orientamento della testina. */
   wireRotation: 0 | 90;
   /** Punti attraverso la testina. */
@@ -56,6 +69,7 @@ export function computeGeometry(
   const leading = Math.min(head.leadingDots, Math.max(0, feedDots - 1));
   const trailing = Math.min(head.trailingDots, Math.max(0, feedDots - leading - 1));
   const printableFeed = feedDots - leading - trailing;
+  const edge = crossDots > EDGE_SAFETY_DOTS * 4 ? EDGE_SAFETY_DOTS : 0;
 
   if (direction === 'across') {
     // Nessuna rotazione: la prima riga stampata è in alto.
@@ -67,6 +81,13 @@ export function computeGeometry(
       label: { width: crossDots, height: feedDots },
       printable: { x: 0, y: leading, width: crossDots, height: printableFeed },
       deadZones,
+      safe: { x: edge, y: leading, width: crossDots - 2 * edge, height: printableFeed },
+      safetyZones: edge
+        ? [
+            { x: 0, y: leading, width: edge, height: printableFeed },
+            { x: crossDots - edge, y: leading, width: edge, height: printableFeed },
+          ]
+        : [],
       wireRotation: 0,
       crossDots,
       feedDots,
@@ -83,6 +104,13 @@ export function computeGeometry(
     label: { width: feedDots, height: crossDots },
     printable: { x: leading, y: 0, width: printableFeed, height: crossDots },
     deadZones,
+    safe: { x: leading, y: edge, width: printableFeed, height: crossDots - 2 * edge },
+    safetyZones: edge
+      ? [
+          { x: leading, y: 0, width: printableFeed, height: edge },
+          { x: leading, y: crossDots - edge, width: printableFeed, height: edge },
+        ]
+      : [],
     wireRotation: 90,
     crossDots,
     feedDots,

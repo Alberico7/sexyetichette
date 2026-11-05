@@ -52,7 +52,7 @@ export const useDocumentStore = defineStore('document', () => {
 
   /** Nuovo testo vuoto, pronto da scrivere. */
   function addText(text = ''): LabelElement {
-    const el = createTextElement(areaFromDots(geometry.value.printable), text);
+    const el = createTextElement(areaFromDots(geometry.value.safe), text);
     doc.value.elements.push(el);
     selectedId.value = el.id;
     touch(doc.value);

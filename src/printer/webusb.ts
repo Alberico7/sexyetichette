@@ -19,6 +19,7 @@ import {
 import { diagLog, describeError } from '@/diagnostics/log';
 import { classifyMediaRead, readWithRetry } from '@/diagnostics/media-read';
 import { traceTransport, type UsbTrace } from '@/diagnostics/usb-trace';
+import { versionProductId } from './engine-version';
 import { LW550_VENDOR_ID, toLibraryMedia } from './media';
 import { summarizeUsbDevice } from './usb-diagnostics';
 import type {
@@ -274,7 +275,7 @@ export class WebUsbPrinterPort implements PrinterPort {
               firmwareKind: v.fwKind,
               firmware: `${v.fwMajor}.${v.fwMinor}`,
               firmwareDate: v.fwReleaseDate,
-              pid: v.pid,
+              pid: versionProductId(v.rawBytes ? new Uint8Array(v.rawBytes) : undefined, v.pid),
             };
           } else {
             r.error = read?.error ?? `Risposta non valida (${read?.bytes?.length ?? '?'} byte)`;

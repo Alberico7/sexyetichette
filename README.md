@@ -17,7 +17,7 @@ Web app open source per progettare e stampare etichette su una **LabelWriter 550
 
 Immagini, codici a barre e QR, modelli salvati e import/export JSON arriveranno nella fase 2 (vedi [docs/2026-11-02-app-etichette-webusb.md](docs/2026-11-02-app-etichette-webusb.md)).
 
-Con la LabelWriter 550 vera sono stati provati il 2026-11-04 collegamento, lettura del rotolo e una prima stampa, tutti riusciti. Allineamento preciso, copie, densità ed errori sono **ancora da provare**: vedi la [checklist](#checklist-per-la-prova-con-la-stampante-vera).
+Con la LabelWriter 550 vera sono stati provati il 2026-11-04 collegamento, lettura del rotolo e una prima stampa, tutti riusciti. Il 2026-11-05 la stampa di prova ha mostrato uno spostamento di 0,4–0,5 mm attraverso il rotolo, già corretto ma da riverificare. Copie, densità ed errori sono **ancora da provare**: vedi la [checklist](#checklist-per-la-prova-con-la-stampante-vera).
 
 ## Requisiti
 
@@ -127,7 +127,15 @@ Il registro sta solo in memoria. Il testo non contiene dati personali: il numero
   - **lettura NFC del rotolo** al primo tentativo: il tag di un rotolo originale 25×54 contiene il codice europeo `S0722520`, larghezza 25,4 mm e lunghezza 54,0 mm;
   - **prima stampa** di un'etichetta con testo: ne esce una sola, con il contenuto intero e centrato.
 
-  Restano da provare la *Stampa di prova* della diagnostica, che misura l'allineamento al millimetro, e i punti qui sotto.
+- [x] **2026-11-05 – Prova *LabelWriter 550* e *Stampa di prova*:**
+  - prova *LabelWriter 550* senza problemi;
+  - firmware 0002.0020, hardware LW550B_PPB_00002;
+  - l'avviso della libreria «read filled exactly 64 bytes» è **innocuo**: 6 letture del rotolo sono identiche byte per byte e le risposte di stato successive non sono sfasate;
+  - stampa di prova corretta per verso, lato che esce per primo, zona iniziale di 6 mm, tacche lungo l'etichetta e nitidezza;
+  - **contenuto spostato di 0,4–0,5 mm** attraverso il rotolo, misurato con il calibro. Il catalogo dà il rotolo largo 25 mm, il chip 25,4 mm, e la stampante allinea l'immagine al bordo basso. **Corretto:** l'app usa la larghezza letta dal chip e lascia un margine di sicurezza di 0,5 mm sui bordi lunghi ([documento](docs/2026-11-05-margine-bordo-testina.md));
+  - l'avviso «codice interno 0x3832» della diagnostica era un falso allarme: la 550 scrive il codice «28» come testo. Corretto.
+
+  Resta da rifare la *Stampa di prova* dopo la correzione, più i punti qui sotto.
 
 ### Da provare con la stampante (non confermato)
 
@@ -137,8 +145,11 @@ Annota per ogni punto ✅ / ❌ e, se qualcosa non va, una foto dell'etichetta.
 2. **Accesso USB.** Compaiono errori come «Accesso USB negato»? Se sì, copia i *Dettagli tecnici*.
 3. **Lettura NFC.** Il formato in alto passa da solo a quello del rotolo inserito? In *Formato etichetta* compare «Rotolo rilevato» con il codice giusto? Se no, apri *Diagnostica → LabelWriter 550*, avvia la prova e condividi il risultato con «Condividi».
    - 2026-11-03, prima prova con la 550 reale: collegamento e stato ok, **rotolo 25×54 non letto**. La causa non è nota: la diagnostica non esisteva ancora.
-   - ✅ 2026-11-04: rotolo letto e riconosciuto (S0722520 → Multiuso piccola 25×54). Da verificare con la prova *LabelWriter 550* che dopo la lettura non resti un byte in coda: la risposta ha riempito esattamente 64 byte.
+   - ✅ 2026-11-04: rotolo letto e riconosciuto (S0722520 → Multiuso piccola 25×54).
+   - ✅ 2026-11-05: nessun byte resta in coda dopo la lettura, verificato con la prova *LabelWriter 550*.
 4. **Stampa di prova.** In *Diagnostica → Stampa di prova* stampa l'etichetta di prova, rispondi alle domande e condividi «Tutti i risultati». Questa prova da sola verifica verso, zona non stampabile e allineamento.
+   - ✅ 2026-11-05: verso, zona iniziale e tacche corretti; contenuto spostato di 0,4–0,5 mm attraverso il rotolo, corretto.
+   - **Da rifare dopo la correzione:** il bordo esterno deve stare a 0,5 mm da entrambi i bordi lunghi, da misurare con il calibro, e nessuna tacca deve essere tagliata. Indica anche se si vede la linea sottile sul bordo esatto: se esce intera, il margine di sicurezza si può ridurre.
 5. ✅ 2026-11-04 – **Prima stampa.** Etichetta con un testo corto e grande al centro, 1 copia, densità Normale. Esce un'etichetta sola? Il testo è leggibile?
 6. **Allineamento lungo il rotolo.** Aggiungi un testo vicino al bordo sinistro dell'area tratteggiata e uno vicino al bordo destro. Sono entrambi stampati interi? Il bordo sinistro è il primo che esce dalla stampante?
 7. **Allineamento attraverso il rotolo.** Con un'etichetta stretta (es. 28×89), metti un rettangolo «bianco su nero» in alto e uno in basso. Sono stampati sull'etichetta e non fuori? Il testo è dritto o capovolto?
