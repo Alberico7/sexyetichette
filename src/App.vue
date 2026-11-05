@@ -108,6 +108,21 @@ watch(
   },
 );
 
+// Stesso formato del rotolo ma con la misura arrotondata del catalogo (es. 25 invece di 25,4 mm):
+// prendo la misura vera del chip. Verso e testi (in mm dal bordo) restano come sono.
+watch(
+  () => [printer.detected, store.doc.media.id, store.doc.media.widthMm, store.doc.media.lengthMm] as const,
+  ([detected]) => {
+    const roll = detected?.media;
+    const cur = store.doc.media;
+    if (!roll || roll.id !== cur.id) return;
+    if (roll.widthMm !== cur.widthMm || roll.lengthMm !== cur.lengthMm || roll.lengthDots !== cur.lengthDots) {
+      store.setMedia(roll, store.doc.direction);
+    }
+  },
+  { immediate: true },
+);
+
 onMounted(() => {
   // Il driver della stampante si carica dopo il primo disegno dell'interfaccia.
   // Il carattere dei nuovi testi arriva in sottofondo, così è pronto al primo «+ Testo».

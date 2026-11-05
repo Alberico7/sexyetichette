@@ -68,7 +68,7 @@ function fitStage(): void {
 
 function drawBackground(): void {
   backgroundLayer.destroyChildren();
-  const { label, printable, deadZones } = store.geometry;
+  const { label, printable, deadZones, safetyZones } = store.geometry;
   const radiusDots = ((store.doc.media.cornerRadiusMm ?? 0) * 300) / 25.4;
   const colors = themeColors();
   backgroundLayer.add(
@@ -88,6 +88,10 @@ function drawBackground(): void {
   );
   for (const z of deadZones) {
     backgroundLayer.add(new Konva.Rect({ ...z, fill: colors.deadZone, listening: false }));
+  }
+  // Margine di sicurezza sui bordi lunghi: stessa tinta, più leggera.
+  for (const z of safetyZones) {
+    backgroundLayer.add(new Konva.Rect({ ...z, fill: colors.deadZone, opacity: 0.6, listening: false }));
   }
   backgroundLayer.add(
     new Konva.Rect({
