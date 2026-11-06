@@ -10,7 +10,9 @@ import type {
   Density,
   DetectedMedia,
   MediaReadResult,
+  PrintControl,
   PrintJob,
+  PrintOutcome,
   PrinterInfo,
   PrinterPort,
 } from '@/printer/types';
@@ -18,6 +20,17 @@ import type { PreparedLabel } from '@/render/export';
 import { loadSettings, saveSettings } from '@/settings';
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'printing';
+
+/** Stampa da più copie interrotta a metà: il titolo dice quante etichette erano partite. */
+function describePartial(e: AppError): AppError {
+  if (!e.partial) return e;
+  const { sent, total } = e.partial;
+  return {
+    ...e,
+    title: `Stampa interrotta dopo ${sent} ${sent === 1 ? 'etichetta inviata' : 'etichette inviate'} su ${total}`,
+    hint: `${e.title}. ${e.hint}`,
+  };
+}
 
 export const usePrinterStore = defineStore('printer', () => {
   const port = shallowRef<PrinterPort | null>(null);
@@ -43,6 +56,12 @@ export const usePrinterStore = defineStore('printer', () => {
   const density = ref<Density>(loadSettings().density ?? 'high');
   watch(density, (d) => saveSettings({ density: d }));
   const lastPrintAt = ref<number | null>(null);
+  /** Stampa in corso da più copie: etichette inviate sul totale. */
+  const progress = ref<{ sent: number; total: number } | null>(null);
+  /** «Ferma» toccato: la stampa in corso non manda altre etichette. */
+  const stopRequested = ref(false);
+  /** Esito dell'ultima stampa riuscita (anche se fermata). */
+  const lastOutcome = shallowRef<PrintOutcome | null>(null);
   let unsubscribeStatus: (() => void) | null = null;
   let unsubscribeDisconnect: (() => void) | null = null;
 
@@ -177,20 +196,39 @@ export const usePrinterStore = defineStore('printer', () => {
     }
   }
 
-  async function print(doc: LabelDocument, prepare?: (doc: LabelDocument) => Promise<PreparedLabel>): Promise<boolean> {
-    return withPrinting(async (p) => {
-      await runPrint(p, doc, { copies: copies.value, density: density.value }, prepare);
-      // Le copie tornano a 1: evita di ristampare più copie per errore.
-      copies.value = 1;
+  /**
+   * Stampa il documento. `copiesOverride`: copie scelte altrove (stampa rapida),
+   * altrimenti quelle del pannello di stampa.
+   */
+  async function print(
+    doc: LabelDocument,
+    prepare?: (doc: LabelDocument) => Promise<PreparedLabel>,
+    copiesOverride?: number,
+  ): Promise<boolean> {
+    const n = copiesOverride ?? copies.value;
+    const ok = await withPrinting(async (p, control) => {
+      const { outcome } = await runPrint(p, doc, { copies: n, density: density.value }, prepare, control);
+      return outcome;
     });
+    // Le copie tornano a 1: evita di ristampare più copie per errore.
+    if (ok) copies.value = 1;
+    return ok;
   }
 
   /** Stampa un lavoro già pronto (etichetta di prova della diagnostica). */
   async function printJob(job: PrintJob): Promise<boolean> {
-    return withPrinting((p) => runJob(p, job));
+    return withPrinting((p, control) => runJob(p, job, control));
   }
 
-  async function withPrinting(run: (p: PrinterPort) => Promise<void>): Promise<boolean> {
+  /** «Ferma»: dopo l'etichetta in corso non ne parte un'altra; il lavoro si chiude normalmente. */
+  function requestStop(): void {
+    if (state.value === 'printing' && progress.value && progress.value.total > 1) {
+      stopRequested.value = true;
+      diagLog.add('app', 'Ferma toccato: nessuna altra etichetta');
+    }
+  }
+
+  async function withPrinting(run: (p: PrinterPort, control: PrintControl) => Promise<PrintOutcome>): Promise<boolean> {
     const p = port.value;
     error.value = null;
     if (!p?.connected) {
@@ -198,14 +236,22 @@ export const usePrinterStore = defineStore('printer', () => {
       return false;
     }
     state.value = 'printing';
+    stopRequested.value = false;
+    progress.value = null;
+    const control: PrintControl = {
+      shouldStop: () => stopRequested.value,
+      onProgress: (sent, total) => (progress.value = { sent, total }),
+    };
     try {
-      await run(p);
+      lastOutcome.value = await run(p, control);
       lastPrintAt.value = Date.now();
       return true;
     } catch (err) {
-      error.value = unwrapError(err);
+      error.value = describePartial(unwrapError(err));
       return false;
     } finally {
+      progress.value = null;
+      stopRequested.value = false;
       if (p.connected) {
         state.value = 'connected';
         void refreshStatus();
@@ -239,6 +285,10 @@ export const usePrinterStore = defineStore('printer', () => {
     copies,
     density,
     lastPrintAt,
+    progress,
+    stopRequested,
+    lastOutcome,
+    requestStop,
     blockingProblems,
     warnings,
     ensurePort,

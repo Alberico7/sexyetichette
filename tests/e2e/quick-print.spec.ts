@@ -152,3 +152,31 @@ test('densità predefinita «Scura» con l’archivio vuoto', async ({ page }) =
   await page.getByTestId('open-preview').tap();
   await expect(page.getByRole('button', { name: 'Scura' })).toHaveAttribute('aria-pressed', 'true');
 });
+
+test('più copie: avanzamento «Ferma N/10», poi «Ferma» chiude il lavoro', async ({ page }) => {
+  await connectSimulated(page, { waitForRoll: true });
+  await writeText(page, 'Ferma');
+  await page.getByTestId('open-copies').tap();
+  await page.getByTestId('copies-10').tap();
+  const stop = page.getByTestId('open-stop');
+  await expect(stop).toBeVisible();
+  await expect(stop).toContainText(/Ferma \d+\/10/);
+  await noHorizontalScroll(page);
+  await page.screenshot({ path: 'test-results/23-ferma.png' });
+  await stop.tap();
+  const toast = page.getByTestId('toast');
+  await expect(toast).toContainText(/^Fermata: stampate \d+ copi[ae] su 10$/);
+  const n = Number(/stampate (\d+)/.exec((await toast.textContent()) ?? '')![1]);
+  expect(n).toBeGreaterThanOrEqual(1);
+  expect(n).toBeLessThan(10);
+  await expect(page.getByTestId('open-print')).toBeVisible();
+});
+
+test('più copie senza fermare: «Stampate 3 copie ✓»', async ({ page }) => {
+  await connectSimulated(page, { waitForRoll: true });
+  await writeText(page, 'Tre');
+  await page.getByTestId('open-copies').tap();
+  await page.getByTestId('copies-3').tap();
+  await expect(page.getByTestId('open-stop')).toBeVisible();
+  await expect(page.getByTestId('toast')).toHaveText('Stampate 3 copie ✓');
+});

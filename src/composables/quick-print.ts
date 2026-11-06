@@ -56,12 +56,9 @@ export function useQuickPrint() {
         return 'preview';
       }
       if (countBlack(prepared.wireBitmap) === 0) return 'preview';
-      printer.copies = clampCopies(copies);
-      const ok = await printer.print(snapshot, async () => prepared);
-      if (!ok) {
-        printer.copies = 1;
-        return 'failed';
-      }
+      // Copie passate direttamente: le copie del pannello di stampa non cambiano.
+      const ok = await printer.print(snapshot, async () => prepared, clampCopies(copies));
+      if (!ok) return 'failed';
       recent.add(snapshot, prepared);
       return 'printed';
     } finally {
