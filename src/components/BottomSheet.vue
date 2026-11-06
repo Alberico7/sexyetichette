@@ -88,6 +88,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
   overflow-x: hidden;
   padding: 16px;
   display: grid;
+  /* Ogni riga alta quanto il suo contenuto: su schermi bassi si scorre invece di
+     schiacciare (l'anteprima veniva tagliata su un Realme GT Master Edition con Brave). */
+  grid-auto-rows: max-content;
   gap: 14px;
 }
 
