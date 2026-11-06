@@ -9,6 +9,7 @@ import { diagLog, describeError } from '@/diagnostics/log';
 import { classifyMediaRead, readWithRetry } from '@/diagnostics/media-read';
 import { printHistory, remainingLabels, type PrintRecord } from '@/diagnostics/print-history';
 import { traceTransport, type UsbTrace } from '@/diagnostics/usb-trace';
+import { browserWatchdogDeps, startStatusWatchdog } from './status-watchdog';
 import { versionProductId } from './engine-version';
 import { LW550_VENDOR_ID, toLibraryMedia } from './media';
 import { summarizeUsbDevice } from './usb-diagnostics';
@@ -210,24 +211,33 @@ export class WebUsbPrinterPort implements PrinterPort {
 
   onStatus(cb: (status: AppPrinterStatus) => void, onError?: (err: AppError) => void): () => void {
     const printer = this.require();
-    // Il polling della libreria (ogni 4 s) ignora gli errori: li gestisco con un mio
-    // controllo, così una stampante muta viene segnalata.
-    let lastOk = Date.now();
+    // Il polling della libreria (ogni 4 s) ignora gli errori: li gestisce il controllo in
+    // status-watchdog.ts, che distingue una stampante muta da una pagina sospesa dal telefono.
+    const watchdog = startStatusWatchdog({
+      ...browserWatchdogDeps(),
+      requestStatus: async () => {
+        if (!this.printer) return false;
+        try {
+          const s = await this.printer.getStatus();
+          watchdog.seen();
+          cb(toAppStatus(s));
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      onTimeout: (detail) => {
+        if (this.printer) onError?.(appError('timeout', detail));
+      },
+      log: (message) => diagLog.add('app', message),
+    });
     const unsubscribe = printer.onStatus((s) => {
-      lastOk = Date.now();
+      watchdog.seen();
       cb(toAppStatus(s));
     });
-    const watchdog = setInterval(() => {
-      if (!this.printer) return;
-      // Durante una stampa lunga il polling attende il lock: tolleranza ampia.
-      if (Date.now() - lastOk > 30_000) {
-        onError?.(appError('timeout', 'Nessuno stato ricevuto da 30 secondi'));
-        lastOk = Date.now();
-      }
-    }, 5_000);
     return () => {
       unsubscribe();
-      clearInterval(watchdog);
+      watchdog.stop();
     };
   }
 
