@@ -9,13 +9,21 @@ import { forEachBlack } from '@/printer/raster';
 export const THUMBNAIL_MAX_SIDE = 240;
 
 /** Dimensioni della miniatura: lato più lungo ≤ `maxSide`, proporzioni dell'area stampabile. */
-export function thumbnailSize(width: number, height: number, maxSide = THUMBNAIL_MAX_SIDE): { width: number; height: number } {
+export function thumbnailSize(
+  width: number,
+  height: number,
+  maxSide = THUMBNAIL_MAX_SIDE,
+): { width: number; height: number } {
   const scale = Math.min(1, maxSide / Math.max(width, height));
   return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
 }
 
 /** Data URL PNG della miniatura; stringa vuota se il canvas non è disponibile. */
-export function thumbnailDataUrl(wireBitmap: LabelBitmap, geometry: LabelGeometry, maxSide = THUMBNAIL_MAX_SIDE): string {
+export function thumbnailDataUrl(
+  wireBitmap: LabelBitmap,
+  geometry: LabelGeometry,
+  maxSide = THUMBNAIL_MAX_SIDE,
+): string {
   const rotated = geometry.wireRotation === 90;
   const rw = rotated ? wireBitmap.heightPx : wireBitmap.widthPx;
   const rh = rotated ? wireBitmap.widthPx : wireBitmap.heightPx;

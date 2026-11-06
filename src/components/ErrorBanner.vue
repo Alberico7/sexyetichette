@@ -5,7 +5,14 @@ const props = defineProps<{ error: AppError; canRecover: boolean }>();
 const emit = defineEmits<{ dismiss: []; recover: []; diagnostics: [] }>();
 
 /** Errori di collegamento per cui la diagnostica USB aiuta a capire dove si ferma. */
-const CONNECTION_CODES = new Set(['no-device-selected', 'access-denied', 'device-unknown', 'webusb-unsupported', 'insecure-context', 'disconnected']);
+const CONNECTION_CODES = new Set([
+  'no-device-selected',
+  'access-denied',
+  'device-unknown',
+  'webusb-unsupported',
+  'insecure-context',
+  'disconnected',
+]);
 const showDiagnostics = () => CONNECTION_CODES.has(props.error.code);
 </script>
 

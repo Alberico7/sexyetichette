@@ -19,7 +19,9 @@ const supported = canShare();
 const note = ref<string | null>(null);
 
 async function copy(): Promise<void> {
-  note.value = (await copyText(props.text())) ? 'Copiato negli appunti.' : 'Copia non riuscita: seleziona e copia il testo a mano.';
+  note.value = (await copyText(props.text()))
+    ? 'Copiato negli appunti.'
+    : 'Copia non riuscita: seleziona e copia il testo a mano.';
 }
 
 async function share(): Promise<void> {
@@ -32,7 +34,9 @@ async function share(): Promise<void> {
   <div class="share">
     <div class="row">
       <button type="button" class="grow" :data-testid="`${testid}-copy`" @click="copy">{{ copyLabel }}</button>
-      <button v-if="supported" type="button" class="grow" :data-testid="`${testid}-share`" @click="share">Condividi</button>
+      <button v-if="supported" type="button" class="grow" :data-testid="`${testid}-share`" @click="share">
+        Condividi
+      </button>
     </div>
     <p v-if="note" class="note" role="status">{{ note }}</p>
   </div>

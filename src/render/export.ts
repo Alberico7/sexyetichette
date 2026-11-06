@@ -13,7 +13,10 @@ import { buildContent, waitForFonts } from './scene';
  * Disegna l'area stampabile dell'etichetta a 300 dpi, nel verso di lettura,
  * su fondo bianco. Restituisce i pixel RGBA.
  */
-export async function renderPrintableRgba(doc: LabelDocument, head: HeadSpec): Promise<{
+export async function renderPrintableRgba(
+  doc: LabelDocument,
+  head: HeadSpec,
+): Promise<{
   image: RgbaImage;
   geometry: LabelGeometry;
 }> {

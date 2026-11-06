@@ -81,7 +81,11 @@ export interface UsbTrace {
  * Avvolge un trasporto. Restituisce `null` se l'oggetto non ha la forma attesa
  * (per esempio in una versione futura della libreria): la stampa non cambia.
  */
-export function traceTransport(transport: unknown, log: DiagnosticLog, now: () => number = () => performance.now()): UsbTrace | null {
+export function traceTransport(
+  transport: unknown,
+  log: DiagnosticLog,
+  now: () => number = () => performance.now(),
+): UsbTrace | null {
   if (
     typeof transport !== 'object' ||
     transport === null ||
@@ -132,14 +136,22 @@ export function traceTransport(transport: unknown, log: DiagnosticLog, now: () =
       const bytes = await originalRead.call(this, length, timeout);
       const ms = Math.round(now() - started);
       remember({ requested: length, bytes: new Uint8Array(bytes), ms });
-      log.add('rx', `risposta a ${trace.lastCommand ?? '?'} · ${bytes.length}/${length} byte · ${ms} ms`, toHex(bytes, MAX_RX_HEX));
+      log.add(
+        'rx',
+        `risposta a ${trace.lastCommand ?? '?'} · ${bytes.length}/${length} byte · ${ms} ms`,
+        toHex(bytes, MAX_RX_HEX),
+      );
       trace.listener?.({ dir: 'rx', opcode: lastOpcode, bytes });
       return bytes;
     } catch (err) {
       const ms = Math.round(now() - started);
       const message = describeError(err);
       remember({ requested: length, error: message, ms });
-      log.add('error', `Lettura USB fallita dopo ${ms} ms (attesi ${length} byte, comando ${trace.lastCommand ?? '?'})`, message);
+      log.add(
+        'error',
+        `Lettura USB fallita dopo ${ms} ms (attesi ${length} byte, comando ${trace.lastCommand ?? '?'})`,
+        message,
+      );
       throw err;
     }
   };

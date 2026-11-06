@@ -98,7 +98,8 @@ export function verticalShiftEm(el: Pick<TextElement, 'fontFamily' | 'bold' | 'i
   const ascent = m.fontBoundingBoxAscent;
   const descent = m.fontBoundingBoxDescent;
   const cap = m.actualBoundingBoxAscent;
-  const shift = [ascent, descent, cap].every(Number.isFinite) && cap > 0 ? (cap / 2 - (ascent - descent) / 2) / size : 0;
+  const shift =
+    [ascent, descent, cap].every(Number.isFinite) && cap > 0 ? (cap / 2 - (ascent - descent) / 2) / size : 0;
   baselineShift.set(key, shift);
   return shift;
 }

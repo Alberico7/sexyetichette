@@ -5,7 +5,15 @@ import { diagLog } from '@/diagnostics/log';
 import { createPrinterPort } from '@/printer';
 import { appError, unwrapError, type AppError } from '@/printer/errors';
 import { runJob, runPrint } from '@/printer/print-flow';
-import type { AppPrinterStatus, Density, DetectedMedia, MediaReadResult, PrintJob, PrinterInfo, PrinterPort } from '@/printer/types';
+import type {
+  AppPrinterStatus,
+  Density,
+  DetectedMedia,
+  MediaReadResult,
+  PrintJob,
+  PrinterInfo,
+  PrinterPort,
+} from '@/printer/types';
 import type { PreparedLabel } from '@/render/export';
 import { loadSettings, saveSettings } from '@/settings';
 
@@ -62,7 +70,10 @@ export const usePrinterStore = defineStore('printer', () => {
   }
 
   function attach(p: PrinterPort, printerInfo: PrinterInfo): void {
-    diagLog.add('app', `Collegata: ${printerInfo.model} (${printerInfo.key}), ID 0x${printerInfo.vendorId.toString(16)}:0x${printerInfo.productId.toString(16)}`);
+    diagLog.add(
+      'app',
+      `Collegata: ${printerInfo.model} (${printerInfo.key}), ID 0x${printerInfo.vendorId.toString(16)}:0x${printerInfo.productId.toString(16)}`,
+    );
     info.value = printerInfo;
     state.value = 'connected';
     unsubscribeStatus?.();
@@ -96,7 +107,10 @@ export const usePrinterStore = defineStore('printer', () => {
     try {
       status.value = await p.getStatus();
       const s = status.value;
-      diagLog.add('app', `Primo stato: ${s.ready ? 'pronta' : 'non pronta'}, rotolo ${s.mediaLoaded ? 'presente' : 'assente'}${s.problems.length ? `, ${s.problems.map((x) => x.code).join(', ')}` : ''}`);
+      diagLog.add(
+        'app',
+        `Primo stato: ${s.ready ? 'pronta' : 'non pronta'}, rotolo ${s.mediaLoaded ? 'presente' : 'assente'}${s.problems.length ? `, ${s.problems.map((x) => x.code).join(', ')}` : ''}`,
+      );
     } catch (err) {
       error.value = unwrapError(err);
     }
@@ -163,10 +177,7 @@ export const usePrinterStore = defineStore('printer', () => {
     }
   }
 
-  async function print(
-    doc: LabelDocument,
-    prepare?: (doc: LabelDocument) => Promise<PreparedLabel>,
-  ): Promise<boolean> {
+  async function print(doc: LabelDocument, prepare?: (doc: LabelDocument) => Promise<PreparedLabel>): Promise<boolean> {
     return withPrinting(async (p) => {
       await runPrint(p, doc, { copies: copies.value, density: density.value }, prepare);
       // Le copie tornano a 1: evita di ristampare più copie per errore.

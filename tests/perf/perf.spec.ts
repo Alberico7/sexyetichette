@@ -28,8 +28,7 @@ test('digitazione fluida e anteprima immediata', async ({ page }) => {
       for (const e of list.getEntries()) w.__lt.push(Math.round(e.duration));
     }).observe({ type: 'longtask' });
   });
-  const longTasks = () =>
-    page.evaluate(() => (window as unknown as { __lt: number[] }).__lt.splice(0));
+  const longTasks = () => page.evaluate(() => (window as unknown as { __lt: number[] }).__lt.splice(0));
 
   await page.getByTestId('add-text').tap();
   await page.waitForTimeout(500);

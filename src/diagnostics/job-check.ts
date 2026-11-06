@@ -15,7 +15,10 @@ import { countBlack, toWireBitmap } from '@/printer/raster';
 import type { PrintJob } from '@/printer/types';
 
 /** Controlli di coerenza sul lavoro: lanciano un errore se qualcosa non torna. */
-export function validateJob(job: PrintJob, head: HeadSpec = { dpi: 300, headDots: 672, leadingDots: 0, trailingDots: 0 }): void {
+export function validateJob(
+  job: PrintJob,
+  head: HeadSpec = { dpi: 300, headDots: 672, leadingDots: 0, trailingDots: 0 },
+): void {
   const { image } = job;
   if (image.width <= 0 || image.height <= 0) throw new Error('Immagine vuota');
   if (image.width > head.headDots) {
@@ -88,7 +91,11 @@ export function checkJob(job: PrintJob, geometry: LabelGeometry, head: HeadSpec,
     const r = image.data[i]!;
     if ((r !== 0 && r !== 255) || image.data[i + 1] !== r || image.data[i + 2] !== r) grey++;
   }
-  push(grey === 0, 'Solo pixel bianchi o neri: l’anteprima è esattamente ciò che si stampa.', `${grey} pixel grigi: il driver li retinerà e la stampa differirà dall’anteprima.`);
+  push(
+    grey === 0,
+    'Solo pixel bianchi o neri: l’anteprima è esattamente ciò che si stampa.',
+    `${grey} pixel grigi: il driver li retinerà e la stampa differirà dall’anteprima.`,
+  );
 
   const ours = toWireBitmap(image, { rotate: 0 });
   const blackDots = countBlack(ours);
@@ -97,7 +104,11 @@ export function checkJob(job: PrintJob, geometry: LabelGeometry, head: HeadSpec,
   const stats: JobCheck['stats'] = { widthDots: image.width, lines: image.height, blackDots };
   try {
     const driver = renderImage(image, { dither: true, rotate: 0 });
-    const composed = compose550Job(DEVICES.LW_550, driver, { copies: 1, density: job.density, labelLengthDots: job.labelLengthDots });
+    const composed = compose550Job(DEVICES.LW_550, driver, {
+      copies: 1,
+      density: job.density,
+      labelLengthDots: job.labelLengthDots,
+    });
     const label = composed.labels[0]!;
     const bytesPerLine = head.headDots / 8;
     // ESC n (4 byte) + ESC D (12 byte) + righe + ESC G (2 byte)
@@ -116,16 +127,26 @@ export function checkJob(job: PrintJob, geometry: LabelGeometry, head: HeadSpec,
       `Il driver cambia l’immagine: ${countBlack(driver)} punti neri invece di ${blackDots}.`,
     );
   } catch (err) {
-    rows.push({ state: 'fail', message: `Codifica della libreria non riuscita: ${err instanceof Error ? err.message : String(err)}` });
+    rows.push({
+      state: 'fail',
+      message: `Codifica della libreria non riuscita: ${err instanceof Error ? err.message : String(err)}`,
+    });
   }
 
   if (doc) {
     const wMm = dotsToMm(geometry.label.width);
     const hMm = dotsToMm(geometry.label.height);
     const outside = doc.elements.filter(
-      (el) => el.rotation % 360 === 0 && (el.x < -0.5 || el.y < -0.5 || el.x + el.width > wMm + 0.5 || el.y + el.height > hMm + 0.5),
+      (el) =>
+        el.rotation % 360 === 0 &&
+        (el.x < -0.5 || el.y < -0.5 || el.x + el.width > wMm + 0.5 || el.y + el.height > hMm + 0.5),
     ).length;
-    push(outside === 0, 'Tutti gli elementi sono dentro l’etichetta.', `${outside} elemento/i escono dall’etichetta e verranno tagliati.`, 'warn');
+    push(
+      outside === 0,
+      'Tutti gli elementi sono dentro l’etichetta.',
+      `${outside} elemento/i escono dall’etichetta e verranno tagliati.`,
+      'warn',
+    );
   }
 
   return { rows, stats };

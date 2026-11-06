@@ -80,9 +80,7 @@ export function parseDocument(v: unknown): LabelDocument | null {
   if (d.direction !== 'along' && d.direction !== 'across') return null;
   if (!isNum(d.continuousLengthMm) || d.continuousLengthMm <= 0) return null;
   if (!Array.isArray(d.elements)) return null;
-  const elements = d.elements
-    .map(parseText)
-    .filter((e): e is TextElement => e !== null && e.text.trim() !== '');
+  const elements = d.elements.map(parseText).filter((e): e is TextElement => e !== null && e.text.trim() !== '');
   const now = new Date().toISOString();
   return {
     format: DOCUMENT_FORMAT,

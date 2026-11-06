@@ -63,7 +63,7 @@ const MESSAGES: Record<ErrorCode, { title: string; hint: string; recoverable?: b
   'access-denied': {
     title: 'Accesso USB negato',
     hint:
-      "Il browser non ha potuto aprire la stampante. Chiudi altre app o schede che la usano, " +
+      'Il browser non ha potuto aprire la stampante. Chiudi altre app o schede che la usano, ' +
       `scollega e ricollega il cavo e riprova. ${GRAPHENE_HINT}`,
   },
   'device-unknown': {

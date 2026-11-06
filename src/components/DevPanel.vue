@@ -5,9 +5,7 @@ import type { SimulatedConfig, SimulatedFault, SimulatedPrinterPort } from '@/pr
 import { usePrinterStore } from '@/stores/printer';
 
 const printer = usePrinterStore();
-const sim = computed(() =>
-  printer.port?.kind === 'simulated' ? (printer.port as SimulatedPrinterPort) : null,
-);
+const sim = computed(() => (printer.port?.kind === 'simulated' ? (printer.port as SimulatedPrinterPort) : null));
 
 // L'adapter non è reattivo: ricalcolo il conteggio a ogni stampa conclusa.
 const jobCount = computed(() => {
@@ -16,7 +14,7 @@ const jobCount = computed(() => {
   return sim.value?.jobs.length ?? 0;
 });
 
-const faults:{ value: SimulatedFault; label: string }[] = [
+const faults: { value: SimulatedFault; label: string }[] = [
   { value: 'none', label: 'Nessun guasto' },
   { value: 'no-media', label: 'Rotolo assente' },
   { value: 'counterfeit', label: 'Rotolo non originale' },
@@ -43,7 +41,10 @@ function set<K extends keyof SimulatedConfig>(key: K, value: SimulatedConfig[K])
     <div class="grid">
       <label class="field">
         Guasto
-        <select :value="sim.config.fault" @change="set('fault', ($event.target as HTMLSelectElement).value as SimulatedFault)">
+        <select
+          :value="sim.config.fault"
+          @change="set('fault', ($event.target as HTMLSelectElement).value as SimulatedFault)"
+        >
           <option v-for="f in faults" :key="f.value" :value="f.value">{{ f.label }}</option>
         </select>
       </label>
@@ -71,7 +72,11 @@ function set<K extends keyof SimulatedConfig>(key: K, value: SimulatedConfig[K])
       </label>
       <label class="field">
         SKU rotolo
-        <input type="text" :value="sim.config.rollSku" @change="set('rollSku', ($event.target as HTMLInputElement).value)" />
+        <input
+          type="text"
+          :value="sim.config.rollSku"
+          @change="set('rollSku', ($event.target as HTMLInputElement).value)"
+        />
       </label>
       <button type="button" @click="sim.unplug()">Scollega il cavo</button>
       <button type="button" @click="sim.plugIn()">Inserisci il cavo</button>

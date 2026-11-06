@@ -162,7 +162,9 @@ onMounted(() => {
     <div v-if="envError" class="env-error" role="alert">
       <strong>{{ envError.title }}</strong>
       <p>{{ envError.hint }}</p>
-      <button type="button" data-testid="open-diagnostics" @click="sheet = 'diagnostics'">Apri la diagnostica USB</button>
+      <button type="button" data-testid="open-diagnostics" @click="sheet = 'diagnostics'">
+        Apri la diagnostica USB
+      </button>
     </div>
     <ErrorBanner
       v-if="printer.error"
@@ -191,31 +193,68 @@ onMounted(() => {
         <button type="button" class="danger" aria-label="Elimina il testo" @click="removeSelected">Elimina</button>
         <button type="button" data-testid="text-done" @click="closeText">Fine</button>
         <div class="print-pair">
-          <button type="button" class="primary" data-testid="text-print" :disabled="quick.printing.value" @click="quickPrint()">
+          <button
+            type="button"
+            class="primary"
+            data-testid="text-print"
+            :disabled="quick.printing.value"
+            @click="quickPrint()"
+          >
             {{ quick.printing.value ? 'Stampa…' : 'Stampa' }}
           </button>
-          <button type="button" class="copies" data-testid="text-copies" aria-label="Stampa più copie" @click="sheet = 'copies'">×1</button>
+          <button
+            type="button"
+            class="copies"
+            data-testid="text-copies"
+            aria-label="Stampa più copie"
+            @click="sheet = 'copies'"
+          >
+            ×1
+          </button>
         </div>
       </div>
     </section>
 
     <nav v-else class="actions" :class="{ three: !store.selectedId }" aria-label="Azioni">
       <button type="button" data-testid="add-text" @click="addText">＋ Testo</button>
-      <button v-if="!store.selectedId" type="button" data-testid="open-recent" @click="sheet = 'recent'">Recenti</button>
+      <button v-if="!store.selectedId" type="button" data-testid="open-recent" @click="sheet = 'recent'">
+        Recenti
+      </button>
       <template v-if="store.selectedId">
         <button type="button" :disabled="!selectedText" data-testid="edit-selected" @click="openEdit(store.selectedId)">
           Modifica
         </button>
         <button type="button" class="danger" @click="removeSelected">Elimina</button>
       </template>
-      <button type="button" class="preview-btn" data-testid="open-preview" aria-label="Anteprima" title="Anteprima" @click="openPrint">
+      <button
+        type="button"
+        class="preview-btn"
+        data-testid="open-preview"
+        aria-label="Anteprima"
+        title="Anteprima"
+        @click="openPrint"
+      >
         <span aria-hidden="true">👁</span>
       </button>
       <div class="print-pair">
-        <button type="button" class="primary" data-testid="open-print" :disabled="quick.printing.value" @click="quickPrint()">
+        <button
+          type="button"
+          class="primary"
+          data-testid="open-print"
+          :disabled="quick.printing.value"
+          @click="quickPrint()"
+        >
           {{ quick.printing.value ? 'Stampa…' : 'Stampa' }}
         </button>
-        <button type="button" class="copies" data-testid="open-copies" aria-label="Stampa più copie" @click="sheet = 'copies'">×1</button>
+        <button
+          type="button"
+          class="copies"
+          data-testid="open-copies"
+          aria-label="Stampa più copie"
+          @click="sheet = 'copies'"
+        >
+          ×1
+        </button>
       </div>
     </nav>
 

@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  checkBrowser,
-  reportToText,
-  runDiagnostics,
-  type Environment,
-  type UsbLike,
-} from '@/printer/usb-diagnostics';
+import { checkBrowser, reportToText, runDiagnostics, type Environment, type UsbLike } from '@/printer/usb-diagnostics';
 
 interface FakeOptions {
   vendorId?: number;

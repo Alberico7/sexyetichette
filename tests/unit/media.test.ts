@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CATALOG,
-  defaultMedia,
-  findMediaBySku,
-  mediaFromSku,
-  sameMediaSize,
-  toLibraryMedia,
-} from '@/printer/media';
+import { CATALOG, defaultMedia, findMediaBySku, mediaFromSku, sameMediaSize, toLibraryMedia } from '@/printer/media';
 
 describe('catalogo formati 550', () => {
   it('contiene solo formati per la testina standard (niente nastri D1 né formati larghi)', () => {
@@ -57,9 +50,18 @@ describe('rotolo letto via NFC', () => {
 
 describe('confronto e conversione', () => {
   it('sameMediaSize tollera i decimi di millimetro del tag', () => {
-    expect(sameMediaSize({ id: 'a', name: '', widthMm: 57, lengthMm: 32 }, { id: 'b', name: '', widthMm: 57.1, lengthMm: 31.7 })).toBe(true);
-    expect(sameMediaSize({ id: 'a', name: '', widthMm: 28, lengthMm: 89 }, { id: 'b', name: '', widthMm: 36, lengthMm: 89 })).toBe(false);
-    expect(sameMediaSize({ id: 'a', name: '', widthMm: 57 }, { id: 'b', name: '', widthMm: 57, lengthMm: 32 })).toBe(false);
+    expect(
+      sameMediaSize(
+        { id: 'a', name: '', widthMm: 57, lengthMm: 32 },
+        { id: 'b', name: '', widthMm: 57.1, lengthMm: 31.7 },
+      ),
+    ).toBe(true);
+    expect(
+      sameMediaSize({ id: 'a', name: '', widthMm: 28, lengthMm: 89 }, { id: 'b', name: '', widthMm: 36, lengthMm: 89 }),
+    ).toBe(false);
+    expect(sameMediaSize({ id: 'a', name: '', widthMm: 57 }, { id: 'b', name: '', widthMm: 57, lengthMm: 32 })).toBe(
+      false,
+    );
   });
 
   it('toLibraryMedia', () => {

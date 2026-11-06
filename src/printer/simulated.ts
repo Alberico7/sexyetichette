@@ -248,14 +248,23 @@ export class SimulatedPrinterPort implements PrinterPort {
   async readMedia(): Promise<MediaReadResult> {
     this.require();
     const result = await readWithRetry(() => this.mediaOnce(), { sleep: (ms) => sleep(Math.min(ms, 50)) });
-    diagLog.add(result.ok ? 'app' : 'warn', `Rotolo ${result.ok ? 'letto' : `non letto (${result.reason})`}, tentativi ${result.attempts}`);
+    diagLog.add(
+      result.ok ? 'app' : 'warn',
+      `Rotolo ${result.ok ? 'letto' : `non letto (${result.reason})`}, tentativi ${result.attempts}`,
+    );
     return result;
   }
 
   /** Un tentativo di lettura del rotolo, con gli stessi esiti del driver reale. */
   private async mediaOnce(): Promise<MediaReadResult> {
     if (!this.isConnected) {
-      return { ok: false, reason: 'not-connected', message: 'Stampante non collegata.', detail: 'not-connected', attempts: 1 };
+      return {
+        ok: false,
+        reason: 'not-connected',
+        message: 'Stampante non collegata.',
+        detail: 'not-connected',
+        attempts: 1,
+      };
     }
     await sleep(Math.min(this.config.delayMs, 50));
     this.mediaReads++;
@@ -309,7 +318,13 @@ export class SimulatedPrinterPort implements PrinterPort {
         return {
           ok: true,
           ms: 20,
-          value: { hardware: 'SIM-HW', firmwareKind: 'application', firmware: '1.0', firmwareDate: '2026', pid: device.productId },
+          value: {
+            hardware: 'SIM-HW',
+            firmwareKind: 'application',
+            firmware: '1.0',
+            firmwareDate: '2026',
+            pid: device.productId,
+          },
           bytes: new Uint8Array(34),
         };
       },
@@ -330,7 +345,13 @@ export class SimulatedPrinterPort implements PrinterPort {
 
   async print(job: PrintJob): Promise<void> {
     this.require();
-    const record: PrintRecord = { at: Date.now(), copies: job.copies, labelsSent: 0, density: job.density, media: job.media.id };
+    const record: PrintRecord = {
+      at: Date.now(),
+      copies: job.copies,
+      labelsSent: 0,
+      density: job.density,
+      media: job.media.id,
+    };
     try {
       // Stessi controlli del driver reale, con gli stessi messaggi.
       if (this.printing || this.config.fault === 'busy') {

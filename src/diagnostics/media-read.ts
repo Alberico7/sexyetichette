@@ -17,7 +17,8 @@ export const SKU_MAGIC = 0xcab6;
 export const REASON_MESSAGES: Record<MediaReadReason, string> = {
   timeout: 'La stampante non ha risposto alla richiesta dei dati del rotolo.',
   short: 'La stampante ha risposto con meno dati del previsto.',
-  'bad-magic': 'La stampante ha risposto, ma i dati non sono quelli di un tag DYMO valido (tag vuoto, non originale o letto male).',
+  'bad-magic':
+    'La stampante ha risposto, ma i dati non sono quelli di un tag DYMO valido (tag vuoto, non originale o letto male).',
   'no-size': 'Il tag del rotolo è stato letto ma non contiene le misure dell’etichetta.',
   invalid: 'La risposta della stampante non è valida.',
   error: 'Errore durante la lettura del rotolo.',
@@ -63,7 +64,11 @@ export function classifyMediaRead(input: ClassifyInput): MediaReadResult {
   if (sku) {
     const found = mediaFromSku(sku);
     if (!found) {
-      return failure('no-size', `Codice «${sku.sku.trim() || '(vuoto)'}», larghezza ${sku.labelWidthMm} mm, lunghezza ${sku.labelLengthMm} mm`, bytes);
+      return failure(
+        'no-size',
+        `Codice «${sku.sku.trim() || '(vuoto)'}», larghezza ${sku.labelWidthMm} mm, lunghezza ${sku.labelLengthMm} mm`,
+        bytes,
+      );
     }
     const detected: DetectedMedia = { sku: sku.sku.trim(), media: found.media, fromCatalog: found.fromCatalog };
     if ((sku.totalLabelCount ?? 0) > 0) detected.totalLabels = sku.totalLabelCount!;
@@ -77,7 +82,11 @@ export function classifyMediaRead(input: ClassifyInput): MediaReadResult {
   if (bytes.length < SKU_BYTES) return failure('short', `Ricevuti ${bytes.length} byte su ${SKU_BYTES}.`, bytes);
   const magic = u16le(bytes, 0);
   if (magic !== SKU_MAGIC) {
-    return failure('bad-magic', `Codice iniziale 0x${magic.toString(16).padStart(4, '0')} invece di 0x${SKU_MAGIC.toString(16)}.`, bytes);
+    return failure(
+      'bad-magic',
+      `Codice iniziale 0x${magic.toString(16).padStart(4, '0')} invece di 0x${SKU_MAGIC.toString(16)}.`,
+      bytes,
+    );
   }
   return failure('invalid', 'Dati del tag non interpretabili.', bytes);
 }
@@ -101,9 +110,7 @@ const mm = (n: number | undefined) => (n === undefined ? '–' : `${String(n).re
 
 /** Tutti i campi del tag NFC, in italiano. */
 export function skuFields(sku: SkuLike): { label: string; value: string }[] {
-  const rows: { label: string; value: string }[] = [
-    { label: 'Codice (SKU)', value: sku.sku.trim() || '(vuoto)' },
-  ];
+  const rows: { label: string; value: string }[] = [{ label: 'Codice (SKU)', value: sku.sku.trim() || '(vuoto)' }];
   const add = (label: string, value: unknown) => {
     if (value !== undefined && value !== '') rows.push({ label, value: String(value) });
   };
@@ -115,8 +122,10 @@ export function skuFields(sku: SkuLike): { label: string; value: string }[] {
   rows.push({ label: 'Larghezza', value: mm(sku.labelWidthMm) });
   rows.push({ label: 'Lunghezza', value: mm(sku.labelLengthMm) });
   if (sku.linerWidthMm !== undefined) add('Larghezza del supporto', mm(sku.linerWidthMm));
-  if (sku.printableHorizontalOffsetMm !== undefined) add('Offset stampabile orizzontale', mm(sku.printableHorizontalOffsetMm));
-  if (sku.printableVerticalOffsetMm !== undefined) add('Offset stampabile verticale', mm(sku.printableVerticalOffsetMm));
+  if (sku.printableHorizontalOffsetMm !== undefined)
+    add('Offset stampabile orizzontale', mm(sku.printableHorizontalOffsetMm));
+  if (sku.printableVerticalOffsetMm !== undefined)
+    add('Offset stampabile verticale', mm(sku.printableVerticalOffsetMm));
   if (sku.verticalOffsetMm !== undefined) add('Offset verticale', mm(sku.verticalOffsetMm));
   if (sku.markerType !== undefined) add('Tipo di tacca', sku.markerType);
   if (sku.markerPitchMm !== undefined) add('Passo delle tacche', mm(sku.markerPitchMm));
@@ -142,12 +151,15 @@ export interface CatalogComparison {
 export function compareWithCatalog(sku: SkuLike): CatalogComparison {
   const entry = findMediaBySku(sku.sku);
   if (!entry) {
-    return { message: `Codice «${sku.sku.trim() || '(vuoto)'}» non presente nel catalogo dell’app: uso le misure lette dal tag.` };
+    return {
+      message: `Codice «${sku.sku.trim() || '(vuoto)'}» non presente nel catalogo dell’app: uso le misure lette dal tag.`,
+    };
   }
   const near = (a: number, b: number | undefined) => b !== undefined && Math.abs(a - b) <= 0.6;
   const w = sku.labelWidthMm;
   const l = sku.labelLengthMm;
-  const same = (near(w, entry.widthMm) && (l === 0 ? entry.lengthMm === undefined : near(l, entry.lengthMm))) ||
+  const same =
+    (near(w, entry.widthMm) && (l === 0 ? entry.lengthMm === undefined : near(l, entry.lengthMm))) ||
     (near(l, entry.widthMm) && near(w, entry.lengthMm));
   return {
     catalogName: entry.name,

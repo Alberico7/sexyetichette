@@ -43,8 +43,15 @@ function slashAngleDeg(b: LabelBitmap): number {
   const r = rows(b);
   const take = Math.max(3, Math.round(r.length * 0.04));
   const centroid = (sel: typeof r) => {
-    let sx = 0, sy = 0, n = 0;
-    for (const row of sel) for (const x of row.xs) { sx += x; sy += row.y; n++; }
+    let sx = 0,
+      sy = 0,
+      n = 0;
+    for (const row of sel)
+      for (const x of row.xs) {
+        sx += x;
+        sy += row.y;
+        n++;
+      }
     return { x: sx / n, y: sy / n };
   };
   const top = centroid(r.slice(0, take));
