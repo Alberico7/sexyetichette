@@ -30,6 +30,8 @@ export interface FullReportInput {
   media?: MediaReadResult | null;
   testPrint?: TestPrintAnswers | null;
   log?: DiagnosticLog | null;
+  /** Testo delle ultime stampe (vedi `PrintHistory.toText`). */
+  prints?: string | null;
 }
 
 const ICONS = { ok: '✓', warn: '!', fail: '✗', info: 'i', skip: '–' } as const;
@@ -79,6 +81,7 @@ export function fullReportText(input: FullReportInput): string {
     for (const p of input.printer.problems) out.push(`  ${p.severity === 'grave' ? '✗' : '!'} ${p.message}`);
     out.push('');
   }
+  if (input.prints) out.push(input.prints, '');
   if (input.testPrint) out.push(testPrintToText(input.testPrint), '');
   if (input.printer) out.push(printerCheckToText(input.printer), '');
   if (input.media && !input.printer) out.push(mediaReadToText(input.media), '');

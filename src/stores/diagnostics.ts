@@ -6,6 +6,7 @@ import { defineStore } from 'pinia';
 import { ref, shallowRef } from 'vue';
 import { APP_BUILD } from '@/app-info';
 import { diagLog } from '@/diagnostics/log';
+import { printHistory } from '@/diagnostics/print-history';
 import type { PrinterCheckReport } from '@/diagnostics/printer-check';
 import { fullReportText, stamp, type TestPrintAnswers } from '@/diagnostics/report';
 import type { DiagnosticReport } from '@/printer/usb-diagnostics';
@@ -26,6 +27,7 @@ export const useDiagnosticsStore = defineStore('diagnostics', () => {
       media: printer.mediaRead,
       testPrint: testPrint.value,
       log: diagLog,
+      prints: printHistory.toText(),
     });
   }
 
