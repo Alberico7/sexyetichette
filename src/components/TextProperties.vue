@@ -172,20 +172,36 @@ function rotate90(): void {
       </div>
 
       <div class="row">
-        <div class="segmented grow" role="group" aria-label="Stile">
-          <button type="button" :aria-pressed="element.bold" @click="update({ bold: !element.bold })">
-            <b>G</b> Grassetto
+        <div class="segmented grow style" role="group" aria-label="Stile">
+          <button
+            type="button"
+            data-testid="bold"
+            aria-label="Grassetto"
+            title="Grassetto"
+            :aria-pressed="element.bold"
+            @click="update({ bold: !element.bold })"
+          >
+            <b aria-hidden="true">G</b>
           </button>
-          <button type="button" :aria-pressed="element.italic" @click="update({ italic: !element.italic })">
-            <i>C</i> Corsivo
+          <button
+            type="button"
+            data-testid="italic"
+            aria-label="Corsivo"
+            title="Corsivo"
+            :aria-pressed="element.italic"
+            @click="update({ italic: !element.italic })"
+          >
+            <i aria-hidden="true">C</i>
           </button>
           <button
             type="button"
             data-testid="underline"
+            aria-label="Sottolineato"
+            title="Sottolineato"
             :aria-pressed="!!element.underline"
             @click="update({ underline: !element.underline })"
           >
-            <u>S</u> Sottolineato
+            <u aria-hidden="true">S</u>
           </button>
         </div>
       </div>
@@ -231,6 +247,25 @@ function rotate90(): void {
 </template>
 
 <style scoped>
+/* Stile: solo le lettere G, C, S, grandi, come nei programmi di scrittura. */
+.style button {
+  font-size: 1.35rem;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.style b {
+  font-weight: 800;
+}
+
+.style i {
+  font-style: italic;
+}
+
+.style u {
+  text-underline-offset: 3px;
+  text-decoration-thickness: 2px;
+}
+
 .more {
   border: 1px solid var(--border);
   border-radius: var(--radius);
