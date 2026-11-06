@@ -1,7 +1,7 @@
 # Colori del tema più riposanti
 
 - Data: 2026-11-06
-- Stato: **realizzato (2026-11-06), da approvare a vista prima di pubblicare**
+- Stato: **realizzato e approvato a vista (2026-11-06)**
 
 ## Perché
 
