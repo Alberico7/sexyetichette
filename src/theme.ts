@@ -50,9 +50,8 @@ function savePreference(p: ThemePreference): void {
   }
 }
 
-const media = typeof window !== 'undefined' && window.matchMedia
-  ? window.matchMedia('(prefers-color-scheme: dark)')
-  : null;
+const media =
+  typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
 export const themePreference = ref<ThemePreference>(typeof window === 'undefined' ? 'auto' : loadPreference());
 const systemDark = ref(media?.matches ?? false);
@@ -61,9 +60,7 @@ media?.addEventListener('change', (e) => {
   applyTheme();
 });
 
-export const effectiveTheme = computed<EffectiveTheme>(() =>
-  resolveTheme(themePreference.value, systemDark.value),
-);
+export const effectiveTheme = computed<EffectiveTheme>(() => resolveTheme(themePreference.value, systemDark.value));
 
 export function applyTheme(): void {
   if (typeof document === 'undefined') return;

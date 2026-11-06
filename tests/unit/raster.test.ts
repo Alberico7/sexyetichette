@@ -40,7 +40,7 @@ describe('fedeltà dell’anteprima', () => {
   it('il dithering del driver lascia invariato il bitmap già in bianco e nero', () => {
     // Immagine con sfumature, testo antialias simulato e rumore.
     let seed = 7;
-    const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) % 256);
+    const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) % 256;
     const img = image(331, 200, (x, y) => ((x + y) % 37 < 5 ? rnd() : (x * 255) / 331));
     const ours = toWireBitmap(img, { rotate: 0 });
     const sent = bitmapToRgba(ours);

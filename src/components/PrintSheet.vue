@@ -46,7 +46,10 @@ watch(
   },
   { immediate: true },
 );
-watch(() => preview.prepared, () => void paint());
+watch(
+  () => preview.prepared,
+  () => void paint(),
+);
 
 const rendering = computed(() => !preview.ready);
 const isEmpty = computed(() => preview.ready && preview.inkDots === 0);
@@ -89,15 +92,18 @@ async function doPrint(): Promise<void> {
     <button type="button" @click="actualSize = !actualSize">{{ actualSize ? 'Adatta' : '1:1' }}</button>
   </div>
   <p class="muted note">
-    Anteprima alla risoluzione reale (300 dpi), in bianco e nero come verrà stampata. La zona rossa
-    non è raggiungibile dalla testina.
+    Anteprima alla risoluzione reale (300 dpi), in bianco e nero come verrà stampata. La zona rossa non è raggiungibile
+    dalla testina.
   </p>
 
   <p v-if="isEmpty" class="warn" data-testid="empty-warning">L'etichetta è vuota.</p>
-  <p v-if="overflow" class="warn" data-testid="overflow-warning">Un testo non entra nel suo riquadro ed è stampato alla dimensione minima.</p>
+  <p v-if="overflow" class="warn" data-testid="overflow-warning">
+    Un testo non entra nel suo riquadro ed è stampato alla dimensione minima.
+  </p>
   <p v-if="mismatch" class="warn" data-testid="mismatch-warning">
-    Il formato scelto ({{ store.doc.media.name }}) non corrisponde al rotolo inserito
-    ({{ printer.detected?.media.name }}).
+    Il formato scelto ({{ store.doc.media.name }}) non corrisponde al rotolo inserito ({{
+      printer.detected?.media.name
+    }}).
   </p>
   <p v-if="printer.state === 'disconnected'" class="warn">Collega la stampante per stampare.</p>
   <p v-for="p in printer.blockingProblems" :key="p.code" class="error">{{ p.title }}: {{ p.hint }}</p>
@@ -116,7 +122,9 @@ async function doPrint(): Promise<void> {
         aria-label="Numero di copie"
         @change="printer.copies = clampCopies(printer.copies)"
       />
-      <button type="button" aria-label="Una copia in più" :disabled="printer.copies >= MAX_COPIES" @click="step(1)">+</button>
+      <button type="button" aria-label="Una copia in più" :disabled="printer.copies >= MAX_COPIES" @click="step(1)">
+        +
+      </button>
     </div>
   </div>
 
@@ -135,14 +143,14 @@ async function doPrint(): Promise<void> {
     </div>
   </div>
 
-  <button
-    type="button"
-    class="primary print"
-    data-testid="print-button"
-    :disabled="!canPrint"
-    @click="doPrint"
-  >
-    {{ printer.state === 'printing' ? 'Stampa in corso…' : printer.copies > 1 ? `Stampa ${printer.copies} copie` : 'Stampa' }}
+  <button type="button" class="primary print" data-testid="print-button" :disabled="!canPrint" @click="doPrint">
+    {{
+      printer.state === 'printing'
+        ? 'Stampa in corso…'
+        : printer.copies > 1
+          ? `Stampa ${printer.copies} copie`
+          : 'Stampa'
+    }}
   </button>
 </template>
 

@@ -3,12 +3,32 @@
  * (`ESC V`, `ESC A`, `ESC U`) e un controllo del lavoro di stampa che non viene
  * inviato. Logica pura: riceve la porta della stampante e il contesto dell'app.
  */
-import { EDGE_SAFETY_DOTS, computeGeometry, documentGeometry, type HeadSpec, type LabelGeometry } from '@/model/geometry';
+import {
+  EDGE_SAFETY_DOTS,
+  computeGeometry,
+  documentGeometry,
+  type HeadSpec,
+  type LabelGeometry,
+} from '@/model/geometry';
 import type { LabelDocument, MediaFormat } from '@/model/types';
 import { dotsToMm } from '@/model/units';
-import { LW550_PRODUCT_ID, LW550_TURBO_PRODUCT_ID, LW550_VENDOR_ID, findMediaBySku, sameMediaSize } from '@/printer/media';
+import {
+  LW550_PRODUCT_ID,
+  LW550_TURBO_PRODUCT_ID,
+  LW550_VENDOR_ID,
+  findMediaBySku,
+  sameMediaSize,
+} from '@/printer/media';
 import { buildJob } from '@/printer/print-flow';
-import type { Density, DetailRow, MediaReadResult, PrinterInfo, PrinterProbe, ProbeResult, RawStatusInfo } from '@/printer/types';
+import type {
+  Density,
+  DetailRow,
+  MediaReadResult,
+  PrinterInfo,
+  PrinterProbe,
+  ProbeResult,
+  RawStatusInfo,
+} from '@/printer/types';
 import { endpointText, hex4Id } from '@/printer/usb-diagnostics';
 import type { PreparedLabel } from '@/render/export';
 import { checkJob } from './job-check';
@@ -75,16 +95,26 @@ const mm = (dots: number) => `${dotsToMm(dots).toFixed(1).replace('.', ',')} mm`
 
 export function formatSize(media: MediaFormat): string {
   const n = (v: number) => String(v).replace('.', ',');
-  return media.lengthMm === undefined ? `${n(media.widthMm)} mm continuo` : `${n(media.widthMm)}×${n(media.lengthMm)} mm`;
+  return media.lengthMm === undefined
+    ? `${n(media.widthMm)} mm continuo`
+    : `${n(media.widthMm)}×${n(media.lengthMm)} mm`;
 }
 
 export function geometryRows(prefix: string, g: LabelGeometry): DetailRow[] {
   return [
-    { label: `${prefix}: etichetta`, value: `${g.label.width}×${g.label.height} punti (${mm(g.label.width)} × ${mm(g.label.height)})` },
-    { label: `${prefix}: area stampabile`, value: `x ${g.printable.x}, y ${g.printable.y}, ${g.printable.width}×${g.printable.height} punti` },
+    {
+      label: `${prefix}: etichetta`,
+      value: `${g.label.width}×${g.label.height} punti (${mm(g.label.width)} × ${mm(g.label.height)})`,
+    },
+    {
+      label: `${prefix}: area stampabile`,
+      value: `x ${g.printable.x}, y ${g.printable.y}, ${g.printable.width}×${g.printable.height} punti`,
+    },
     {
       label: `${prefix}: zone non stampabili`,
-      value: g.deadZones.length ? g.deadZones.map((z) => `${z.width}×${z.height} punti a x ${z.x}, y ${z.y}`).join('; ') : 'nessuna',
+      value: g.deadZones.length
+        ? g.deadZones.map((z) => `${z.width}×${z.height} punti a x ${z.x}, y ${z.y}`).join('; ')
+        : 'nessuna',
     },
     {
       label: `${prefix}: area consigliata (margine di sicurezza ${EDGE_SAFETY_DOTS} punti sui bordi lunghi)`,
@@ -130,9 +160,17 @@ export async function runPrinterCheck(
   // 2. Dispositivo
   const dev = probe.device();
   if (!dev) {
-    add({ id: 'device', title: 'Dispositivo USB', state: 'info', message: 'Descrittori USB non disponibili.', details: [] });
+    add({
+      id: 'device',
+      title: 'Dispositivo USB',
+      state: 'info',
+      message: 'Descrittori USB non disponibili.',
+      details: [],
+    });
   } else {
-    const known = dev.vendorId === LW550_VENDOR_ID && (dev.productId === LW550_PRODUCT_ID || dev.productId === LW550_TURBO_PRODUCT_ID);
+    const known =
+      dev.vendorId === LW550_VENDOR_ID &&
+      (dev.productId === LW550_PRODUCT_ID || dev.productId === LW550_TURBO_PRODUCT_ID);
     const turbo = dev.productId === LW550_TURBO_PRODUCT_ID;
     const details: DetailRow[] = [
       { label: 'Nome', value: `${dev.manufacturerName} – ${dev.productName}` },
@@ -152,7 +190,11 @@ export async function runPrinterCheck(
       id: 'device',
       title: 'Dispositivo USB',
       state: known ? (turbo ? 'warn' : 'ok') : 'fail',
-      message: known ? (turbo ? 'LabelWriter 550 Turbo (non verificata)' : 'LabelWriter 550') : 'Modello non riconosciuto',
+      message: known
+        ? turbo
+          ? 'LabelWriter 550 Turbo (non verificata)'
+          : 'LabelWriter 550'
+        : 'Modello non riconosciuto',
       details,
     });
   }
@@ -178,7 +220,10 @@ export async function runPrinterCheck(
       }
       if (dev && v.pid !== 0 && v.pid !== dev.productId) {
         state = 'warn';
-        details.push({ label: 'Attenzione', value: `codice interno ${hex4Id(v.pid)} diverso dal codice USB ${hex4Id(dev.productId)}` });
+        details.push({
+          label: 'Attenzione',
+          value: `codice interno ${hex4Id(v.pid)} diverso dal codice USB ${hex4Id(dev.productId)}`,
+        });
       }
     } else {
       problem('avviso', 'La stampante non ha risposto alla richiesta della versione (ESC V).');
@@ -207,18 +252,29 @@ export async function runPrinterCheck(
     let message: string;
     if (!last) {
       message = 'Nessuna risposta allo stato.';
-      problem('grave', `La stampante non risponde alla richiesta di stato (${reads.length} tentativi su ${reads.length}).`);
+      problem(
+        'grave',
+        `La stampante non risponde alla richiesta di stato (${reads.length} tentativi su ${reads.length}).`,
+      );
     } else {
       const s = last.status;
       message = `${s.ready ? 'Pronta' : 'Non pronta'}, rotolo ${s.mediaLoaded ? 'presente' : 'assente'}${s.problems.length ? `, ${s.problems.map((p) => p.title).join(', ')}` : ''}`;
-      details.push({ label: 'Pronta', value: s.ready ? 'sì' : 'no' }, { label: 'Rotolo presente', value: s.mediaLoaded ? 'sì' : 'no' });
+      details.push(
+        { label: 'Pronta', value: s.ready ? 'sì' : 'no' },
+        { label: 'Rotolo presente', value: s.mediaLoaded ? 'sì' : 'no' },
+      );
       for (const p of s.problems) {
-        details.push({ label: p.warning ? 'Avviso' : 'Problema', value: `${p.title}${p.detail ? ` (${p.detail})` : ''}` });
+        details.push({
+          label: p.warning ? 'Avviso' : 'Problema',
+          value: `${p.title}${p.detail ? ` (${p.detail})` : ''}`,
+        });
         problem(p.warning ? 'avviso' : 'grave', `Stato della stampante: ${p.title}.`);
       }
       for (const d of s.details) details.push({ label: `Libreria: ${d.label}`, value: d.value });
-      if (last.printStatus === 5) problem('grave', 'Il lock di stampa è tenuto da un altro host (un altro programma o dispositivo).');
-      if (ok.length < reads.length) problem('avviso', `Stato instabile: ${reads.length - ok.length} letture su ${reads.length} fallite.`);
+      if (last.printStatus === 5)
+        problem('grave', 'Il lock di stampa è tenuto da un altro host (un altro programma o dispositivo).');
+      if (ok.length < reads.length)
+        problem('avviso', `Stato instabile: ${reads.length - ok.length} letture su ${reads.length} fallite.`);
       const slow = ok.filter((r) => r.ms > 1000).length;
       if (slow > 0) {
         if (state === 'ok') state = 'warn';
@@ -227,7 +283,14 @@ export async function runPrinterCheck(
       const distinct = new Set(ok.map((r) => (r.bytes ? toHex(r.bytes) : ''))).size;
       if (distinct > 1) details.push({ label: 'Differenze', value: `${distinct} risposte diverse tra le letture` });
     }
-    add({ id: 'status', title: `Stato (ESC A) × ${repeats}`, state, message, ms: Math.round(reads.reduce((s, r) => s + r.ms, 0) / reads.length), details });
+    add({
+      id: 'status',
+      title: `Stato (ESC A) × ${repeats}`,
+      state,
+      message,
+      ms: Math.round(reads.reduce((s, r) => s + r.ms, 0) / reads.length),
+      details,
+    });
   }
 
   // 5. Rotolo (ESC U), più volte
@@ -241,7 +304,13 @@ export async function runPrinterCheck(
       try {
         reads.push(await probe.media());
       } catch (err) {
-        reads.push({ ok: false, reason: 'error', message: 'Errore durante la lettura del rotolo.', detail: describeError(err), attempts: 1 });
+        reads.push({
+          ok: false,
+          reason: 'error',
+          message: 'Errore durante la lettura del rotolo.',
+          detail: describeError(err),
+          attempts: 1,
+        });
       }
       times.push(Math.round(performance.now() - start));
     }
@@ -269,16 +338,29 @@ export async function runPrinterCheck(
       for (const f of first.fields) details.push({ label: `Tag: ${f.label}`, value: f.value });
       const entry = d.sku ? findMediaBySku(d.sku) : undefined;
       if (!entry) {
-        details.push({ label: 'Catalogo', value: `codice «${d.sku || '(vuoto)'}» non nel catalogo: uso le misure del tag (${formatSize(d.media)})` });
-        problem('avviso', `Codice del rotolo «${d.sku || '(vuoto)'}» non nel catalogo dell’app: verranno usate le misure lette dal tag.`);
+        details.push({
+          label: 'Catalogo',
+          value: `codice «${d.sku || '(vuoto)'}» non nel catalogo: uso le misure del tag (${formatSize(d.media)})`,
+        });
+        problem(
+          'avviso',
+          `Codice del rotolo «${d.sku || '(vuoto)'}» non nel catalogo dell’app: verranno usate le misure lette dal tag.`,
+        );
       } else {
         details.push({ label: 'Catalogo', value: `${entry.name}` });
       }
-      if (okReads.length < reads.length) problem('avviso', `Lettura del rotolo instabile: ${reads.length - okReads.length} letture su ${reads.length} fallite.`);
+      if (okReads.length < reads.length)
+        problem(
+          'avviso',
+          `Lettura del rotolo instabile: ${reads.length - okReads.length} letture su ${reads.length} fallite.`,
+        );
       const sizes = new Set(okReads.map((r) => formatSize(r.detected.media))).size;
       if (sizes > 1) problem('avviso', 'Letture del rotolo diverse tra loro.');
       if (!sameMediaSize(d.media, ctx.doc.media)) {
-        problem('avviso', `Il formato scelto (${formatSize(ctx.doc.media)}) è diverso dal rotolo (${formatSize(d.media)}).`);
+        problem(
+          'avviso',
+          `Il formato scelto (${formatSize(ctx.doc.media)}) è diverso dal rotolo (${formatSize(d.media)}).`,
+        );
       }
     }
     add({ id: 'media', title: `Rotolo (ESC U) × ${repeats}`, state, message, details });
@@ -289,18 +371,32 @@ export async function runPrinterCheck(
     const g = documentGeometry(ctx.doc, ctx.head);
     const details: DetailRow[] = [
       { label: 'Formato scelto', value: `${ctx.doc.media.name} (${ctx.doc.media.id}), ${formatSize(ctx.doc.media)}` },
-      { label: 'Verso del contenuto', value: ctx.doc.direction === 'along' ? 'lungo il rotolo' : 'attraverso il rotolo' },
+      {
+        label: 'Verso del contenuto',
+        value: ctx.doc.direction === 'along' ? 'lungo il rotolo' : 'attraverso il rotolo',
+      },
       ...geometryRows('Scelto', g),
-      { label: 'Testina', value: `${ctx.head.headDots} punti a ${ctx.head.dpi} dpi, zona iniziale ${ctx.head.leadingDots}, finale ${ctx.head.trailingDots}` },
+      {
+        label: 'Testina',
+        value: `${ctx.head.headDots} punti a ${ctx.head.dpi} dpi, zona iniziale ${ctx.head.leadingDots}, finale ${ctx.head.trailingDots}`,
+      },
     ];
     let state: CheckStepState = 'ok';
     if (media?.ok) {
       const dm = media.detected.media;
       details.push({ label: 'Formato del rotolo', value: `${dm.name}, ${formatSize(dm)}` });
-      details.push(...geometryRows('Rotolo', computeGeometry(dm, ctx.doc.direction, ctx.doc.continuousLengthMm, ctx.head)));
+      details.push(
+        ...geometryRows('Rotolo', computeGeometry(dm, ctx.doc.direction, ctx.doc.continuousLengthMm, ctx.head)),
+      );
       if (!sameMediaSize(dm, ctx.doc.media)) state = 'warn';
     }
-    add({ id: 'geometry', title: 'Formato e geometria', state, message: `${formatSize(ctx.doc.media)}, ${g.crossDots}×${g.feedDots} punti`, details });
+    add({
+      id: 'geometry',
+      title: 'Formato e geometria',
+      state,
+      message: `${formatSize(ctx.doc.media)}, ${g.crossDots}×${g.feedDots} punti`,
+      details,
+    });
   }
 
   // 7. Controllo del lavoro, senza inviarlo
@@ -310,8 +406,16 @@ export async function runPrinterCheck(
       const prepared = await ctx.prepare(ctx.doc);
       const job = buildJob(ctx.doc, prepared, { copies: 1, density: ctx.settings.density });
       const result = checkJob(job, prepared.geometry, ctx.head, ctx.doc);
-      if (ctx.overflow) result.rows.push({ state: 'warn', message: 'Un testo non entra nel suo riquadro ed è stampato alla dimensione minima.' });
-      const worst = result.rows.some((r) => r.state === 'fail') ? 'fail' : result.rows.some((r) => r.state === 'warn') ? 'warn' : 'ok';
+      if (ctx.overflow)
+        result.rows.push({
+          state: 'warn',
+          message: 'Un testo non entra nel suo riquadro ed è stampato alla dimensione minima.',
+        });
+      const worst = result.rows.some((r) => r.state === 'fail')
+        ? 'fail'
+        : result.rows.some((r) => r.state === 'warn')
+          ? 'warn'
+          : 'ok';
       const empty = ctx.doc.elements.length === 0;
       for (const r of result.rows) {
         // Un'etichetta ancora vuota non è un problema della stampante.
@@ -325,11 +429,20 @@ export async function runPrinterCheck(
         state: worst,
         message: `${result.stats.widthDots}×${result.stats.lines} punti, ${result.stats.blackDots} neri${result.stats.encodedBytes ? `, ${result.stats.encodedBytes} byte per copia` : ''}`,
         ms: Math.round(performance.now() - start),
-        details: result.rows.map((r) => ({ label: r.state === 'ok' ? '✓' : r.state === 'warn' ? '!' : '✗', value: r.message })),
+        details: result.rows.map((r) => ({
+          label: r.state === 'ok' ? '✓' : r.state === 'warn' ? '!' : '✗',
+          value: r.message,
+        })),
       });
     } catch (err) {
       problem('grave', `Preparazione del lavoro di stampa non riuscita: ${describeError(err)}`);
-      add({ id: 'job', title: 'Lavoro di stampa (non inviato)', state: 'fail', message: 'Preparazione non riuscita.', details: [{ label: 'Errore', value: describeError(err) }] });
+      add({
+        id: 'job',
+        title: 'Lavoro di stampa (non inviato)',
+        state: 'fail',
+        message: 'Preparazione non riuscita.',
+        details: [{ label: 'Errore', value: describeError(err) }],
+      });
     }
   } else {
     add({ id: 'job', title: 'Lavoro di stampa (non inviato)', state: 'skip', message: 'Non eseguito.', details: [] });
@@ -344,7 +457,14 @@ export async function runPrinterCheck(
     details: [
       { label: 'Elementi sull’etichetta', value: String(ctx.doc.elements.length) },
       { label: 'Lunghezza continua', value: `${ctx.doc.continuousLengthMm} mm` },
-      ...(ctx.info ? [{ label: 'Modello (libreria)', value: `${ctx.info.model} (${ctx.info.key})${ctx.info.verified ? '' : ', non verificato'}` }] : []),
+      ...(ctx.info
+        ? [
+            {
+              label: 'Modello (libreria)',
+              value: `${ctx.info.model} (${ctx.info.key})${ctx.info.verified ? '' : ', non verificato'}`,
+            },
+          ]
+        : []),
     ],
   });
 

@@ -27,14 +27,44 @@ export const EU_CODES: readonly EuCodes[] = [
   { mediaId: 'return-address', widthMm: 19, lengthMm: 51, shown: ['S0722550', '11355'], more: ['2234186', '2234184'] },
   { mediaId: 'barcode-dymo-file', widthMm: 19, lengthMm: 64, shown: [], more: ['2112284'] },
   { mediaId: 'multi-purpose-square', widthMm: 25, lengthMm: 25, shown: ['S0929120'], more: ['2112286'] },
-  { mediaId: 'multi-purpose-small', widthMm: 25, lengthMm: 54, shown: ['S0722520', '11352'], more: ['2177564', '2223589', '2112283'] },
+  {
+    mediaId: 'multi-purpose-small',
+    widthMm: 25,
+    lengthMm: 54,
+    shown: ['S0722520', '11352'],
+    more: ['2177564', '2223589', '2112283'],
+  },
   { mediaId: 'shelving', widthMm: 25, lengthMm: 89, shown: [], more: ['2112285'] },
-  { mediaId: 'address-standard', widthMm: 28, lengthMm: 89, shown: ['S0722370', '99010'], more: ['2093091', '13188', '1983173'] },
-  { mediaId: 'multi-purpose-medium-removable', widthMm: 32, lengthMm: 57, shown: ['S0722540', '11354'], more: ['2093094', '2093095', '2223590'] },
+  {
+    mediaId: 'address-standard',
+    widthMm: 28,
+    lengthMm: 89,
+    shown: ['S0722370', '99010'],
+    more: ['2093091', '13188', '1983173'],
+  },
+  {
+    mediaId: 'multi-purpose-medium-removable',
+    widthMm: 32,
+    lengthMm: 57,
+    shown: ['S0722540', '11354'],
+    more: ['2093094', '2093095', '2223590'],
+  },
   { mediaId: 'multi-purpose-medium', widthMm: 32, lengthMm: 57, shown: [], more: ['2112289'] },
-  { mediaId: 'address-large', widthMm: 36, lengthMm: 89, shown: ['S0722400', '99012', 'S0722410', '99013'], more: ['2093093', '13187', '1983172'] },
+  {
+    mediaId: 'address-large',
+    widthMm: 36,
+    lengthMm: 89,
+    shown: ['S0722400', '99012', 'S0722410', '99013'],
+    more: ['2093093', '13187', '1983172'],
+  },
   { mediaId: 'appointment-card', widthMm: 51, lengthMm: 89, shown: ['S0929100'], more: [] },
-  { mediaId: 'multi-purpose-large', widthMm: 54, lengthMm: 70, shown: ['S0722440', '99015'], more: ['2234188', '2234185'] },
+  {
+    mediaId: 'multi-purpose-large',
+    widthMm: 54,
+    lengthMm: 70,
+    shown: ['S0722440', '99015'],
+    more: ['2234188', '2234185'],
+  },
   {
     mediaId: 'shipping-standard',
     widthMm: 54,
@@ -48,7 +78,13 @@ export const EU_CODES: readonly EuCodes[] = [
   // Formati nuovi (non presenti nel catalogo della libreria).
   { mediaId: 'eu-suspension-file', widthMm: 12, lengthMm: 50, shown: ['S0722460', '99017'], more: [] },
   { mediaId: 'eu-lever-arch-narrow', widthMm: 38, lengthMm: 190, shown: ['S0722470', '99018'], more: [] },
-  { mediaId: 'eu-name-badge-small', widthMm: 41, lengthMm: 89, shown: ['S0722560', '11356'], more: ['2234187', '2234183'] },
+  {
+    mediaId: 'eu-name-badge-small',
+    widthMm: 41,
+    lengthMm: 89,
+    shown: ['S0722560', '11356'],
+    more: ['2234187', '2234183'],
+  },
 ];
 
 /**

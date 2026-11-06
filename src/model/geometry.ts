@@ -75,8 +75,7 @@ export function computeGeometry(
     // Nessuna rotazione: la prima riga stampata è in alto.
     const deadZones: Rect[] = [];
     if (leading > 0) deadZones.push({ x: 0, y: 0, width: crossDots, height: leading });
-    if (trailing > 0)
-      deadZones.push({ x: 0, y: feedDots - trailing, width: crossDots, height: trailing });
+    if (trailing > 0) deadZones.push({ x: 0, y: feedDots - trailing, width: crossDots, height: trailing });
     return {
       label: { width: crossDots, height: feedDots },
       printable: { x: 0, y: leading, width: crossDots, height: printableFeed },
@@ -98,8 +97,7 @@ export function computeGeometry(
   // diventa la prima riga stampata, quindi la zona iniziale è a sinistra.
   const deadZones: Rect[] = [];
   if (leading > 0) deadZones.push({ x: 0, y: 0, width: leading, height: crossDots });
-  if (trailing > 0)
-    deadZones.push({ x: feedDots - trailing, y: 0, width: trailing, height: crossDots });
+  if (trailing > 0) deadZones.push({ x: feedDots - trailing, y: 0, width: trailing, height: crossDots });
   return {
     label: { width: feedDots, height: crossDots },
     printable: { x: leading, y: 0, width: printableFeed, height: crossDots },

@@ -10,7 +10,9 @@ const fullText = () => diagnostics.fullText();
 
 <template>
   <section class="all" aria-label="Condividi tutta la diagnostica">
-    <small>Tutti i risultati, ultime stampe e registro ({{ diagLog.entries.length }} eventi), senza dati personali.</small>
+    <small
+      >Tutti i risultati, ultime stampe e registro ({{ diagLog.entries.length }} eventi), senza dati personali.</small
+    >
     <ShareActions :title="diagnostics.shareTitle()" :text="fullText" copy-label="Copia tutto" testid="diag-all" />
   </section>
 </template>

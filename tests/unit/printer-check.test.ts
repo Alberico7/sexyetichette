@@ -35,7 +35,16 @@ async function probeOf(config: ConstructorParameters<typeof SimulatedPrinterPort
 describe('prova LabelWriter 550', () => {
   it('tutto a posto: nessun problema e tutti i passaggi', async () => {
     const report = await runPrinterCheck(await probeOf({ rollSku: '30252' }), context());
-    expect(report.steps.map((s) => s.id)).toEqual(['app', 'device', 'version', 'status', 'media', 'geometry', 'job', 'settings']);
+    expect(report.steps.map((s) => s.id)).toEqual([
+      'app',
+      'device',
+      'version',
+      'status',
+      'media',
+      'geometry',
+      'job',
+      'settings',
+    ]);
     expect(report.problems).toEqual([]);
     expect(report.summary).toMatch(/Nessun problema/);
     expect(report.steps.find((s) => s.id === 'job')?.state).toBe('ok');
@@ -58,7 +67,9 @@ describe('prova LabelWriter 550', () => {
   it('formato scelto diverso dal rotolo: avviso', async () => {
     const doc = createDocument(findMediaById('multi-purpose-small')!);
     const report = await runPrinterCheck(await probeOf({ rollSku: '30252' }), context({ doc, prepare: fakePrepare }));
-    expect(report.problems.some((p) => /formato scelto \(25×54 mm\) è diverso dal rotolo \(28×89 mm\)/.test(p.message))).toBe(true);
+    expect(
+      report.problems.some((p) => /formato scelto \(25×54 mm\) è diverso dal rotolo \(28×89 mm\)/.test(p.message)),
+    ).toBe(true);
   });
 
   it('coperchio aperto: problema grave dallo stato', async () => {
@@ -76,7 +87,12 @@ describe('controllo del lavoro di stampa', () => {
   it('lavoro corretto: tutte le righe ok, 84 byte per riga', async () => {
     const doc = addressDoc();
     const prepared = await fakePrepare(doc);
-    const result = checkJob(buildJob(doc, prepared, { copies: 1, density: 'normal' }), prepared.geometry, LW550_HEAD, doc);
+    const result = checkJob(
+      buildJob(doc, prepared, { copies: 1, density: 'normal' }),
+      prepared.geometry,
+      LW550_HEAD,
+      doc,
+    );
     expect(result.rows.filter((r) => r.state !== 'ok')).toEqual([]);
     expect(result.stats.bytesPerLine).toBe(84);
     expect(result.stats.lines).toBe(prepared.geometry.printable.width);
@@ -90,7 +106,10 @@ describe('controllo del lavoro di stampa', () => {
     job.image.data[0] = 128;
     job.labelLengthDots += 5;
     const result = checkJob(job, prepared.geometry, LW550_HEAD, doc);
-    const text = result.rows.filter((r) => r.state !== 'ok').map((r) => r.message).join('\n');
+    const text = result.rows
+      .filter((r) => r.state !== 'ok')
+      .map((r) => r.message)
+      .join('\n');
     expect(text).toMatch(/Lunghezza etichetta/);
     expect(text).toMatch(/pixel grigi/);
     expect(text).toMatch(/escono dall’etichetta/);
@@ -108,7 +127,11 @@ describe('testo completo e condivisione', () => {
       when: new Date(2026, 10, 3, 17, 5),
       app: APP,
       printer: report,
-      testPrint: { printedAt: new Date(2026, 10, 3, 17, 6), border: 'manca a sinistra', missingTicks: { left: '6', right: '', top: '', bottom: '' } },
+      testPrint: {
+        printedAt: new Date(2026, 10, 3, 17, 6),
+        border: 'manca a sinistra',
+        missingTicks: { left: '6', right: '', top: '', bottom: '' },
+      },
       log,
     });
     expect(text.startsWith('Etichettatrice – diagnostica 2026-11-03 17:05')).toBe(true);

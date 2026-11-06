@@ -13,7 +13,9 @@ import { ISO_FONT_FACE } from '@/model/fonts';
  */
 function registerIsoFont(): void {
   if (typeof document === 'undefined' || typeof FontFace === 'undefined' || !('fonts' in document)) return;
-  document.fonts.add(new FontFace(ISO_FONT_FACE, `url(${JSON.stringify(isoFontUrl)}) format('woff')`, { display: 'swap' }));
+  document.fonts.add(
+    new FontFace(ISO_FONT_FACE, `url(${JSON.stringify(isoFontUrl)}) format('woff')`, { display: 'swap' }),
+  );
 }
 registerIsoFont();
 

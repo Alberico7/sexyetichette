@@ -41,7 +41,9 @@ const themeLabel = computed(
       <span class="dot" :class="indicator.tone" aria-hidden="true" />
       <div class="texts">
         <strong>{{ indicator.text }}</strong>
-        <small v-if="model">{{ model }}<template v-if="printer.info && !printer.info.verified"> · non verificata</template></small>
+        <small v-if="model"
+          >{{ model }}<template v-if="printer.info && !printer.info.verified"> · non verificata</template></small
+        >
       </div>
     </div>
     <button

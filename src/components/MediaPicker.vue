@@ -19,9 +19,7 @@ const query = ref('');
 const filtered = computed(() => {
   const q = query.value.trim().toLowerCase();
   if (!q) return CATALOG;
-  return CATALOG.filter(
-    (m) => m.name.toLowerCase().includes(q) || allSkus(m).some((s) => s.toLowerCase().includes(q)),
-  );
+  return CATALOG.filter((m) => m.name.toLowerCase().includes(q) || allSkus(m).some((s) => s.toLowerCase().includes(q)));
 });
 
 const customWidth = ref(57);
@@ -38,9 +36,7 @@ function chooseCustom(): void {
   choose(customMedia(w, l));
 }
 
-const mismatch = computed(
-  () => printer.detected && !sameMediaSize(printer.detected.media, store.doc.media),
-);
+const mismatch = computed(() => printer.detected && !sameMediaSize(printer.detected.media, store.doc.media));
 
 function setDirection(d: ContentDirection): void {
   store.setDirection(d);
@@ -72,7 +68,9 @@ async function reread(): Promise<void> {
       </button>
     </template>
     <template v-else-if="printer.state === 'connected' && failure">
-      <p class="warn" data-testid="media-read-failed">Non è stato possibile leggere il rotolo: scegli il formato dall'elenco.</p>
+      <p class="warn" data-testid="media-read-failed">
+        Non è stato possibile leggere il rotolo: scegli il formato dall'elenco.
+      </p>
       <p class="cause" data-testid="media-read-cause">{{ failure.message }}</p>
       <details>
         <summary>Dettagli</summary>
@@ -89,16 +87,25 @@ async function reread(): Promise<void> {
           </template>
         </dl>
       </details>
-      <ShareActions title="Etichettatrice – lettura del rotolo" :text="failureText" copy-label="Copia dettagli" testid="media-read" />
+      <ShareActions
+        title="Etichettatrice – lettura del rotolo"
+        :text="failureText"
+        copy-label="Copia dettagli"
+        testid="media-read"
+      />
     </template>
     <template v-else-if="printer.state === 'disconnected'">
-      <p class="muted">Collega la stampante per rilevare il rotolo automaticamente, oppure scegli il formato qui sotto.</p>
+      <p class="muted">
+        Collega la stampante per rilevare il rotolo automaticamente, oppure scegli il formato qui sotto.
+      </p>
     </template>
     <div v-if="printer.state === 'connected'" class="row">
       <button type="button" class="grow" data-testid="media-reread" :disabled="rereading" @click="reread">
         {{ rereading ? 'Lettura…' : 'Rileggi il rotolo' }}
       </button>
-      <button type="button" class="grow" data-testid="media-diagnostics" @click="emit('diagnostics')">Diagnostica</button>
+      <button type="button" class="grow" data-testid="media-diagnostics" @click="emit('diagnostics')">
+        Diagnostica
+      </button>
     </div>
   </div>
 

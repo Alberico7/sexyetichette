@@ -19,12 +19,17 @@ function docWith(el: Partial<TextElement>) {
 }
 
 function bounds(b: LabelBitmap) {
-  let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -1,
+    maxY = -1;
   for (let y = 0; y < b.heightPx; y++)
     for (let x = 0; x < b.widthPx; x++)
       if (getPixel(b, x, y)) {
-        minX = Math.min(minX, x); maxX = Math.max(maxX, x);
-        minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
       }
   return { minX, minY, w: maxX - minX + 1, h: maxY - minY + 1 };
 }

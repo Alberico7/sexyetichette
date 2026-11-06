@@ -133,13 +133,7 @@ function rotate90(): void {
     </button>
   </div>
 
-  <button
-    type="button"
-    class="toggle"
-    data-testid="auto-fit"
-    :aria-pressed="!!element.autoFit"
-    @click="toggleAutoFit"
-  >
+  <button type="button" class="toggle" data-testid="auto-fit" :aria-pressed="!!element.autoFit" @click="toggleAutoFit">
     <span class="check" aria-hidden="true">{{ element.autoFit ? '✓' : '' }}</span>
     Adatta automaticamente
     <small>riempie il riquadro, a capo solo con Invio</small>
@@ -151,72 +145,79 @@ function rotate90(): void {
   <details class="more" data-testid="more-options">
     <summary>Altre opzioni</summary>
     <div class="more-body">
-  <div class="row">
-    <label class="field grow">
-      Carattere
-      <select :value="element.fontFamily" @change="update({ fontFamily: ($event.target as HTMLSelectElement).value })">
-        <option v-for="f in FONTS" :key="f.value" :value="f.value">{{ f.label }}</option>
-      </select>
-    </label>
-    <label class="field size">
-      {{ element.autoFit ? 'Dimensione (auto)' : 'Dimensione (pt)' }}
-      <input
-        :value="size"
-        type="number"
-        inputmode="decimal"
-        :min="MIN_PT"
-        :max="MAX_PT"
-        step="1"
-        data-testid="font-size"
-        @input="onSizeInput"
-        @blur="onSizeBlur"
-      />
-    </label>
-  </div>
+      <div class="row">
+        <label class="field grow">
+          Carattere
+          <select
+            :value="element.fontFamily"
+            @change="update({ fontFamily: ($event.target as HTMLSelectElement).value })"
+          >
+            <option v-for="f in FONTS" :key="f.value" :value="f.value">{{ f.label }}</option>
+          </select>
+        </label>
+        <label class="field size">
+          {{ element.autoFit ? 'Dimensione (auto)' : 'Dimensione (pt)' }}
+          <input
+            :value="size"
+            type="number"
+            inputmode="decimal"
+            :min="MIN_PT"
+            :max="MAX_PT"
+            step="1"
+            data-testid="font-size"
+            @input="onSizeInput"
+            @blur="onSizeBlur"
+          />
+        </label>
+      </div>
 
-  <div class="row">
-    <div class="segmented grow" role="group" aria-label="Stile">
-      <button type="button" :aria-pressed="element.bold" @click="update({ bold: !element.bold })"><b>G</b> Grassetto</button>
-      <button type="button" :aria-pressed="element.italic" @click="update({ italic: !element.italic })"><i>C</i> Corsivo</button>
-    </div>
-  </div>
+      <div class="row">
+        <div class="segmented grow" role="group" aria-label="Stile">
+          <button type="button" :aria-pressed="element.bold" @click="update({ bold: !element.bold })">
+            <b>G</b> Grassetto
+          </button>
+          <button type="button" :aria-pressed="element.italic" @click="update({ italic: !element.italic })">
+            <i>C</i> Corsivo
+          </button>
+        </div>
+      </div>
 
-  <div class="field">
-    Allineamento orizzontale
-    <div class="segmented" role="group" aria-label="Allineamento orizzontale">
-      <button
-        v-for="a in aligns"
-        :key="a.value"
-        type="button"
-        :aria-pressed="element.align === a.value"
-        @click="update({ align: a.value })"
-      >
-        {{ a.label }}
-      </button>
-    </div>
-  </div>
+      <div class="field">
+        Allineamento orizzontale
+        <div class="segmented" role="group" aria-label="Allineamento orizzontale">
+          <button
+            v-for="a in aligns"
+            :key="a.value"
+            type="button"
+            :aria-pressed="element.align === a.value"
+            @click="update({ align: a.value })"
+          >
+            {{ a.label }}
+          </button>
+        </div>
+      </div>
 
-  <div class="field">
-    Allineamento verticale
-    <div class="segmented" role="group" aria-label="Allineamento verticale">
-      <button
-        v-for="a in vAligns"
-        :key="a.value"
-        type="button"
-        :aria-pressed="element.verticalAlign === a.value"
-        @click="update({ verticalAlign: a.value })"
-      >
-        {{ a.label }}
-      </button>
-    </div>
-  </div>
+      <div class="field">
+        Allineamento verticale
+        <div class="segmented" role="group" aria-label="Allineamento verticale">
+          <button
+            v-for="a in vAligns"
+            :key="a.value"
+            type="button"
+            :aria-pressed="element.verticalAlign === a.value"
+            @click="update({ verticalAlign: a.value })"
+          >
+            {{ a.label }}
+          </button>
+        </div>
+      </div>
 
-  <div class="row">
-    <button type="button" class="grow" :aria-pressed="element.invert" @click="update({ invert: !element.invert })">
-      {{ element.invert ? 'Bianco su nero ✓' : 'Bianco su nero' }}
-    </button>
-    <button type="button" class="grow" @click="rotate90">Ruota 90°</button>
-  </div>
+      <div class="row">
+        <button type="button" class="grow" :aria-pressed="element.invert" @click="update({ invert: !element.invert })">
+          {{ element.invert ? 'Bianco su nero ✓' : 'Bianco su nero' }}
+        </button>
+        <button type="button" class="grow" @click="rotate90">Ruota 90°</button>
+      </div>
     </div>
   </details>
 </template>
@@ -274,7 +275,6 @@ function rotate90(): void {
   width: 130px;
   flex: none;
 }
-
 
 .toggle {
   display: grid;
