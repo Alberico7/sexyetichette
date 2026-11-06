@@ -156,7 +156,11 @@ Annota per ogni punto ✅ / ❌ e, se qualcosa non va, una foto dell'etichetta.
 6. **Allineamento lungo il rotolo.** Aggiungi un testo vicino al bordo sinistro dell'area tratteggiata e uno vicino al bordo destro. Sono entrambi stampati interi? Il bordo sinistro è il primo che esce dalla stampante?
 7. **Allineamento attraverso il rotolo.** Con un'etichetta stretta (es. 28×89), metti un rettangolo «bianco su nero» in alto e uno in basso. Sono stampati sull'etichetta e non fuori? Il testo è dritto o capovolto?
 8. **Verso «Attraverso il rotolo».** Ripeti la prova 5 con questo verso.
-9. **Copie.** Stampa 3 copie: escono 3 etichette e la stampante si ferma correttamente?
+9. **Copie.** Il 2026-11-06, con 7 copie, la 550 ha stampato 1 etichetta e poi è andata in errore. Causa probabile: la libreria aspetta la risposta di stato fra un'etichetta e l'altra prima di spedire la successiva, mentre il driver ufficiale DYMO la legge dopo. Ora le copie usano l'ordine DYMO ([docs/2026-11-06-copie-multiple-550.md](docs/2026-11-06-copie-multiple-550.md)). **Da rifare:**
+   - 2 e poi 5 copie: escono tutte, nessun lampeggio, il contatore del rotolo scende di 2 e poi di 5;
+   - 10 copie con «Ferma» dopo 2 o 3.
+
+   Se fallisce: incollare il testo di «Copia tutto», poi passare a `MULTI_COPY_MODE = 'one-by-one'` in `src/printer/copies.ts`.
 10. **Densità.** Confronta Chiara e Scura.
 11. **Errori.** Apri il coperchio: compare «Coperchio aperto»? Togli il rotolo: compare «Rotolo assente»? Stacca il cavo: compare «Stampante scollegata»?
 12. ✅ 2026-11-04 – **Ricollegamento.** Ricarica la pagina con la stampante collegata: torna «Pronta» senza toccare *Collega*?
