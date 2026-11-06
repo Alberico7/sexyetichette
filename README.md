@@ -40,6 +40,8 @@ Con **`?sim`** in fondo all'indirizzo (`http://localhost:5173/?sim`) l'app usa u
 | `npm test` | Test unitari (Node) e test di rendering (Chromium reale) |
 | `npm run test:e2e` | Test dell'interfaccia a 412×915 (Pixel 7a), con la stampante simulata |
 | `npm run test:perf` | Prestazioni sulla build di produzione con CPU rallentata 4×: digitazione e apertura dell'anteprima |
+| `npm run lint` | ESLint su `src` e `tests` |
+| `npm run format` / `format:check` | Prettier: formatta / controlla |
 | `npm run build` | Controllo dei tipi, build in `dist/` e controllo dell'assenza della simulazione |
 | `npm run preview` | Serve la build in locale |
 
@@ -61,7 +63,7 @@ Tutto il codice che usa la libreria della stampante è in `src/printer/webusb.ts
 
 1. Crea un repository su GitHub e carica il progetto sul ramo `main`.
 2. Nel repository apri **Settings → Pages** e alla voce **Source** scegli **GitHub Actions**.
-3. A ogni push su `main`, il workflow [.github/workflows/pages.yml](.github/workflows/pages.yml) esegue i test, fa la build e pubblica `dist/`.
+3. A ogni push su `main`, il workflow [.github/workflows/pages.yml](.github/workflows/pages.yml) esegue lint, controllo della formattazione, test vitest e test e2e Playwright: se uno fallisce non pubblica. Poi fa la build e pubblica `dist/`. Il test di prestazioni gira anche lì ma è solo informativo, perché i tempi dei server di GitHub non sono confrontabili con quelli di un telefono; le sue soglie si verificano in locale con `npm run test:perf`.
 4. L'app sarà disponibile su `https://<utente>.github.io/<repository>/`. È in HTTPS, quindi WebUSB funziona. I percorsi sono relativi, quindi non serve configurare il nome del repository.
 
 Va bene anche qualunque altro hosting statico in HTTPS: basta caricare il contenuto di `dist/`.
