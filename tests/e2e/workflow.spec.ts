@@ -1,35 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
-
-let pageProblems: string[] = [];
-test.beforeEach(({ page }) => {
-  pageProblems = [];
-  page.on('pageerror', (e) => pageProblems.push(`pageerror: ${e.message}`));
-  page.on('console', (m) => {
-    if (m.type() === 'error' || (m.type() === 'warning' && m.text().includes('[Vue warn]'))) {
-      pageProblems.push(`${m.type()}: ${m.text()}`);
-    }
-  });
-});
-test.afterEach(() => {
-  expect(pageProblems, 'errori nella console della pagina').toEqual([]);
-});
-
-async function noHorizontalScroll(page: Page): Promise<void> {
-  const { scroll, client } = await page.evaluate(() => ({
-    scroll: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth),
-    client: document.documentElement.clientWidth,
-  }));
-  expect(scroll).toBeLessThanOrEqual(client);
-}
-
-async function connect(page: Page): Promise<void> {
-  await page.goto('/?sim');
-  await page.getByRole('button', { name: 'Collega', exact: true }).tap();
-  await expect(page.getByRole('status').first()).toContainText('Pronta');
-}
+import { test, expect, noHorizontalScroll, connectSimulated } from './helpers';
 
 test('operazione tipica: «+ Testo», scrivi, «Stampa» = 2 tocchi, senza anteprima', async ({ page }) => {
-  await connect(page);
+  await connectSimulated(page);
   let taps = 0;
   const tap = async (testId: string) => {
     taps++;
@@ -87,7 +59,7 @@ test('barra contestuale e secondo tocco per modificare', async ({ page }) => {
 });
 
 test('stampante reinserita: si ricollega da sola', async ({ page }) => {
-  await connect(page);
+  await connectSimulated(page);
   const panel = page.getByTestId('dev-panel');
   await panel.locator('summary').tap();
   await panel.getByRole('button', { name: 'Scollega il cavo' }).tap();
@@ -98,7 +70,7 @@ test('stampante reinserita: si ricollega da sola', async ({ page }) => {
 });
 
 test('densità e formato ricordati; copie che tornano a 1 dopo la stampa', async ({ page }) => {
-  await connect(page);
+  await connectSimulated(page);
   await page.getByTestId('media-chip').tap();
   await page.getByRole('option', { name: /Multiuso piccola/ }).tap();
   await page.getByRole('button', { name: 'Chiudi', exact: true }).tap();
