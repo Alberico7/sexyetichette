@@ -104,6 +104,9 @@ export function verticalShiftEm(el: Pick<TextElement, 'fontFamily' | 'bold' | 'i
   return shift;
 }
 
+/** Distanza del centro della sottolineatura dalla riga di base, in em. Vedi docs/2026-11-06-sottolineato.md. */
+export const UNDERLINE_OFFSET_EM = 0.12;
+
 function buildText(group: Group, el: TextElement, w: number, h: number): void {
   // Primo uso di ⌀ con questo carattere: prepara il mini-font (l'editor si ridisegna quando è pronto).
   if (el.text.includes(DIAMETER_SIGN)) void ensureDiameterFont(el.fontFamily);
@@ -126,6 +129,9 @@ function buildText(group: Group, el: TextElement, w: number, h: number): void {
       fontFamily: fontStack(el.fontFamily),
       fontSize,
       fontStyle: fontStyle(el),
+      textDecoration: el.underline ? 'underline' : '',
+      // Centro della linea sotto la riga di base, come nei browser (Konva userebbe 0,25 em: staccata dal testo).
+      underlineOffset: Math.round(fontSize * UNDERLINE_OFFSET_EM),
       align: el.align,
       verticalAlign: el.verticalAlign,
       // Con l'adattamento automatico si va a capo solo dove l'utente ha premuto Invio.
