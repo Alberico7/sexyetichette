@@ -5,6 +5,9 @@ import { expect, test } from '@playwright/test';
  * (margine rispetto a un telefono di fascia media). Obiettivi dal documento
  * docs/2026-11-02-interfaccia-piu-veloce.md.
  */
+/** Sui server di GitHub (PERF_CI=1) le soglie di tempo sono raddoppiate: macchine più lente e variabili. */
+const TIME_FACTOR = process.env.PERF_CI ? 2 : 1;
+
 test('digitazione fluida e anteprima immediata', async ({ page }) => {
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
@@ -43,7 +46,7 @@ test('digitazione fluida e anteprima immediata', async ({ page }) => {
   t = Date.now();
   await page.getByTestId('open-preview').tap();
   await page.waitForFunction(() => {
-    const c = document.querySelector('[data-testid=preview-canvas]') as HTMLCanvasElement | null;
+    const c = document.querySelector<HTMLCanvasElement>('[data-testid=preview-canvas]');
     return !!c && c.width === 638 && !document.body.textContent?.includes('Aggiornamento anteprima');
   });
   const openPreviewMs = Date.now() - t;
@@ -54,6 +57,6 @@ test('digitazione fluida e anteprima immediata', async ({ page }) => {
   expect(typing.filter((d) => d > 50).length, 'blocchi oltre 50 ms durante la digitazione').toBeLessThanOrEqual(2);
   expect(Math.max(0, ...typing), 'blocco più lungo durante la digitazione (ms)').toBeLessThanOrEqual(80);
   // Anteprima: meno di 150 ms oltre il costo del tocco, nessun blocco oltre 80 ms.
-  expect(openPreviewMs - tapBaselineMs, 'apertura anteprima oltre il tocco (ms)').toBeLessThan(150);
+  expect(openPreviewMs - tapBaselineMs, 'apertura anteprima oltre il tocco (ms)').toBeLessThan(150 * TIME_FACTOR);
   expect(Math.max(0, ...preview), 'blocco più lungo all’apertura dell’anteprima (ms)').toBeLessThanOrEqual(80);
 });

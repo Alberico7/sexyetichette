@@ -101,7 +101,7 @@ function describeError(err: unknown): string {
 }
 
 function errorName(err: unknown): string {
-  return typeof err === 'object' && err !== null && 'name' in err ? String((err as { name: unknown }).name) : '';
+  return typeof err === 'object' && err !== null && 'name' in err ? String(err.name) : '';
 }
 
 export function labelWriterName(vendorId: number, productId: number): string | undefined {

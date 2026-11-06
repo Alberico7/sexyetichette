@@ -1,7 +1,7 @@
 # Manutenibilità: test e2e in pubblicazione, lint e formattazione, aiuti comuni nei test
 
 - Data: 2026-11-06
-- Stato: **confermato (2026-11-06), in realizzazione**
+- Stato: **confermato e realizzato (2026-11-06)**
 
 Dal controllo di manutenibilità del 2026-11-06 si realizzano tre punti. Nessuno cambia il comportamento dell'app.
 
@@ -91,3 +91,26 @@ Dal controllo di manutenibilità del 2026-11-06 si realizzano tre punti. Nessuno
 ## Fuori da questo lavoro
 
 I punti 4 e 5 del controllo, cioè «Ultime stampe» registrato in un posto solo e le copie passate direttamente alla stampa, si fanno insieme alla correzione delle copie multiple. Il punto 6, su `App.vue`, si fa più avanti.
+
+## Note di implementazione (2026-11-06)
+
+- **Commit separati:**
+  1. aiuti comuni e2e;
+  2. strumenti e flusso di pubblicazione;
+  3. sola formattazione Prettier;
+  4. correzioni di ESLint.
+- **Aiuti e2e:** `tests/e2e/helpers.ts`. Il controllo degli errori in console è un fixture automatico. È stato verificato con un test di prova che scrive `console.error`: il test fallisce come deve.
+- **ESLint, configurazione oltre al piano:**
+  - `require-await` spento: le porte e i finti trasporti implementano interfacce async;
+  - `no-unsafe-*` spenti solo nei due test dei caratteri, perché opentype.js non ha tipi;
+  - `prefer-const` con `ignoreReadBeforeAssign`, per `chosen` in `usb-diagnostics.ts`, letto in una closure prima dell'assegnazione;
+  - `unbound-method` spento riga per riga in `usb-trace.ts` e nel suo test, con un commento.
+- **Errore trovato e corretto durante il lavoro:**
+  - la correzione automatica di ESLint aveva trasformato gli import delle forme in `src/render/konva.ts` in `import type`;
+  - quegli import registrano le forme in Konva, quindi 43 test sono falliti con «Konva.Rect is not a constructor»;
+  - ripristinati, con un commento e la regola spenta solo lì.
+- **ESLint non ha trovato promesse lasciate senza `await`** (`no-floating-promises`).
+- **Tipi:** `tsconfig.json` ora controlla anche `tests/e2e`, `tests/perf`, `vite.config.ts` e `playwright.config.ts`. Non è emerso nessun errore.
+- **Verifica della build:** dopo formattazione e correzioni, l'app costruita è identica alla precedente a parte l'identificatore del commit. Il confronto ignora i nomi dei file con hash, gli identificatori degli stili `data-v-…` e gli spazi all'inizio e alla fine dei testi nei modelli dei componenti, che il browser non mostra.
+- **`npm audit`:** 11 segnalazioni «moderate», tutte da `minimatch`, usato da ESLint. È un possibile rallentamento solo con schemi di file scritti apposta, e solo sul computer di sviluppo. Non entra nell'app.
+- **Ancora da verificare:** il primo giro del flusso su GitHub con i nuovi passi, in particolare il test di prestazioni con `PERF_CI=1`.

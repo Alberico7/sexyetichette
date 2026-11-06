@@ -30,7 +30,7 @@ const faults: { value: SimulatedFault; label: string }[] = [
 ];
 
 function set<K extends keyof SimulatedConfig>(key: K, value: SimulatedConfig[K]): void {
-  sim.value?.configure({ [key]: value } as Partial<SimulatedConfig>);
+  sim.value?.configure({ [key]: value });
   void printer.refreshStatus();
 }
 </script>

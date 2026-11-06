@@ -9,7 +9,6 @@ import {
   fakeClipboard,
   copied,
 } from './helpers';
-import type { Page } from '@playwright/test';
 
 test('«Stampa» dall’editor: stampa subito, senza anteprima, e finisce nei Recenti', async ({ page }) => {
   await connectSimulated(page, { waitForRoll: true });
