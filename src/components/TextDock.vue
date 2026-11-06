@@ -35,7 +35,7 @@ const emit = defineEmits<{ remove: []; done: []; print: []; copies: [] }>();
   background: var(--surface);
   border-top: 1px solid var(--border);
   border-radius: 16px 16px 0 0;
-  box-shadow: 0 -4px 16px rgb(0 0 0 / 0.12);
+  box-shadow: 0 -4px 16px rgb(0 0 0 / 0.1);
 }
 
 .dock-body {

@@ -39,10 +39,11 @@ const PADDING = 16;
 /** Colori dell'editor letti dal tema (l'etichetta resta sempre bianca). */
 function themeColors() {
   return {
-    selection: cssColor('--selection', '#1d4ed8'),
+    selection: cssColor('--selection', '#274e76'),
     outline: cssColor('--printable-outline', 'rgba(29,78,216,0.5)'),
     deadZone: cssColor('--dead-zone', 'rgba(200,60,60,0.12)'),
     shadow: cssColor('--paper-shadow', 'rgba(0,0,0,0.25)'),
+    paper: cssColor('--paper', '#ffffff'),
   };
 }
 
@@ -77,7 +78,8 @@ function drawBackground(): void {
       y: 0,
       width: label.width,
       height: label.height,
-      fill: '#fff',
+      // Bianca; nel tema scuro un po' attenuata (--paper). L'anteprima di stampa resta bianca.
+      fill: colors.paper,
       cornerRadius: radiusDots,
       // Bordo sottile invece di un'ombra sfocata: molto più leggero da ridisegnare.
       stroke: colors.shadow,
