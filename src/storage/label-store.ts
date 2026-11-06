@@ -64,7 +64,7 @@ function parseText(v: unknown): TextElement | null {
     verticalAlign: e.verticalAlign as TextElement['verticalAlign'],
     invert: e.invert as boolean,
   };
-  if (e.autoFit !== undefined) el.autoFit = e.autoFit as boolean;
+  if (e.autoFit !== undefined) el.autoFit = e.autoFit;
   return el;
 }
 

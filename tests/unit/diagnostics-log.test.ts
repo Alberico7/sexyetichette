@@ -40,6 +40,8 @@ describe('traffico USB', () => {
         return new Uint8Array(n).fill(0xab);
       },
     };
+    // Solo confronto di identità: il metodo non viene chiamato.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const originalWrite = transport.write;
     const log = new DiagnosticLog();
     const trace = traceTransport(transport, log, () => 0)!;
@@ -55,6 +57,7 @@ describe('traffico USB', () => {
     expect(text).not.toContain('5a 5a');
     expect(trace.readsByOpcode.get(0x41)?.bytes?.length).toBe(32);
     trace.detach();
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(transport.write).toBe(originalWrite);
   });
 

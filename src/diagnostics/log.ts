@@ -86,7 +86,7 @@ export function formatTime(t: number): string {
 export function describeError(err: unknown): string {
   if (typeof err === 'object' && err !== null && 'message' in err) {
     const name = 'name' in err ? String((err as { name: unknown }).name) : 'Error';
-    return `${name}: ${String((err as { message: unknown }).message)}`;
+    return `${name}: ${String(err.message)}`;
   }
   return String(err);
 }

@@ -28,7 +28,7 @@ describe('mini-font del diametro ISO', () => {
 
   it('il file incluso nel progetto corrisponde allo script', () => {
     const file = readFileSync('src/assets/fonts/diametro.otf');
-    const committed = parse(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength) as ArrayBuffer);
+    const committed = parse(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength));
     const fresh = parse(buildDiameterFont().toArrayBuffer());
     expect(committed.charToGlyph('\u2300').path.toPathData(2)).toBe(fresh.charToGlyph('\u2300').path.toPathData(2));
   });

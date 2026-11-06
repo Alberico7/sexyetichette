@@ -125,7 +125,7 @@ test('etichetta salvata con misura arrotondata: prende la misura vera del rotolo
     .toContain('Misura');
   // Come se fosse stata salvata con la misura arrotondata del catalogo.
   await page.evaluate(() => {
-    const doc = JSON.parse(localStorage.getItem('etichettatrice.etichetta')!);
+    const doc = JSON.parse(localStorage.getItem('etichettatrice.etichetta')!) as { media: { widthMm: number } };
     doc.media.widthMm = 27.6;
     localStorage.setItem('etichettatrice.etichetta', JSON.stringify(doc));
   });
@@ -133,7 +133,13 @@ test('etichetta salvata con misura arrotondata: prende la misura vera del rotolo
   await page.getByRole('button', { name: 'Collega', exact: true }).tap();
   await expect(page.getByRole('status').first()).toContainText('Pronta');
   await expect
-    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('etichettatrice.etichetta')!).media.widthMm))
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (JSON.parse(localStorage.getItem('etichettatrice.etichetta')!) as { media: { widthMm: number } }).media
+            .widthMm,
+      ),
+    )
     .toBe(28);
   // Il testo resta e nessun avviso di rotolo diverso.
   expect(await page.evaluate(() => localStorage.getItem('etichettatrice.etichetta'))).toContain('Misura');
