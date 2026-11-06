@@ -11,6 +11,7 @@ import { useDocumentStore } from '@/stores/document';
 import { usePreviewStore } from '@/stores/preview';
 import { usePrinterStore } from '@/stores/printer';
 
+const emit = defineEmits<{ 'go-test': [] }>();
 const printer = usePrinterStore();
 const store = useDocumentStore();
 const preview = usePreviewStore();
@@ -80,6 +81,9 @@ async function start(): Promise<void> {
       <li v-for="(p, i) in report.problems" :key="i" :class="p.severity">{{ p.message }}</li>
     </ul>
   </section>
+  <button v-if="report && !running" type="button" data-testid="check-go-test" @click="emit('go-test')">
+    Vai alla stampa di prova →
+  </button>
 
   <ol v-if="steps.length" class="steps" data-testid="check-steps">
     <li v-for="s in steps" :key="s.id" :class="s.state">

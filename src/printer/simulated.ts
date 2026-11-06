@@ -6,6 +6,7 @@
  * lock di stampa, controllo dello stato prima della stampa, messaggi d'errore
  * con lo stesso testo della libreria, dithering finale del driver.
  */
+import { printHistory, type PrintRecord } from '@/diagnostics/print-history';
 import { renderImage, type LabelBitmap } from '@mbtech-nl/bitmap';
 import { parseSkuInfo } from '@thermal-label/labelwriter-core';
 import { diagLog } from '@/diagnostics/log';
@@ -329,6 +330,7 @@ export class SimulatedPrinterPort implements PrinterPort {
 
   async print(job: PrintJob): Promise<void> {
     this.require();
+    const record: PrintRecord = { at: Date.now(), copies: job.copies, labelsSent: 0, density: job.density, media: job.media.id };
     try {
       // Stessi controlli del driver reale, con gli stessi messaggi.
       if (this.printing || this.config.fault === 'busy') {
@@ -352,13 +354,16 @@ export class SimulatedPrinterPort implements PrinterPort {
           e.name = 'TransportClosedError';
           throw e;
         }
+        record.labelsSent = i + 1;
       }
       const driverBitmap = renderImage(job.image, { dither: true, rotate: 0 });
       this.jobs.push({ job, driverBitmap, at: Date.now() });
     } catch (err) {
+      record.error = err instanceof Error ? err.message : String(err);
       throw err instanceof AppErrorException ? err : new AppErrorException(toAppError(err));
     } finally {
       this.printing = false;
+      printHistory.add(record);
     }
   }
 
