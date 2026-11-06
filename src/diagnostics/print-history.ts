@@ -19,6 +19,10 @@ export interface PrintRecord {
   media: string;
   remainingBefore?: number;
   remainingAfter?: number;
+  /** `single`, `job` (un lavoro con più etichette) o `one-by-one`. */
+  mode?: string;
+  /** Fermata con «Ferma» dopo questo numero di etichette. */
+  stoppedAfter?: number;
   error?: string;
 }
 
@@ -56,6 +60,8 @@ export class PrintHistory {
         parts.push(`rimaste sul rotolo ${r.remainingBefore ?? '?'} → ${r.remainingAfter ?? '?'}`);
       }
       parts.push(`densità ${r.density}`, `formato ${r.media}`);
+      if (r.mode) parts.push(`modo ${r.mode}`);
+      if (r.stoppedAfter !== undefined) parts.push(`FERMATA dopo ${r.stoppedAfter}`);
       if (r.error) parts.push(`ERRORE: ${r.error}`);
       lines.push(`  ${formatTime(r.at)} · ${parts.join(' · ')}`);
     }

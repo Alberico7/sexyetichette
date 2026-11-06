@@ -6,7 +6,7 @@
  * lock di stampa, controllo dello stato prima della stampa, messaggi d'errore
  * con lo stesso testo della libreria, dithering finale del driver.
  */
-import { printHistory, type PrintRecord } from '@/diagnostics/print-history';
+import { MULTI_COPY_MODE } from './copies';
 import { renderImage, type LabelBitmap } from '@mbtech-nl/bitmap';
 import { parseSkuInfo } from '@thermal-label/labelwriter-core';
 import { diagLog } from '@/diagnostics/log';
@@ -18,7 +18,9 @@ import { buildSkuBytes } from './sim-sku';
 import type {
   AppPrinterStatus,
   MediaReadResult,
+  PrintControl,
   PrintJob,
+  PrintOutcome,
   PrinterInfo,
   PrinterPort,
   PrinterProbe,
@@ -343,15 +345,11 @@ export class SimulatedPrinterPort implements PrinterPort {
     };
   }
 
-  async print(job: PrintJob): Promise<void> {
+  async print(job: PrintJob, control: PrintControl = {}): Promise<PrintOutcome> {
     this.require();
-    const record: PrintRecord = {
-      at: Date.now(),
-      copies: job.copies,
-      labelsSent: 0,
-      density: job.density,
-      media: job.media.id,
-    };
+    const total = job.copies;
+    let sent = 0;
+    let stopped = false;
     try {
       // Stessi controlli del driver reale, con gli stessi messaggi.
       if (this.printing || this.config.fault === 'busy') {
@@ -367,7 +365,12 @@ export class SimulatedPrinterPort implements PrinterPort {
       }
       validateJob(job);
       this.printing = true;
-      for (let i = 0; i < job.copies; i++) {
+      for (let i = 0; i < total; i++) {
+        // «Ferma»: come la stampante vera, niente altre etichette dopo quella in corso.
+        if (i > 0 && control.shouldStop?.()) {
+          stopped = true;
+          break;
+        }
         await sleep(this.config.delayMs);
         if (this.config.fault === 'disconnect-on-print') {
           this.unplug();
@@ -375,16 +378,18 @@ export class SimulatedPrinterPort implements PrinterPort {
           e.name = 'TransportClosedError';
           throw e;
         }
-        record.labelsSent = i + 1;
+        sent = i + 1;
+        control.onProgress?.(sent, total);
       }
       const driverBitmap = renderImage(job.image, { dither: true, rotate: 0 });
       this.jobs.push({ job, driverBitmap, at: Date.now() });
+      return { mode: total > 1 ? MULTI_COPY_MODE : 'single', total, sent, stopped };
     } catch (err) {
-      record.error = err instanceof Error ? err.message : String(err);
-      throw err instanceof AppErrorException ? err : new AppErrorException(toAppError(err));
+      const e = err instanceof AppErrorException ? err.appError : toAppError(err);
+      if (total > 1) e.partial = { sent, total };
+      throw new AppErrorException(e);
     } finally {
       this.printing = false;
-      printHistory.add(record);
     }
   }
 

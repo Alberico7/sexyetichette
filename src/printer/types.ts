@@ -143,6 +143,33 @@ export interface PrintJob {
   density: Density;
 }
 
+/** Conteggi letti dal traffico USB durante una stampa (solo stampante vera). */
+export interface UsbPrintCounts {
+  /** Etichette spedite (comandi ESC n). */
+  labelsSent: number;
+  /** Etichette rimaste sul rotolo prima e dopo, dalle risposte di stato. */
+  remainingBefore?: number;
+  remainingAfter?: number;
+}
+
+/** Com'è andata una stampa. Vedi docs/2026-11-06-copie-multiple-550.md. */
+export interface PrintOutcome {
+  /** `single`: 1 copia; `job`: un lavoro con più etichette; `one-by-one`: un lavoro per copia. */
+  mode: 'single' | 'job' | 'one-by-one';
+  total: number;
+  /** Etichette spedite alla stampante. */
+  sent: number;
+  /** Fermata con «Ferma» prima della fine. */
+  stopped: boolean;
+  usb?: UsbPrintCounts;
+}
+
+/** Controllo di una stampa in corso: «Ferma» e avanzamento. */
+export interface PrintControl {
+  shouldStop?: () => boolean;
+  onProgress?: (sent: number, total: number) => void;
+}
+
 /** Interfaccia minima tra l'app e la stampante. */
 export interface PrinterPort {
   readonly kind: 'webusb' | 'simulated';
@@ -159,7 +186,7 @@ export interface PrinterPort {
   readMedia(): Promise<MediaReadResult>;
   /** Comandi di sola lettura per la diagnostica; `null` se non collegata. */
   probe(): PrinterProbe | null;
-  print(job: PrintJob): Promise<void>;
+  print(job: PrintJob, control?: PrintControl): Promise<PrintOutcome>;
   recover(): Promise<void>;
   /** Chiamata quando la stampante viene scollegata fisicamente. */
   onDisconnect(cb: () => void): () => void;

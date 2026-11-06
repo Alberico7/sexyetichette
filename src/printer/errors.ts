@@ -1,3 +1,4 @@
+import type { UsbPrintCounts } from './types';
 /**
  * Traduzione in italiano degli errori del browser, della libreria e della stampante.
  *
@@ -36,6 +37,8 @@ export interface AppError {
   hint: string;
   /** Messaggio tecnico originale, per la sezione dettagli. */
   detail?: string;
+  /** Stampa da più copie interrotta a metà: quante etichette erano già partite. */
+  partial?: { sent: number; total: number; usb?: UsbPrintCounts };
   /** `true` se ha senso proporre "Ripristina stampante". */
   recoverable?: boolean;
   /** `true` per avvisi che non impediscono la stampa. */
