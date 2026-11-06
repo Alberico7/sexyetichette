@@ -302,3 +302,35 @@ test('carattere «Tecnico ISO 3098»: predefinito, scaricato all’avvio e usato
   const sans = await previewPixels();
   expect(sans).not.toBe(iso);
 });
+
+test('sottolineato: pulsante nello stile, anteprima diversa, nessuno scorrimento orizzontale', async ({ page }) => {
+  await connectSimulated(page);
+  await page.getByTestId('add-text').tap();
+  await page.keyboard.type('Sottolineato');
+  await page.getByTestId('more-options').locator('summary').tap();
+  const btn = page.getByTestId('underline');
+  await expect(btn).toHaveAttribute('aria-pressed', 'false');
+  await noHorizontalScroll(page);
+  const preview = async () => {
+    await page.getByTestId('text-done').tap();
+    await page.getByTestId('open-preview').tap();
+    await expect(page.getByText('Aggiornamento anteprima')).toHaveCount(0);
+    const data = await page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.toDataURL());
+    await page.getByRole('button', { name: 'Chiudi', exact: true }).tap();
+    return data;
+  };
+  const plain = await preview();
+  const box = (await page.getByTestId('editor').boundingBox())!;
+  // Il testo è ancora selezionato: un tocco riapre il pannello.
+  await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(page.getByTestId('text-panel')).toBeVisible();
+  await page.getByTestId('more-options').locator('summary').tap();
+  await page.getByTestId('underline').tap();
+  await expect(page.getByTestId('underline')).toHaveAttribute('aria-pressed', 'true');
+  await page.screenshot({ path: 'test-results/24-sottolineato-pannello.png' });
+  const underlined = await preview();
+  expect(underlined).not.toBe(plain);
+  await page.getByTestId('open-preview').tap();
+  await expect(page.getByText('Aggiornamento anteprima')).toHaveCount(0);
+  await page.screenshot({ path: 'test-results/25-sottolineato-anteprima.png' });
+});

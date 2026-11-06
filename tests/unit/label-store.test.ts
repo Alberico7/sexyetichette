@@ -142,3 +142,33 @@ describe('etichette recenti', () => {
     expect(formatWhen(new Date(2025, 9, 28).toISOString(), now)).toBe('28 ott 2025');
   });
 });
+
+describe('sottolineato (docs/2026-11-06-sottolineato.md)', () => {
+  it('etichetta salvata prima del sottolineato: si carica, non sottolineata', () => {
+    const s = new MemoryStorage();
+    const doc = docWith('Vecchia');
+    delete (doc.elements[0] as { underline?: boolean }).underline;
+    saveCurrentLabel(doc, s);
+    const loaded = loadCurrentLabel(s)!;
+    expect(loaded.elements[0]!.underline ?? false).toBe(false);
+  });
+
+  it('il sottolineato si salva e si rilegge; valore non valido → elemento scartato', () => {
+    const s = new MemoryStorage();
+    const doc = docWith('Sotto');
+    doc.elements[0]!.underline = true;
+    saveCurrentLabel(doc, s);
+    expect(loadCurrentLabel(s)!.elements[0]!.underline).toBe(true);
+    const bad = docWith('Rotto');
+    (bad.elements[0] as unknown as { underline: string }).underline = 'sì';
+    saveCurrentLabel(bad, s);
+    expect(loadCurrentLabel(s)?.elements ?? []).toHaveLength(0);
+  });
+
+  it('Recenti: stessa etichetta con e senza sottolineato non sono doppioni', () => {
+    const a = docWith('Uguale');
+    const b = structuredClone(a);
+    b.elements[0]!.underline = true;
+    expect(labelSignature(a)).not.toBe(labelSignature(b));
+  });
+});
