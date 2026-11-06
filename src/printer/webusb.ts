@@ -3,11 +3,12 @@
  * Tutto ciò che riguarda la libreria resta in questo file.
  */
 import { fromUSBDeviceAll, requestPrinters, type WebLabelWriterPrinter } from '@thermal-label/labelwriter-web';
-import type { PrinterStatus } from '@thermal-label/labelwriter-core';
+import { compose550Job, parseStatus, renderImage, type PrinterStatus } from '@thermal-label/labelwriter-core';
 import { AppErrorException, appError, checkEnvironment, fromStatusError, toAppError, type AppError } from './errors';
 import { diagLog, describeError } from '@/diagnostics/log';
 import { classifyMediaRead, readWithRetry } from '@/diagnostics/media-read';
-import { printHistory, remainingLabels, type PrintRecord } from '@/diagnostics/print-history';
+import { remainingLabels } from '@/diagnostics/print-history';
+import { CopiesError, MULTI_COPY_MODE, write550CopiesDymoOrder, type Transport550 } from './copies';
 import { traceTransport, type UsbTrace } from '@/diagnostics/usb-trace';
 import { browserWatchdogDeps, startStatusWatchdog } from './status-watchdog';
 import { versionProductId } from './engine-version';
@@ -17,12 +18,15 @@ import type {
   AppPrinterStatus,
   EngineVersionInfo,
   MediaReadResult,
+  PrintControl,
   PrintJob,
+  PrintOutcome,
   PrinterInfo,
   PrinterPort,
   PrinterProbe,
   ProbeResult,
   RawStatusInfo,
+  UsbPrintCounts,
 } from './types';
 
 const OP_STATUS = 0x41;
@@ -311,38 +315,68 @@ export class WebUsbPrinterPort implements PrinterPort {
     };
   }
 
-  async print(job: PrintJob): Promise<void> {
+  async print(job: PrintJob, control: PrintControl = {}): Promise<PrintOutcome> {
     const printer = this.require();
-    // Per «Ultime stampe»: etichette inviate (ESC n) e contatore del rotolo nelle risposte di stato.
-    const record: PrintRecord = { at: Date.now(), copies: job.copies, density: job.density, media: job.media.id };
-    const trace = this.trace;
-    if (trace) {
-      record.labelsSent = 0;
-      trace.listener = (e) => {
-        if (e.dir === 'tx' && e.opcode === OP_LABEL_INDEX) record.labelsSent = (record.labelsSent ?? 0) + 1;
-        if (e.dir === 'rx' && e.opcode === OP_STATUS) {
-          const left = remainingLabels(e.bytes);
-          if (left === undefined) return;
-          record.remainingBefore ??= left;
-          record.remainingAfter = left;
-        }
-      };
-    }
+    const total = job.copies;
+    let mode: PrintOutcome['mode'] = total > 1 ? MULTI_COPY_MODE : 'single';
+    const usb = this.countUsb();
+    diagLog.add(
+      'app',
+      `Stampa: immagine ${job.image.width}×${job.image.height} punti, etichetta ${job.labelLengthDots} punti, ${total} copie, densità ${job.density}, formato ${job.media.id}`,
+    );
+    let sent = 0;
     try {
+      let result: { sent: number; stopped: boolean };
+      if (total === 1) {
+        await printer.print(...libraryPrintArgs(job));
+        result = { sent: 1, stopped: false };
+        control.onProgress?.(1, 1);
+      } else {
+        const copies = await printCopies(printer, job, control, MULTI_COPY_MODE, (n) => (sent = n));
+        mode = copies.mode;
+        result = copies;
+      }
+      sent = result.sent;
       diagLog.add(
         'app',
-        `Stampa: immagine ${job.image.width}×${job.image.height} punti, etichetta ${job.labelLengthDots} punti, ${job.copies} copie, densità ${job.density}, formato ${job.media.id}`,
+        result.stopped ? `Stampa fermata: ${result.sent} di ${total} etichette inviate` : 'Stampa completata',
       );
-      await printer.print(...libraryPrintArgs(job));
-      diagLog.add('app', 'Stampa completata dalla libreria');
+      return { mode, total, sent: result.sent, stopped: result.stopped, usb: usb.counts };
     } catch (err) {
-      record.error = describeError(err);
-      diagLog.add('error', 'Stampa non riuscita', record.error);
-      throw new AppErrorException(toAppError(err));
+      if (err instanceof CopiesError) sent = err.sent;
+      const cause = err instanceof CopiesError ? (err.statusError ?? err.cause ?? err) : err;
+      const e =
+        cause && typeof cause === 'object' && 'code' in cause && 'message' in cause && !(cause instanceof Error)
+          ? fromStatusError(cause as { code: string; message: string })
+          : toAppError(cause);
+      if (total > 1) e.partial = { sent, total, usb: usb.counts };
+      diagLog.add('error', 'Stampa non riuscita', describeError(cause));
+      throw new AppErrorException(e);
     } finally {
-      if (trace) trace.listener = null;
-      printHistory.add(record);
+      usb.stop();
     }
+  }
+
+  /** Conteggi dal traffico USB osservato: etichette inviate (ESC n) e contatore del rotolo. */
+  private countUsb(): { counts: UsbPrintCounts | undefined; stop(): void } {
+    const trace = this.trace;
+    if (!trace) return { counts: undefined, stop() {} };
+    const counts: UsbPrintCounts = { labelsSent: 0 };
+    trace.listener = (e) => {
+      if (e.dir === 'tx' && e.opcode === OP_LABEL_INDEX) counts.labelsSent++;
+      if (e.dir === 'rx' && e.opcode === OP_STATUS) {
+        const left = remainingLabels(e.bytes);
+        if (left === undefined) return;
+        counts.remainingBefore ??= left;
+        counts.remainingAfter = left;
+      }
+    };
+    return {
+      counts,
+      stop() {
+        trace.listener = null;
+      },
+    };
   }
 
   async recover(): Promise<void> {
@@ -392,4 +426,101 @@ function notConnected(): MediaReadResult {
     detail: 'not-connected',
     attempts: 1,
   };
+}
+
+/** Parti interne di `WebLabelWriterPrinter` usate per le copie multiple (0.6.4). */
+interface LibraryInternals {
+  run<T>(fn: () => Promise<T>): Promise<T>;
+  acquireLock(): Promise<void>;
+  transport: Transport550;
+}
+
+/**
+ * Coda dei comandi, blocco della stampante e trasporto della libreria. Sono
+ * campi privati: se una versione futura li cambia, `null` e si stampa una
+ * copia alla volta.
+ */
+function libraryInternals(printer: WebLabelWriterPrinter): LibraryInternals | null {
+  const p = printer as unknown as {
+    serializer?: { run?: unknown };
+    doAcquire550Lock?: unknown;
+    transport?: { write?: unknown; read?: unknown };
+  };
+  const serializer = p.serializer;
+  const transport = p.transport;
+  if (
+    typeof serializer?.run !== 'function' ||
+    typeof p.doAcquire550Lock !== 'function' ||
+    typeof transport?.write !== 'function' ||
+    typeof transport.read !== 'function'
+  ) {
+    return null;
+  }
+  const run = serializer.run as <T>(fn: () => Promise<T>) => Promise<T>;
+  const acquire = p.doAcquire550Lock as () => Promise<void>;
+  return {
+    run: <T>(fn: () => Promise<T>) => run.call(serializer, fn) as Promise<T>,
+    acquireLock: () => acquire.call(printer),
+    transport: transport as Transport550,
+  };
+}
+
+/** Riserva: N lavori da 1 copia, il percorso provato su carta. */
+async function printOneByOne(
+  printer: WebLabelWriterPrinter,
+  job: PrintJob,
+  control: PrintControl,
+  onSent: (n: number) => void,
+): Promise<{ sent: number; stopped: boolean }> {
+  const total = job.copies;
+  for (let i = 0; i < total; i++) {
+    if (i > 0 && control.shouldStop?.()) return { sent: i, stopped: true };
+    try {
+      await printer.print(...libraryPrintArgs({ ...job, copies: 1 }));
+    } catch (err) {
+      throw new CopiesError(err instanceof Error ? err.message : String(err), i, total, err);
+    }
+    onSent(i + 1);
+    control.onProgress?.(i + 1, total);
+  }
+  return { sent: total, stopped: false };
+}
+
+/**
+ * Due o più copie. Modo `'job'`: un lavoro con più etichette nell'ordine del
+ * driver DYMO, nella coda dei comandi della libreria (nessuna richiesta di
+ * stato si infila a metà). Se le parti interne della libreria mancano, o con
+ * il modo `'one-by-one'`, un lavoro da 1 copia per volta.
+ */
+export async function printCopies(
+  printer: WebLabelWriterPrinter,
+  job: PrintJob,
+  control: PrintControl,
+  mode: 'job' | 'one-by-one' = MULTI_COPY_MODE,
+  onSent: (n: number) => void = () => {},
+): Promise<{ sent: number; stopped: boolean; mode: 'job' | 'one-by-one' }> {
+  const internals = mode === 'job' ? libraryInternals(printer) : null;
+  if (mode === 'job' && !internals) {
+    diagLog.add('warn', 'Copie: parti interne della libreria non trovate, stampo una copia alla volta');
+  }
+  if (!internals) return { ...(await printOneByOne(printer, job, control, onSent)), mode: 'one-by-one' };
+  const result = await internals.run(async () => {
+    await internals.acquireLock();
+    const [image, media, options] = libraryPrintArgs(job);
+    const bitmap = renderImage(image, { dither: true, rotate: 0 });
+    const composed = compose550Job(printer.device, bitmap, options, media);
+    return write550CopiesDymoOrder(internals.transport, composed, {
+      ...control,
+      onProgress: (sent, total) => {
+        onSent(sent);
+        control.onProgress?.(sent, total);
+      },
+      statusProblem: (bytes) => {
+        if (bytes[0] === 3) return { code: 'job_cancelled', message: 'Print job cancelled on the printer' };
+        return parseStatus(printer.device, bytes).errors[0] ?? null;
+      },
+      log: (m) => diagLog.add('app', m),
+    });
+  });
+  return { sent: result.sent, stopped: result.stopped, mode: 'job' };
 }

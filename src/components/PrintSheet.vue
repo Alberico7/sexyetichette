@@ -65,6 +65,11 @@ const canPrint = computed(
   () => printer.state === 'connected' && printer.blockingProblems.length === 0 && preview.prepared !== null,
 );
 
+/** Stampa da più copie in corso: il pulsante diventa «Ferma». */
+const multiProgress = computed(() =>
+  printer.state === 'printing' && printer.progress && printer.progress.total > 1 ? printer.progress : null,
+);
+
 function step(delta: number): void {
   printer.copies = clampCopies(printer.copies + delta);
 }
@@ -143,7 +148,17 @@ async function doPrint(): Promise<void> {
     </div>
   </div>
 
-  <button type="button" class="primary print" data-testid="print-button" :disabled="!canPrint" @click="doPrint">
+  <button
+    v-if="multiProgress"
+    type="button"
+    class="danger print"
+    data-testid="print-stop"
+    :disabled="printer.stopRequested"
+    @click="printer.requestStop()"
+  >
+    {{ printer.stopRequested ? 'Fermo…' : `Ferma · ${multiProgress.sent} di ${multiProgress.total}` }}
+  </button>
+  <button v-else type="button" class="primary print" data-testid="print-button" :disabled="!canPrint" @click="doPrint">
     {{
       printer.state === 'printing'
         ? 'Stampa in corso…'

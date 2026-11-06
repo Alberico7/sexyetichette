@@ -102,7 +102,9 @@ function onPrinted(copies = 1): void {
   sheet.value = 'none';
   // Lavoro finito: nessun testo selezionato, la barra mostra di nuovo «Recenti».
   store.select(null);
-  toast.show(copies > 1 ? `Stampate ${copies} copie ✓` : 'Stampata ✓');
+  const o = printer.lastOutcome;
+  if (o?.stopped) toast.show(`Fermata: stampate ${o.sent} ${o.sent === 1 ? 'copia' : 'copie'} su ${o.total}`);
+  else toast.show(copies > 1 ? `Stampate ${copies} copie ✓` : 'Stampata ✓');
 }
 
 // Un pannello aperto copre l'avviso: lo tolgo.
