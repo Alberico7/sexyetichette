@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { TEST_PHASE } from '@/config';
 import { usePrinterStore } from '@/stores/printer';
 import { THEME_LABELS, cycleTheme, nextPreference, themePreference } from '@/theme';
 
+const emit = defineEmits<{ diagnostics: [] }>();
 const printer = usePrinterStore();
 
 const indicator = computed(() => {
@@ -52,6 +54,17 @@ const themeLabel = computed(
       @click="cycleTheme"
     >
       <span aria-hidden="true">{{ themeIcon }}</span>
+    </button>
+    <button
+      v-if="TEST_PHASE"
+      type="button"
+      class="theme"
+      data-testid="bar-diagnostics"
+      aria-label="Diagnostica"
+      title="Diagnostica"
+      @click="emit('diagnostics')"
+    >
+      <span aria-hidden="true">🔧</span>
     </button>
     <button
       v-if="printer.state === 'disconnected' || printer.state === 'connecting'"

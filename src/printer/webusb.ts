@@ -18,6 +18,7 @@ import {
 } from './errors';
 import { diagLog, describeError } from '@/diagnostics/log';
 import { classifyMediaRead, readWithRetry } from '@/diagnostics/media-read';
+import { printHistory, remainingLabels, type PrintRecord } from '@/diagnostics/print-history';
 import { traceTransport, type UsbTrace } from '@/diagnostics/usb-trace';
 import { versionProductId } from './engine-version';
 import { LW550_VENDOR_ID, toLibraryMedia } from './media';
@@ -37,6 +38,7 @@ import type {
 const OP_STATUS = 0x41;
 const OP_SKU = 0x55;
 const OP_VERSION = 0x56;
+const OP_LABEL_INDEX = 0x6e;
 
 function elapsed(start: number): number {
   return Math.round(performance.now() - start);
@@ -309,6 +311,21 @@ export class WebUsbPrinterPort implements PrinterPort {
 
   async print(job: PrintJob): Promise<void> {
     const printer = this.require();
+    // Per «Ultime stampe»: etichette inviate (ESC n) e contatore del rotolo nelle risposte di stato.
+    const record: PrintRecord = { at: Date.now(), copies: job.copies, density: job.density, media: job.media.id };
+    const trace = this.trace;
+    if (trace) {
+      record.labelsSent = 0;
+      trace.listener = (e) => {
+        if (e.dir === 'tx' && e.opcode === OP_LABEL_INDEX) record.labelsSent = (record.labelsSent ?? 0) + 1;
+        if (e.dir === 'rx' && e.opcode === OP_STATUS) {
+          const left = remainingLabels(e.bytes);
+          if (left === undefined) return;
+          record.remainingBefore ??= left;
+          record.remainingAfter = left;
+        }
+      };
+    }
     try {
       diagLog.add(
         'app',
@@ -317,8 +334,12 @@ export class WebUsbPrinterPort implements PrinterPort {
       await printer.print(...libraryPrintArgs(job));
       diagLog.add('app', 'Stampa completata dalla libreria');
     } catch (err) {
-      diagLog.add('error', 'Stampa non riuscita', describeError(err));
+      record.error = describeError(err);
+      diagLog.add('error', 'Stampa non riuscita', record.error);
       throw new AppErrorException(toAppError(err));
+    } finally {
+      if (trace) trace.listener = null;
+      printHistory.add(record);
     }
   }
 
