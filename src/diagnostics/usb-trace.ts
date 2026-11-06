@@ -71,6 +71,8 @@ export interface UsbTrace {
   readsByOpcode: Map<number, TracedRead>;
   /** Ultimo comando scritto. */
   lastCommand: string | null;
+  /** Chiamata dopo ogni scrittura e lettura riuscita (per esempio per contare le etichette di una stampa). */
+  listener: ((event: { dir: 'tx' | 'rx'; opcode: number | null; bytes: Uint8Array }) => void) | null;
   /** Ripristina i metodi originali. */
   detach(): void;
 }
@@ -100,6 +102,7 @@ export function traceTransport(transport: unknown, log: DiagnosticLog, now: () =
     lastRead: null,
     readsByOpcode: new Map(),
     lastCommand: null,
+    listener: null,
     detach() {
       target.write = originalWrite;
       target.read = originalRead;
@@ -116,6 +119,7 @@ export function traceTransport(transport: unknown, log: DiagnosticLog, now: () =
       const ms = Math.round(now() - started);
       const hex = data.length <= MAX_TX_HEX ? toHex(data) : undefined;
       log.add('tx', `${command} · ${data.length} byte · ${ms} ms`, hex);
+      trace.listener?.({ dir: 'tx', opcode: lastOpcode, bytes: data });
     } catch (err) {
       log.add('error', `Scrittura USB fallita: ${command} · ${data.length} byte`, describeError(err));
       throw err;
@@ -129,6 +133,7 @@ export function traceTransport(transport: unknown, log: DiagnosticLog, now: () =
       const ms = Math.round(now() - started);
       remember({ requested: length, bytes: new Uint8Array(bytes), ms });
       log.add('rx', `risposta a ${trace.lastCommand ?? '?'} · ${bytes.length}/${length} byte · ${ms} ms`, toHex(bytes, MAX_RX_HEX));
+      trace.listener?.({ dir: 'rx', opcode: lastOpcode, bytes });
       return bytes;
     } catch (err) {
       const ms = Math.round(now() - started);

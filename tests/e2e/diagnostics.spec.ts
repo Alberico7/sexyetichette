@@ -201,3 +201,61 @@ test('chiudere il menu di condivisione non mostra errori; senza supporto il puls
   await expect(other.getByTestId('diag-all-share')).toHaveCount(0);
   await other.close();
 });
+
+/** L'elemento è interamente dentro lo schermo (visibile senza scorrere). */
+async function inViewport(page: Page, testid: string): Promise<void> {
+  const box = await page.getByTestId(testid).boundingBox();
+  const vp = page.viewportSize()!;
+  expect(box, testid).not.toBeNull();
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(vp.height);
+}
+
+test('diagnostica più semplice: 🔧 in alto, schede fisse, «Vai alla stampa di prova», copia sempre visibile', async ({ page }) => {
+  await fakeShare(page);
+  await page.goto('/?sim');
+  // Stampante scollegata: il pulsante c'è e apre la diagnostica sulla scheda USB.
+  await page.getByTestId('bar-diagnostics').tap();
+  const dialog = page.getByRole('dialog', { name: 'Diagnostica' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('tab')).toHaveText(['Prova 550', 'Stampa di prova', 'USB']);
+  await expect(page.getByTestId('diag-tab-usb')).toHaveAttribute('aria-selected', 'true');
+  await inViewport(page, 'diag-all-copy');
+  await dialog.getByRole('button', { name: 'Chiudi' }).tap();
+  await noHorizontalScroll(page);
+
+  // Collegata: prova 550, poi in fondo ai risultati le schede restano raggiungibili.
+  await page.getByRole('button', { name: 'Collega', exact: true }).tap();
+  await expect(page.getByRole('status').first()).toContainText('Pronta');
+  await page.getByTestId('bar-diagnostics').tap();
+  await page.getByTestId('diag-tab-550').tap();
+  await page.getByTestId('check-start').tap();
+  await expect(page.getByTestId('check-summary')).toBeVisible({ timeout: 15_000 });
+  await page.getByTestId('check-steps').locator('li').last().scrollIntoViewIfNeeded();
+  await inViewport(page, 'diag-tab-test');
+  await inViewport(page, 'diag-all-copy');
+  await page.screenshot({ path: 'test-results/20-diagnostica-schede-fisse.png' });
+
+  await page.getByTestId('check-go-test').tap();
+  await expect(page.getByTestId('diag-tab-test')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('test-format')).toBeVisible();
+  await inViewport(page, 'test-format');
+
+  // Riaprendo si torna all'ultima scheda usata.
+  await dialog.getByRole('button', { name: 'Chiudi' }).tap();
+  await page.getByTestId('bar-diagnostics').tap();
+  await expect(page.getByTestId('diag-tab-test')).toHaveAttribute('aria-selected', 'true');
+
+  // Una stampa da 2 copie finisce in «Ultime stampe».
+  await dialog.getByRole('button', { name: 'Chiudi' }).tap();
+  await page.getByTestId('add-text').tap();
+  await page.keyboard.type('Due');
+  await page.getByTestId('text-print').tap();
+  await page.getByRole('button', { name: 'Una copia in più' }).tap();
+  await page.getByTestId('print-button').tap();
+  await expect(page.getByTestId('dev-panel')).toContainText('lavori ricevuti: 1');
+  await page.getByTestId('bar-diagnostics').tap();
+  await page.getByTestId('diag-all-share').tap();
+  const text = (await shared(page))[0]?.text ?? '';
+  expect(text).toMatch(/Ultime stampe \(1\):\n.*copie chieste 2 · etichette inviate 2/);
+});

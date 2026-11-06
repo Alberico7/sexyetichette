@@ -18,6 +18,7 @@ import { usePrinterStore } from '@/stores/printer';
 
 // Diagnostica USB: caricata solo quando serve.
 const DiagnosticsPanel = defineAsyncComponent(() => import('@/components/DiagnosticsPanel.vue'));
+const DiagnosticsShare = defineAsyncComponent(() => import('@/components/DiagnosticsShare.vue'));
 
 // Il pannello di simulazione esiste solo nella build di sviluppo.
 const DevPanel = import.meta.env.DEV ? defineAsyncComponent(() => import('@/components/DevPanel.vue')) : null;
@@ -137,7 +138,7 @@ onMounted(() => {
 
 <template>
   <div class="app">
-    <PrinterBar />
+    <PrinterBar @diagnostics="sheet = 'diagnostics'" />
 
     <div v-if="envError" class="env-error" role="alert">
       <strong>{{ envError.title }}</strong>
@@ -199,6 +200,9 @@ onMounted(() => {
     </BottomSheet>
     <BottomSheet :open="sheet === 'diagnostics'" title="Diagnostica" @close="sheet = 'none'">
       <DiagnosticsPanel v-if="sheet === 'diagnostics'" />
+      <template #footer>
+        <DiagnosticsShare v-if="sheet === 'diagnostics'" />
+      </template>
     </BottomSheet>
   </div>
 </template>
