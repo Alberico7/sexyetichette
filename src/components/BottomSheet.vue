@@ -43,7 +43,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgb(0 0 0 / 0.35);
+  background: rgb(20 18 15 / 0.3);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -57,7 +57,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
   flex-direction: column;
   background: var(--surface);
   border-radius: 18px 18px 0 0;
-  box-shadow: 0 -8px 24px rgb(0 0 0 / 0.2);
+  box-shadow: 0 -8px 24px rgb(0 0 0 / 0.15);
   padding-bottom: var(--safe-bottom);
 }
 

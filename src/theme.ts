@@ -17,7 +17,8 @@ export const THEME_LABELS: Record<ThemePreference, string> = {
 };
 
 /** Colore della barra del browser per ciascun tema (uguale a `--surface`). */
-const META_COLORS: Record<EffectiveTheme, string> = { light: '#ffffff', dark: '#1c1f26' };
+/** Colore della barra del browser: quello dei pannelli in base.css. */
+const META_COLORS: Record<EffectiveTheme, string> = { light: '#f8f6f1', dark: '#24272c' };
 
 export function isThemePreference(v: unknown): v is ThemePreference {
   return v === 'auto' || v === 'light' || v === 'dark';
