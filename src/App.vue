@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import BottomSheet from '@/components/BottomSheet.vue';
+import CopiesPicker from '@/components/CopiesPicker.vue';
 import ErrorBanner from '@/components/ErrorBanner.vue';
 import LabelEditor from '@/components/LabelEditor.vue';
 import MediaPicker from '@/components/MediaPicker.vue';
@@ -9,6 +10,7 @@ import PrinterBar from '@/components/PrinterBar.vue';
 import RecentSheet from '@/components/RecentSheet.vue';
 import TextProperties from '@/components/TextProperties.vue';
 import type { LabelDocument } from '@/model/types';
+import { useQuickPrint } from '@/composables/quick-print';
 import { checkEnvironment } from '@/printer/errors';
 import { DEFAULT_FONT } from '@/model/fonts';
 import { requestFont } from '@/render/web-fonts';
@@ -23,13 +25,14 @@ const DiagnosticsShare = defineAsyncComponent(() => import('@/components/Diagnos
 // Il pannello di simulazione esiste solo nella build di sviluppo.
 const DevPanel = import.meta.env.DEV ? defineAsyncComponent(() => import('@/components/DevPanel.vue')) : null;
 
-type Sheet = 'none' | 'text' | 'media' | 'print' | 'recent' | 'diagnostics';
+type Sheet = 'none' | 'text' | 'media' | 'print' | 'copies' | 'recent' | 'diagnostics';
 
 /** Durata dell'avviso dopo la stampa. */
 const TOAST_MS = 3000;
 
 const store = useDocumentStore();
 const printer = usePrinterStore();
+const quick = useQuickPrint();
 // Avvia il calcolo dell'anteprima in sottofondo fin dall'apertura.
 usePreviewStore();
 // Con «?diagnostica» nell'indirizzo si apre subito la diagnostica USB.
@@ -67,6 +70,22 @@ function openPrint(): void {
   sheet.value = 'print';
 }
 
+/**
+ * Stampa rapida: stampa subito, senza anteprima. Se c'è un avviso da vedere
+ * (stampante non pronta, etichetta vuota…) apre l'anteprima con le copie scelte.
+ */
+async function quickPrint(copies = 1): Promise<void> {
+  if (sheet.value === 'text') store.removeIfEmpty(store.selectedId);
+  if (sheet.value === 'text' || sheet.value === 'copies') sheet.value = 'none';
+  const result = await quick.print(copies);
+  if (result === 'preview') {
+    printer.copies = copies;
+    sheet.value = 'print';
+  } else if (result === 'printed') {
+    onPrinted(copies);
+  }
+}
+
 function removeSelected(): void {
   if (store.selectedId) store.removeElement(store.selectedId);
   if (sheet.value === 'text') sheet.value = 'none';
@@ -79,11 +98,11 @@ function showToast(text: string | null): void {
   if (text) toastTimer = setTimeout(() => (toast.value = null), TOAST_MS);
 }
 
-function onPrinted(): void {
+function onPrinted(copies = 1): void {
   sheet.value = 'none';
   // Lavoro finito: nessun testo selezionato, la barra mostra di nuovo «Recenti».
   store.select(null);
-  showToast('Etichetta inviata alla stampante');
+  showToast(copies > 1 ? `Stampate ${copies} copie ✓` : 'Stampata ✓');
 }
 
 // Un pannello aperto copre l'avviso: lo tolgo.
@@ -171,7 +190,12 @@ onMounted(() => {
       <div class="dock-actions">
         <button type="button" class="danger" aria-label="Elimina il testo" @click="removeSelected">Elimina</button>
         <button type="button" data-testid="text-done" @click="closeText">Fine</button>
-        <button type="button" class="primary" data-testid="text-print" @click="openPrint">Stampa</button>
+        <div class="print-pair">
+          <button type="button" class="primary" data-testid="text-print" :disabled="quick.printing.value" @click="quickPrint()">
+            {{ quick.printing.value ? 'Stampa…' : 'Stampa' }}
+          </button>
+          <button type="button" class="copies" data-testid="text-copies" aria-label="Stampa più copie" @click="sheet = 'copies'">×1</button>
+        </div>
       </div>
     </section>
 
@@ -184,7 +208,15 @@ onMounted(() => {
         </button>
         <button type="button" class="danger" @click="removeSelected">Elimina</button>
       </template>
-      <button type="button" class="primary" data-testid="open-print" @click="openPrint">Stampa</button>
+      <button type="button" class="preview-btn" data-testid="open-preview" aria-label="Anteprima" title="Anteprima" @click="openPrint">
+        <span aria-hidden="true">👁</span>
+      </button>
+      <div class="print-pair">
+        <button type="button" class="primary" data-testid="open-print" :disabled="quick.printing.value" @click="quickPrint()">
+          {{ quick.printing.value ? 'Stampa…' : 'Stampa' }}
+        </button>
+        <button type="button" class="copies" data-testid="open-copies" aria-label="Stampa più copie" @click="sheet = 'copies'">×1</button>
+      </div>
     </nav>
 
     <div v-if="toast" class="toast" role="status" data-testid="toast">{{ toast }}</div>
@@ -192,6 +224,10 @@ onMounted(() => {
     <BottomSheet :open="sheet === 'media'" title="Formato etichetta" @close="sheet = 'none'">
       <MediaPicker @diagnostics="sheet = 'diagnostics'" />
     </BottomSheet>
+    <BottomSheet :open="sheet === 'copies'" title="Quante copie?" @close="sheet = 'none'">
+      <CopiesPicker v-if="sheet === 'copies'" @print="quickPrint" />
+    </BottomSheet>
+
     <BottomSheet :open="sheet === 'print'" title="Anteprima e stampa" @close="sheet = 'none'">
       <PrintSheet :active="sheet === 'print'" @printed="onPrinted" />
     </BottomSheet>
@@ -270,14 +306,14 @@ onMounted(() => {
 
 .dock-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr 1.4fr;
+  grid-template-columns: 1fr 1fr 1.9fr;
   gap: 6px;
   padding: 8px 8px calc(8px + var(--safe-bottom));
 }
 
 .actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 44px minmax(0, 1.55fr);
   gap: 6px;
   padding: 8px 8px calc(8px + var(--safe-bottom));
   background: var(--surface);
@@ -285,7 +321,27 @@ onMounted(() => {
 }
 
 .actions.three {
-  grid-template-columns: 1fr 1fr 1.2fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) 52px minmax(0, 1.6fr);
+}
+
+/* «Stampa» e «×1» affiancati: stampa subito, oppure sceglie le copie. */
+.print-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  gap: 4px;
+  min-width: 0;
+}
+
+.print-pair .copies {
+  font-weight: 600;
+}
+
+.preview-btn {
+  font-size: 1.2rem;
+}
+
+.actions:not(.three) button {
+  font-size: 0.95rem;
 }
 
 .actions button,

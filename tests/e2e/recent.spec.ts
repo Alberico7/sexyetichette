@@ -34,9 +34,10 @@ const jobs = (page: Page) => page.getByTestId('dev-panel').locator('summary');
 async function writeAndPrint(page: Page, text: string): Promise<void> {
   await page.getByTestId('add-text').tap();
   await page.keyboard.type(text);
-  await page.getByTestId('text-print').tap();
+  await page.getByTestId('text-done').tap();
+  await page.getByTestId('open-preview').tap();
   await page.getByTestId('print-button').tap();
-  await expect(page.getByTestId('toast')).toContainText('Etichetta inviata alla stampante');
+  await expect(page.getByTestId('toast')).toContainText('Stampata');
 }
 
 test('l’etichetta resta dopo aver ricaricato la pagina', async ({ page }) => {
@@ -54,7 +55,7 @@ test('l’etichetta resta dopo aver ricaricato la pagina', async ({ page }) => {
   // Nessun testo selezionato e pannello Testo chiuso.
   await expect(page.getByTestId('text-panel')).toHaveCount(0);
   await expect(page.getByTestId('open-recent')).toBeVisible();
-  await page.getByTestId('open-print').tap();
+  await page.getByTestId('open-preview').tap();
   await expect(page.getByTestId('empty-warning')).toHaveCount(0);
   await expect(page.getByTestId('preview-canvas')).toBeVisible();
 });
@@ -85,7 +86,7 @@ test('recenti: compaiono dopo la stampa, si riaprono e non hanno doppioni', asyn
   await page.getByRole('button', { name: 'Chiudi', exact: true }).tap();
 
   // Stessa etichetta ristampata: nessun doppione.
-  await page.getByTestId('open-print').tap();
+  await page.getByTestId('open-preview').tap();
   await page.getByTestId('print-button').tap();
   await expect(page.getByTestId('toast')).toBeVisible();
   await page.getByTestId('open-recent').tap();
@@ -134,7 +135,7 @@ test('dopo la stampa l’etichetta resta: ristampa con «Stampa» → «Stampa»
   await expect(jobs(page)).toContainText('lavori ricevuti: 1');
   // L'avviso è solo informativo, senza pulsanti.
   await expect(page.getByTestId('toast').getByRole('button')).toHaveCount(0);
-  await page.getByTestId('open-print').tap();
+  await page.getByTestId('open-preview').tap();
   await page.getByTestId('print-button').tap();
   await expect(jobs(page)).toContainText('lavori ricevuti: 2');
 });
