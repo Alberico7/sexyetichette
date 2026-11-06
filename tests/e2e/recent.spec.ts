@@ -1,32 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
-
-let pageProblems: string[] = [];
-test.beforeEach(({ page }) => {
-  pageProblems = [];
-  page.on('pageerror', (e) => pageProblems.push(`pageerror: ${e.message}`));
-  page.on('console', (m) => {
-    if (m.type() === 'error' || (m.type() === 'warning' && m.text().includes('[Vue warn]'))) {
-      pageProblems.push(`${m.type()}: ${m.text()}`);
-    }
-  });
-});
-test.afterEach(() => {
-  expect(pageProblems, 'errori nella console della pagina').toEqual([]);
-});
-
-async function noHorizontalScroll(page: Page): Promise<void> {
-  const { scroll, client } = await page.evaluate(() => ({
-    scroll: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth),
-    client: document.documentElement.clientWidth,
-  }));
-  expect(scroll, 'scorrimento orizzontale').toBeLessThanOrEqual(client);
-}
-
-async function connect(page: Page): Promise<void> {
-  await page.goto('/?sim');
-  await page.getByRole('button', { name: 'Collega', exact: true }).tap();
-  await expect(page.getByRole('status').first()).toContainText('Pronta');
-}
+import { test, expect, noHorizontalScroll, connectSimulated } from './helpers';
+import type { Page } from '@playwright/test';
 
 const jobs = (page: Page) => page.getByTestId('dev-panel').locator('summary');
 
@@ -69,7 +42,7 @@ test('salvata subito quando l’app va in sottofondo', async ({ page }) => {
 });
 
 test('recenti: compaiono dopo la stampa, si riaprono e non hanno doppioni', async ({ page }) => {
-  await connect(page);
+  await connectSimulated(page);
   await page.getByTestId('open-recent').tap();
   await expect(page.getByTestId('recent-empty')).toBeVisible();
   await page.getByRole('button', { name: 'Chiudi', exact: true }).tap();
@@ -121,7 +94,7 @@ test('recenti: compaiono dopo la stampa, si riaprono e non hanno doppioni', asyn
 });
 
 test('recenti ricordate dopo aver ricaricato la pagina', async ({ page }) => {
-  await connect(page);
+  await connectSimulated(page);
   await writeAndPrint(page, 'Ricordata');
   await page.reload();
   await page.getByTestId('open-recent').tap();
@@ -130,7 +103,7 @@ test('recenti ricordate dopo aver ricaricato la pagina', async ({ page }) => {
 });
 
 test('dopo la stampa l’etichetta resta: ristampa con «Stampa» → «Stampa»', async ({ page }) => {
-  await connect(page);
+  await connectSimulated(page);
   await writeAndPrint(page, 'Di nuovo');
   await expect(jobs(page)).toContainText('lavori ricevuti: 1');
   // L'avviso è solo informativo, senza pulsanti.
@@ -142,7 +115,7 @@ test('dopo la stampa l’etichetta resta: ristampa con «Stampa» → «Stampa»
 
 test('etichetta salvata con misura arrotondata: prende la misura vera del rotolo letto', async ({ page }) => {
   // Il rotolo simulato è 30252 (indirizzo 28×89 mm).
-  await connect(page);
+  await connectSimulated(page);
   await expect(page.getByTestId('media-chip')).toContainText('Indirizzo 28×89 mm');
   await page.getByTestId('add-text').tap();
   await page.keyboard.type('Misura');

@@ -1,33 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
-
-// Qualunque errore JavaScript o avviso di Vue nella pagina fa fallire il test.
-let pageProblems: string[] = [];
-test.beforeEach(({ page }) => {
-  pageProblems = [];
-  page.on('pageerror', (e) => pageProblems.push(`pageerror: ${e.message}`));
-  page.on('console', (m) => {
-    if (m.type() === 'error' || (m.type() === 'warning' && m.text().includes('[Vue warn]'))) {
-      pageProblems.push(`${m.type()}: ${m.text()}`);
-    }
-  });
-});
-test.afterEach(() => {
-  expect(pageProblems, 'errori nella console della pagina').toEqual([]);
-});
-
-async function noHorizontalScroll(page: Page): Promise<void> {
-  const { scroll, client } = await page.evaluate(() => ({
-    scroll: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth),
-    client: document.documentElement.clientWidth,
-  }));
-  expect(scroll, 'scorrimento orizzontale').toBeLessThanOrEqual(client);
-}
-
-async function connectSimulated(page: Page): Promise<void> {
-  await page.goto('/?sim');
-  await page.getByRole('button', { name: 'Collega', exact: true }).tap();
-  await expect(page.getByRole('status').first()).toContainText('Pronta');
-}
+import { test, expect, noHorizontalScroll, connectSimulated } from './helpers';
 
 test('layout su Pixel 7a senza scorrimento orizzontale', async ({ page }) => {
   await page.goto('/?sim');
