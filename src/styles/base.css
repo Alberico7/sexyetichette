@@ -14,22 +14,30 @@
 
 :root {
   color-scheme: light dark;
-  --bg: light-dark(#f3f4f6, #111318);
-  --surface: light-dark(#ffffff, #1c1f26);
-  --surface-2: light-dark(#f9fafb, #232730);
-  --text: light-dark(#111827, #f3f4f6);
-  --muted: light-dark(#6b7280, #9ca3af);
-  --border: light-dark(#d1d5db, #374151);
-  --accent: light-dark(#1d4ed8, #3b82f6);
-  --accent-text: #ffffff;
-  --ok: light-dark(#15803d, #22c55e);
-  --warn: light-dark(#b45309, #f59e0b);
-  --danger: light-dark(#b91c1c, #f87171);
-  /* Colori dell'editor (l'etichetta resta sempre bianca). */
-  --selection: light-dark(#1d4ed8, #60a5fa);
-  --printable-outline: light-dark(rgb(29 78 216 / 0.5), rgb(96 165 250 / 0.7));
-  --dead-zone: light-dark(rgb(200 60 60 / 0.12), rgb(248 113 113 / 0.22));
-  --paper-shadow: light-dark(rgb(0 0 0 / 0.25), rgb(255 255 255 / 0.18));
+  /*
+   * Colori attenuati e caldi, poco faticosi per gli occhi; tutto il testo ad
+   * almeno 7:1 (WCAG AAA) sul fondo meno favorevole. Il test
+   * tests/unit/theme-contrast.test.ts lo verifica.
+   * Vedi docs/2026-11-06-colori-riposanti.md.
+   */
+  --bg: light-dark(#efece6, #1c1e22);
+  --surface: light-dark(#f8f6f1, #24272c);
+  --surface-2: light-dark(#f2efe9, #2b2e34);
+  --text: light-dark(#2e2c29, #e0ddd5);
+  --muted: light-dark(#4f4c46, #c1bdb7);
+  --border: light-dark(#cfcac0, #41454d);
+  --accent: light-dark(#274e76, #a6c0df);
+  --accent-text: light-dark(#ffffff, #16202c);
+  --ok: light-dark(#205636, #93c9a6);
+  --warn: light-dark(#6f420e, #e0b77b);
+  --danger: light-dark(#843131, #ebaeae);
+  /* Colori dell'editor. */
+  --selection: light-dark(#274e76, #a6c0df);
+  --printable-outline: light-dark(rgb(39 78 118 / 0.45), rgb(166 192 223 / 0.6));
+  --dead-zone: light-dark(rgb(132 49 49 / 0.12), rgb(235 174 174 / 0.2));
+  --paper-shadow: light-dark(rgb(46 44 41 / 0.22), rgb(0 0 0 / 0.5));
+  /* Etichetta nell'editor: bianca; un po' attenuata nel tema scuro (l'anteprima di stampa resta bianca). */
+  --paper: light-dark(#ffffff, #e9e6df);
   --radius: 12px;
   --tap: 48px;
   --safe-top: env(safe-area-inset-top, 0px);
@@ -96,6 +104,22 @@ button {
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Caselle di spunta e selezione del testo con i colori del tema, non quelli accesi del browser. */
+:root {
+  accent-color: var(--accent);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  color: inherit;
+}
+
+/* Un tocco su «Altre opzioni» non seleziona la scritta. */
+summary {
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button.primary {
