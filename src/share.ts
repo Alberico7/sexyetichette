@@ -12,7 +12,7 @@ export function canShare(nav: Navigator = navigator): boolean {
 }
 
 function isAbort(err: unknown): boolean {
-  return typeof err === 'object' && err !== null && 'name' in err && (err as { name: unknown }).name === 'AbortError';
+  return typeof err === 'object' && err !== null && 'name' in err && err.name === 'AbortError';
 }
 
 /** Nome del file: diagnostica-AAAA-MM-GG-HHMM.txt */

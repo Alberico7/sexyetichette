@@ -4,9 +4,12 @@
  * Importare Konva sempre da qui, mai da 'konva'.
  */
 import CoreKonva from 'konva/lib/Core';
+// Import con effetto: caricare il modulo registra la forma in Konva. Non devono diventare `import type`.
+/* eslint-disable @typescript-eslint/consistent-type-imports */
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { Transformer } from 'konva/lib/shapes/Transformer';
+/* eslint-enable @typescript-eslint/consistent-type-imports */
 
 // L'import delle forme le registra anche nello spazio dei nomi di Konva.
 const Konva = CoreKonva as typeof CoreKonva & {

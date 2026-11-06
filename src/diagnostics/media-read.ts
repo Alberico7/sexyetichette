@@ -111,7 +111,7 @@ const mm = (n: number | undefined) => (n === undefined ? '–' : `${String(n).re
 /** Tutti i campi del tag NFC, in italiano. */
 export function skuFields(sku: SkuLike): { label: string; value: string }[] {
   const rows: { label: string; value: string }[] = [{ label: 'Codice (SKU)', value: sku.sku.trim() || '(vuoto)' }];
-  const add = (label: string, value: unknown) => {
+  const add = (label: string, value: string | number | boolean | null | undefined) => {
     if (value !== undefined && value !== '') rows.push({ label, value: String(value) });
   };
   add('Marca', sku.brand);

@@ -8,7 +8,7 @@ const FILE = 'src/assets/fonts/osifont-lgpl3fe.woff';
 
 describe('carattere «Tecnico ISO 3098» (osifont)', () => {
   const buf = readFileSync(FILE);
-  const font = opentype.parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer);
+  const font = opentype.parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
 
   it('file presente e leggibile, con licenza LGPL 3 e font exception', () => {
     expect(font.names.windows?.fontFamily?.en ?? font.names.fontFamily?.en).toBe('osifont');

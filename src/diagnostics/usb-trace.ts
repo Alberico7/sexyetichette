@@ -95,7 +95,10 @@ export function traceTransport(
     return null;
   }
   const target = transport as TransportLike;
+  // Metodi originali, richiamati con .call(this, …) qui sotto: il `this` resta quello giusto.
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalWrite = target.write;
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalRead = target.read;
   let lastOpcode: number | null = null;
   const remember = (r: TracedRead) => {
