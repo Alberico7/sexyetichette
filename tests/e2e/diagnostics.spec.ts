@@ -1,18 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
-
-let pageProblems: string[] = [];
-test.beforeEach(({ page }) => {
-  pageProblems = [];
-  page.on('pageerror', (e) => pageProblems.push(`pageerror: ${e.message}`));
-  page.on('console', (m) => {
-    if (m.type() === 'error' || (m.type() === 'warning' && m.text().includes('[Vue warn]'))) {
-      pageProblems.push(`${m.type()}: ${m.text()}`);
-    }
-  });
-});
-test.afterEach(() => {
-  expect(pageProblems, 'errori nella console della pagina').toEqual([]);
-});
+import { test, expect, noHorizontalScroll, connectSimulated, fakeShare, shared } from './helpers';
+import type { Page } from '@playwright/test';
 
 /** Sostituisce navigator.usb con uno finto che offre una stampante HP e registra le chiamate. */
 async function fakeUsb(page: Page, opts: { claimFails?: boolean } = {}): Promise<void> {
@@ -41,14 +28,6 @@ async function fakeUsb(page: Page, opts: { claimFails?: boolean } = {}): Promise
     };
     Object.defineProperty(Navigator.prototype, 'usb', { configurable: true, get: () => usb });
   }, opts);
-}
-
-async function noHorizontalScroll(page: Page): Promise<void> {
-  const { scroll, client } = await page.evaluate(() => ({
-    scroll: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth),
-    client: document.documentElement.clientWidth,
-  }));
-  expect(scroll).toBeLessThanOrEqual(client);
 }
 
 test('?diagnostica: prova con una stampante HP, nessun dato inviato', async ({ page }) => {
@@ -88,37 +67,10 @@ test('link alla diagnostica dal messaggio «Nessuna stampante selezionata»', as
   await expect(page.getByRole('dialog', { name: 'Diagnostica' })).toBeVisible();
 });
 
-/** navigator.share finto: registra titolo e testo; `cancel` simula la chiusura del menu. */
-async function fakeShare(page: Page, opts: { cancel?: boolean } = {}): Promise<void> {
-  await page.addInitScript((o) => {
-    const shared: { title?: string; text?: string }[] = [];
-    (window as unknown as { __shared: typeof shared }).__shared = shared;
-    Object.defineProperty(Navigator.prototype, 'share', {
-      configurable: true,
-      value: async (d: { title?: string; text?: string }) => {
-        if (o.cancel) throw new DOMException('Share canceled', 'AbortError');
-        shared.push(d);
-      },
-    });
-    Object.defineProperty(Navigator.prototype, 'canShare', { configurable: true, value: () => false });
-  }, opts);
-}
-
-const shared = (page: Page) => page.evaluate(() => (window as unknown as { __shared: { title?: string; text?: string }[] }).__shared);
-
-async function simWithFault(page: Page, fault: string): Promise<void> {
-  await page.goto('/?sim');
-  const panel = page.getByTestId('dev-panel');
-  await panel.locator('summary').tap();
-  await panel.getByLabel('Guasto').selectOption(fault);
-  await panel.locator('summary').tap();
-  await page.getByRole('button', { name: 'Collega', exact: true }).tap();
-  await expect(page.getByRole('status').first()).toContainText('Pronta');
-}
 
 test('rotolo che non risponde: causa, dettagli e condivisione', async ({ page }) => {
   await fakeShare(page);
-  await simWithFault(page, 'nfc-timeout');
+  await connectSimulated(page, { fault: 'nfc-timeout', waitForReady: true });
   await page.getByTestId('media-chip').tap();
   await expect(page.getByTestId('media-read-failed')).toBeVisible();
   await expect(page.getByTestId('media-read-cause')).toContainText('non ha risposto');
@@ -136,7 +88,7 @@ test('rotolo che non risponde: causa, dettagli e condivisione', async ({ page })
 
 test('prova LabelWriter 550 completa e «Condividi tutto»', async ({ page }) => {
   await fakeShare(page);
-  await simWithFault(page, 'nfc-flaky');
+  await connectSimulated(page, { fault: 'nfc-flaky', waitForReady: true });
   await page.getByTestId('media-chip').tap();
   await page.getByTestId('media-diagnostics').tap();
   const dialog = page.getByRole('dialog', { name: 'Diagnostica' });
@@ -162,7 +114,7 @@ test('prova LabelWriter 550 completa e «Condividi tutto»', async ({ page }) =>
 
 test('stampa di prova: conferma, una etichetta e domande nel testo condiviso', async ({ page }) => {
   await fakeShare(page);
-  await simWithFault(page, 'none');
+  await connectSimulated(page, { fault: 'none', waitForReady: true });
   await page.getByTestId('media-chip').tap();
   await page.getByTestId('media-diagnostics').tap();
   await page.getByTestId('diag-tab-test').tap();
