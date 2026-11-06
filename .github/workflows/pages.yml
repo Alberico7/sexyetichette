@@ -25,7 +25,21 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - run: npm run lint
+      - run: npm run format:check
       - run: npm test
+      - run: npx playwright test --project=e2e
+      - run: npx playwright test --project=perf
+        env:
+          PERF_CI: '1'
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
