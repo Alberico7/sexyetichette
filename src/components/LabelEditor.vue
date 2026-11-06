@@ -210,7 +210,8 @@ onMounted(async () => {
   stage.add(backgroundLayer, contentLayer, uiLayer);
   transformer = new Konva.Transformer({
     rotateEnabled: true,
-    rotationSnaps: [0, 90, 180, 270],
+    // Il cerchietto di rotazione si aggancia ai multipli di 45° (richiesta dell'utente del 2026-11-06).
+    rotationSnaps: [0, 45, 90, 135, 180, 225, 270, 315],
     rotationSnapTolerance: 6,
     keepRatio: false,
     flipEnabled: false,
@@ -223,6 +224,8 @@ onMounted(async () => {
   });
   uiLayer.add(transformer);
   applyTransformerColors();
+  // Solo in sviluppo e nei test e2e: accesso alla scena (non entra nella build pubblicata).
+  if (import.meta.env.DEV) (window as unknown as { __labelStage?: Stage }).__labelStage = stage;
 
   stage.on('click tap', (e) => {
     const target = e.target as Node | Stage;
