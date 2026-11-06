@@ -43,7 +43,10 @@ export function stamp(d: Date): string {
 
 export function testPrintToText(t: TestPrintAnswers): string {
   const lines = ['Stampa di prova:'];
-  if (t.printedAt) lines.push(`  Stampata: ${stamp(t.printedAt)}${t.format ? `, formato ${t.format}` : ''}${t.density ? `, densità ${t.density}` : ''}`);
+  if (t.printedAt)
+    lines.push(
+      `  Stampata: ${stamp(t.printedAt)}${t.format ? `, formato ${t.format}` : ''}${t.density ? `, densità ${t.density}` : ''}`,
+    );
   if (t.error) lines.push(`  Errore: ${t.error}`);
   const ans = (label: string, v?: string) => lines.push(`  ${label}: ${v || '(senza risposta)'}`);
   ans('Bordo esterno', t.border);
@@ -52,7 +55,9 @@ export function testPrintToText(t: TestPrintAnswers): string {
   ans('Lato uscito per primo', t.firstOut);
   if (t.missingTicks) {
     const m = t.missingTicks;
-    lines.push(`  Tacche mancanti o tagliate (mm): sinistra ${m.left || '?'}, destra ${m.right || '?'}, alto ${m.top || '?'}, basso ${m.bottom || '?'}`);
+    lines.push(
+      `  Tacche mancanti o tagliate (mm): sinistra ${m.left || '?'}, destra ${m.right || '?'}, alto ${m.top || '?'}, basso ${m.bottom || '?'}`,
+    );
   } else {
     ans('Tacche mancanti', undefined);
   }

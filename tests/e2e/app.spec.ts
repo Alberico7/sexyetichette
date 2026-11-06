@@ -150,7 +150,9 @@ test('pulsante diametro: inserisce ⌀ nella posizione del cursore', async ({ pa
   // Il simbolo arriva nell'anteprima di stampa.
   await page.getByTestId('text-done').tap();
   await page.getByTestId('open-preview').tap();
-  await expect.poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width)).toBe(638);
+  await expect
+    .poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width))
+    .toBe(638);
 });
 
 test('pulsante AFKEUR: inserisce la parola nella posizione del cursore', async ({ page }) => {
@@ -171,7 +173,9 @@ test('pulsante AFKEUR: inserisce la parola nella posizione del cursore', async (
 
   await page.getByTestId('text-done').tap();
   await page.getByTestId('open-preview').tap();
-  await expect.poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width)).toBe(638);
+  await expect
+    .poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width))
+    .toBe(638);
   await expect(page.getByTestId('empty-warning')).toHaveCount(0);
 });
 
@@ -223,7 +227,9 @@ test('adattamento automatico: attivo sui nuovi testi, la dimensione segue il tes
 
   await page.getByTestId('text-done').tap();
   await page.getByTestId('open-preview').tap();
-  await expect.poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width)).toBe(638);
+  await expect
+    .poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width))
+    .toBe(638);
 });
 
 test('simbolo del diametro ISO nell’anteprima', async ({ page }) => {

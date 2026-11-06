@@ -1,19 +1,19 @@
 <script setup lang="ts">
 /** Pagina «Diagnostica»: prova della 550, stampa di prova e collegamento USB. */
-import { nextTick, ref, watch } from "vue";
-import PrinterCheck from "@/components/PrinterCheck.vue";
-import TestPrint from "@/components/TestPrint.vue";
-import UsbDiagnostics from "@/components/UsbDiagnostics.vue";
-import { usePrinterStore } from "@/stores/printer";
+import { nextTick, ref, watch } from 'vue';
+import PrinterCheck from '@/components/PrinterCheck.vue';
+import TestPrint from '@/components/TestPrint.vue';
+import UsbDiagnostics from '@/components/UsbDiagnostics.vue';
+import { usePrinterStore } from '@/stores/printer';
 
-type Tab = "550" | "test" | "usb";
+type Tab = '550' | 'test' | 'usb';
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "550", label: "Prova 550" },
-  { id: "test", label: "Stampa di prova" },
-  { id: "usb", label: "USB" },
+  { id: '550', label: 'Prova 550' },
+  { id: 'test', label: 'Stampa di prova' },
+  { id: 'usb', label: 'USB' },
 ];
-const TAB_KEY = "etichettatrice.diagnostica.scheda";
+const TAB_KEY = 'etichettatrice.diagnostica.scheda';
 
 const printer = usePrinterStore();
 
@@ -27,9 +27,7 @@ function savedTab(): Tab | null {
   }
 }
 
-const tab = ref<Tab>(
-  savedTab() ?? (printer.state === "connected" ? "550" : "usb"),
-);
+const tab = ref<Tab>(savedTab() ?? (printer.state === 'connected' ? '550' : 'usb'));
 const top = ref<HTMLElement | null>(null);
 
 watch(tab, async (t) => {
@@ -40,17 +38,13 @@ watch(tab, async (t) => {
   }
   // Ogni scheda parte dall'inizio, anche se la precedente era scorsa in basso.
   await nextTick();
-  top.value?.scrollIntoView({ block: "start" });
+  top.value?.scrollIntoView({ block: 'start' });
 });
 </script>
 
 <template>
   <div ref="top" class="tabs-bar">
-    <div
-      class="tabs segmented"
-      role="tablist"
-      aria-label="Sezioni della diagnostica"
-    >
+    <div class="tabs segmented" role="tablist" aria-label="Sezioni della diagnostica">
       <button
         v-for="t in TABS"
         :key="t.id"

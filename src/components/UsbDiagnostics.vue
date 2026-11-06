@@ -42,7 +42,11 @@ async function start(): Promise<void> {
     const pre = preSteps.value.map((s) => ({ ...s }));
     const result = await runDiagnostics(env, pre);
     diagnostics.usbReport = result;
-    diagLog.add('app', `Diagnostica USB: ${result.outcome}`, result.device ? `${result.device.vendorId}:${result.device.productId}` : undefined);
+    diagLog.add(
+      'app',
+      `Diagnostica USB: ${result.outcome}`,
+      result.device ? `${result.device.vendorId}:${result.device.productId}` : undefined,
+    );
   } finally {
     running.value = false;
   }
@@ -70,12 +74,18 @@ const steps = () => report.value?.steps ?? preSteps.value;
 
 <template>
   <p class="intro">
-    Verifica con <strong>qualsiasi dispositivo USB</strong> (anche una stampante di casa) che il telefono, il cavo
-    e il browser permettano di comunicare con una stampante. <strong>Non viene inviato nessun dato</strong>: il
-    dispositivo non stampa e non cambia stato.
+    Verifica con <strong>qualsiasi dispositivo USB</strong> (anche una stampante di casa) che il telefono, il cavo e il
+    browser permettano di comunicare con una stampante. <strong>Non viene inviato nessun dato</strong>: il dispositivo
+    non stampa e non cambia stato.
   </p>
 
-  <p v-if="report" class="summary" :class="report.outcome === 'ok' ? 'ok' : 'fail'" role="status" data-testid="diag-summary">
+  <p
+    v-if="report"
+    class="summary"
+    :class="report.outcome === 'ok' ? 'ok' : 'fail'"
+    role="status"
+    data-testid="diag-summary"
+  >
     {{ report.summary }}
   </p>
 
@@ -97,7 +107,10 @@ const steps = () => report.value?.steps ?? preSteps.value;
     <h3>Dispositivo</h3>
     <p>
       {{ report.device.manufacturerName }} – {{ report.device.productName }}<br />
-      <small>ID {{ report.device.vendorId }}:{{ report.device.productId }} · USB {{ report.device.usbVersion }} · versione {{ report.device.deviceVersion }}</small>
+      <small
+        >ID {{ report.device.vendorId }}:{{ report.device.productId }} · USB {{ report.device.usbVersion }} · versione
+        {{ report.device.deviceVersion }}</small
+      >
     </p>
     <p v-if="report.device.labelWriter" class="lw">{{ report.device.labelWriter }}</p>
     <ul>
@@ -115,7 +128,12 @@ const steps = () => report.value?.steps ?? preSteps.value;
       {{ running ? 'Prova in corso…' : report ? 'Prova un altro dispositivo' : 'Scegli un dispositivo' }}
     </button>
     <template v-if="report">
-      <ShareActions title="Etichettatrice – diagnostica USB" :text="reportText" copy-label="Copia risultati" testid="diag" />
+      <ShareActions
+        title="Etichettatrice – diagnostica USB"
+        :text="reportText"
+        copy-label="Copia risultati"
+        testid="diag"
+      />
       <button v-if="report.usbDevice" type="button" data-testid="diag-forget" @click="forget">
         Dimentica questo dispositivo
       </button>

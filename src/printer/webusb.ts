@@ -2,20 +2,9 @@
  * Implementazione reale di `PrinterPort` su `@thermal-label/labelwriter-web`.
  * Tutto ciò che riguarda la libreria resta in questo file.
  */
-import {
-  fromUSBDeviceAll,
-  requestPrinters,
-  type WebLabelWriterPrinter,
-} from '@thermal-label/labelwriter-web';
+import { fromUSBDeviceAll, requestPrinters, type WebLabelWriterPrinter } from '@thermal-label/labelwriter-web';
 import type { PrinterStatus } from '@thermal-label/labelwriter-core';
-import {
-  AppErrorException,
-  appError,
-  checkEnvironment,
-  fromStatusError,
-  toAppError,
-  type AppError,
-} from './errors';
+import { AppErrorException, appError, checkEnvironment, fromStatusError, toAppError, type AppError } from './errors';
 import { diagLog, describeError } from '@/diagnostics/log';
 import { classifyMediaRead, readWithRetry } from '@/diagnostics/media-read';
 import { printHistory, remainingLabels, type PrintRecord } from '@/diagnostics/print-history';
@@ -245,7 +234,10 @@ export class WebUsbPrinterPort implements PrinterPort {
   async readMedia(): Promise<MediaReadResult> {
     const result = await readWithRetry(() => this.readMediaOnce());
     if (result.ok) {
-      diagLog.add('app', `Rotolo letto: ${result.detected.media.name} (codice ${result.detected.sku}), tentativi ${result.attempts}`);
+      diagLog.add(
+        'app',
+        `Rotolo letto: ${result.detected.media.name} (codice ${result.detected.sku}), tentativi ${result.attempts}`,
+      );
     } else {
       diagLog.add('warn', `Rotolo non letto (${result.reason}), tentativi ${result.attempts}`, result.detail);
     }
@@ -367,7 +359,10 @@ export class WebUsbPrinterPort implements PrinterPort {
  * Un tentativo di `getMedia()` con la causa precisa in caso di fallimento,
  * ricavata dai byte osservati sul trasporto (esportata per i test con il driver reale).
  */
-export async function readMediaWith(printer: Pick<WebLabelWriterPrinter, 'getMedia'>, trace: UsbTrace | null): Promise<MediaReadResult> {
+export async function readMediaWith(
+  printer: Pick<WebLabelWriterPrinter, 'getMedia'>,
+  trace: UsbTrace | null,
+): Promise<MediaReadResult> {
   trace?.readsByOpcode.delete(OP_SKU);
   try {
     const sku = await printer.getMedia();
@@ -380,5 +375,11 @@ export async function readMediaWith(printer: Pick<WebLabelWriterPrinter, 'getMed
 }
 
 function notConnected(): MediaReadResult {
-  return { ok: false, reason: 'not-connected', message: 'Stampante non collegata.', detail: 'not-connected', attempts: 1 };
+  return {
+    ok: false,
+    reason: 'not-connected',
+    message: 'Stampante non collegata.',
+    detail: 'not-connected',
+    attempts: 1,
+  };
 }

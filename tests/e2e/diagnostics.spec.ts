@@ -6,25 +6,68 @@ async function fakeUsb(page: Page, opts: { claimFails?: boolean } = {}): Promise
   await page.addInitScript((o) => {
     const calls: string[] = [];
     (window as unknown as { __usbCalls: string[] }).__usbCalls = calls;
-    const config = { configurationValue: 1, interfaces: [{ interfaceNumber: 0, alternate: { interfaceClass: 7 }, alternates: [{ interfaceClass: 7 }] }] };
+    const config = {
+      configurationValue: 1,
+      interfaces: [{ interfaceNumber: 0, alternate: { interfaceClass: 7 }, alternates: [{ interfaceClass: 7 }] }],
+    };
     let opened = false;
     const device = {
-      vendorId: 0x03f0, productId: 0x2d11, productName: 'DeskJet 2700', manufacturerName: 'HP',
-      serialNumber: 'CN99998888', usbVersionMajor: 2, usbVersionMinor: 0, configurations: [config],
-      get opened() { return opened; }, get configuration() { return config; },
-      async open() { calls.push('open'); opened = true; },
-      async close() { calls.push('close'); opened = false; },
-      async selectConfiguration() { calls.push('selectConfiguration'); },
-      async claimInterface() { calls.push('claimInterface'); if (o.claimFails) { const e = new Error('Unable to claim interface.'); e.name = 'NetworkError'; throw e; } },
-      async releaseInterface() { calls.push('releaseInterface'); },
-      async forget() { calls.push('forget'); },
-      async transferOut() { calls.push('transferOut'); },
-      async controlTransferOut() { calls.push('controlTransferOut'); },
+      vendorId: 0x03f0,
+      productId: 0x2d11,
+      productName: 'DeskJet 2700',
+      manufacturerName: 'HP',
+      serialNumber: 'CN99998888',
+      usbVersionMajor: 2,
+      usbVersionMinor: 0,
+      configurations: [config],
+      get opened() {
+        return opened;
+      },
+      get configuration() {
+        return config;
+      },
+      async open() {
+        calls.push('open');
+        opened = true;
+      },
+      async close() {
+        calls.push('close');
+        opened = false;
+      },
+      async selectConfiguration() {
+        calls.push('selectConfiguration');
+      },
+      async claimInterface() {
+        calls.push('claimInterface');
+        if (o.claimFails) {
+          const e = new Error('Unable to claim interface.');
+          e.name = 'NetworkError';
+          throw e;
+        }
+      },
+      async releaseInterface() {
+        calls.push('releaseInterface');
+      },
+      async forget() {
+        calls.push('forget');
+      },
+      async transferOut() {
+        calls.push('transferOut');
+      },
+      async controlTransferOut() {
+        calls.push('controlTransferOut');
+      },
     };
     const usb = {
-      async getDevices() { return []; },
-      async requestDevice() { calls.push('requestDevice'); return device; },
-      addEventListener() {}, removeEventListener() {},
+      async getDevices() {
+        return [];
+      },
+      async requestDevice() {
+        calls.push('requestDevice');
+        return device;
+      },
+      addEventListener() {},
+      removeEventListener() {},
     };
     Object.defineProperty(Navigator.prototype, 'usb', { configurable: true, get: () => usb });
   }, opts);
@@ -66,7 +109,6 @@ test('link alla diagnostica dal messaggio «Nessuna stampante selezionata»', as
   await page.getByRole('alert').getByTestId('open-diagnostics').tap();
   await expect(page.getByRole('dialog', { name: 'Diagnostica' })).toBeVisible();
 });
-
 
 test('rotolo che non risponde: causa, dettagli e condivisione', async ({ page }) => {
   await fakeShare(page);
@@ -125,7 +167,10 @@ test('stampa di prova: conferma, una etichetta e domande nel testo condiviso', a
   await expect(page.getByTestId('test-questions')).toBeVisible();
   await expect(page.getByTestId('dev-panel')).toContainText('lavori ricevuti: 1');
   await page.getByTestId('answer-border').filter({ hasText: 'manca a sinistra' }).tap();
-  await page.getByTestId('answer-firstOut').filter({ hasText: /^\s*sì\s*$/ }).tap();
+  await page
+    .getByTestId('answer-firstOut')
+    .filter({ hasText: /^\s*sì\s*$/ })
+    .tap();
   await page.getByTestId('ticks-left').fill('6');
   await page.getByTestId('ticks-left').blur();
   await noHorizontalScroll(page);
@@ -138,7 +183,10 @@ test('stampa di prova: conferma, una etichetta e domande nel testo condiviso', a
   expect(text).toContain('sinistra 6');
 });
 
-test('chiudere il menu di condivisione non mostra errori; senza supporto il pulsante non c’è', async ({ page, browser }) => {
+test('chiudere il menu di condivisione non mostra errori; senza supporto il pulsante non c’è', async ({
+  page,
+  browser,
+}) => {
   await fakeShare(page, { cancel: true });
   await page.goto('/?diagnostica');
   await page.getByTestId('diag-all-share').tap();
@@ -163,7 +211,9 @@ async function inViewport(page: Page, testid: string): Promise<void> {
   expect(box!.y + box!.height).toBeLessThanOrEqual(vp.height);
 }
 
-test('diagnostica più semplice: 🔧 in alto, schede fisse, «Vai alla stampa di prova», copia sempre visibile', async ({ page }) => {
+test('diagnostica più semplice: 🔧 in alto, schede fisse, «Vai alla stampa di prova», copia sempre visibile', async ({
+  page,
+}) => {
   await fakeShare(page);
   await page.goto('/?sim');
   // Stampante scollegata: il pulsante c'è e apre la diagnostica sulla scheda USB.

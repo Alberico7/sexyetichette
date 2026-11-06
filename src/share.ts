@@ -25,7 +25,12 @@ export function shareFileName(when = new Date()): string {
  * Condivide un testo. Se è molto lungo e il browser accetta i file, lo invia
  * come file .txt. Se l'utente chiude il menu restituisce `cancelled`, senza errori.
  */
-export async function shareText(title: string, text: string, nav: Navigator = navigator, when = new Date()): Promise<ShareOutcome> {
+export async function shareText(
+  title: string,
+  text: string,
+  nav: Navigator = navigator,
+  when = new Date(),
+): Promise<ShareOutcome> {
   if (!canShare(nav)) return 'unsupported';
   try {
     if (text.length > SHARE_FILE_THRESHOLD && typeof File !== 'undefined' && typeof nav.canShare === 'function') {

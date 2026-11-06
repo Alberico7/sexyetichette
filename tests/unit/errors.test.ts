@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  DeviceIdentificationRequiredError,
-} from '@thermal-label/labelwriter-web';
-import {
-  MediaNotSpecifiedError,
-  TransportClosedError,
-  TransportTimeoutError,
-} from '@thermal-label/contracts';
+import { DeviceIdentificationRequiredError } from '@thermal-label/labelwriter-web';
+import { MediaNotSpecifiedError, TransportClosedError, TransportTimeoutError } from '@thermal-label/contracts';
 import { AppErrorException, fromStatusError, toAppError, unwrapError } from '@/printer/errors';
 
 const dom = (name: string, message = 'x') => new DOMException(message, name);
@@ -40,8 +34,7 @@ describe('errori della libreria (classi)', () => {
 
 describe('errori della libreria (riconosciuti dal testo, v0.6.4)', () => {
   it('lock occupato', () => {
-    const msg =
-      'Print lock on LW_550 is held by another host. Wait for the active job to finish, then retry.';
+    const msg = 'Print lock on LW_550 is held by another host. Wait for the active job to finish, then retry.';
     expect(toAppError(new Error(msg)).code).toBe('busy');
   });
 

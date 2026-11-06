@@ -10,11 +10,21 @@ import { runPrint } from '@/printer/print-flow';
 import { SimulatedPrinterPort } from '@/printer/simulated';
 import { addressDoc, fakePrepare } from './helpers';
 
-const hex = (s: string) => new Uint8Array(s.trim().split(/\s+/).map((b) => parseInt(b, 16)));
+const hex = (s: string) =>
+  new Uint8Array(
+    s
+      .trim()
+      .split(/\s+/)
+      .map((b) => parseInt(b, 16)),
+  );
 
 /** Risposte a ESC A della 550 vera (2026-11-06): 477 etichette rimaste, poi la risposta «vuota» dopo una pausa. */
-const STATUS_477 = hex('00 00 00 00 00 00 00 00 00 64 08 53 30 37 32 32 35 32 30 00 00 00 00 00 00 00 00 dd 01 00 00 00');
-const STATUS_EMPTY = hex('04 00 00 00 00 00 00 00 00 64 08 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00');
+const STATUS_477 = hex(
+  '00 00 00 00 00 00 00 00 00 64 08 53 30 37 32 32 35 32 30 00 00 00 00 00 00 00 00 dd 01 00 00 00',
+);
+const STATUS_EMPTY = hex(
+  '04 00 00 00 00 00 00 00 00 64 08 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00',
+);
 
 describe('etichette rimaste nello stato della 550', () => {
   it('byte 27–28: dd 01 = 477', () => {
@@ -34,9 +44,16 @@ describe('ultime stampe', () => {
     await port.connect();
     await runPrint(port, addressDoc(), { copies: 2, density: 'high' }, fakePrepare);
     expect(printHistory.records).toHaveLength(1);
-    expect(printHistory.records[0]).toMatchObject({ copies: 2, labelsSent: 2, density: 'high', media: 'address-standard' });
+    expect(printHistory.records[0]).toMatchObject({
+      copies: 2,
+      labelsSent: 2,
+      density: 'high',
+      media: 'address-standard',
+    });
     const text = fullReportText({ app: { version: '0', commit: 'x', builtAt: '' }, prints: printHistory.toText() });
-    expect(text).toMatch(/Ultime stampe \(1\):\n {2}\d\d:\d\d:\d\d\.\d{3} · copie chieste 2 · etichette inviate 2 · densità high/);
+    expect(text).toMatch(
+      /Ultime stampe \(1\):\n {2}\d\d:\d\d:\d\d\.\d{3} · copie chieste 2 · etichette inviate 2 · densità high/,
+    );
   });
 
   it('ne tiene al massimo 10, la più recente per prima', () => {
@@ -51,8 +68,19 @@ describe('ultime stampe', () => {
 
   it('errore e contatore del rotolo nel testo', () => {
     const h = new PrintHistory();
-    h.add({ at: 0, copies: 2, labelsSent: 1, density: 'high', media: 'm', remainingBefore: 477, remainingAfter: 476, error: 'Transport closed' });
-    expect(h.toText()).toContain('copie chieste 2 · etichette inviate 1 · rimaste sul rotolo 477 → 476 · densità high · formato m · ERRORE: Transport closed');
+    h.add({
+      at: 0,
+      copies: 2,
+      labelsSent: 1,
+      density: 'high',
+      media: 'm',
+      remainingBefore: 477,
+      remainingAfter: 476,
+      error: 'Transport closed',
+    });
+    expect(h.toText()).toContain(
+      'copie chieste 2 · etichette inviate 1 · rimaste sul rotolo 477 → 476 · densità high · formato m · ERRORE: Transport closed',
+    );
   });
 
   it('nessuna stampa: lo dice', () => {

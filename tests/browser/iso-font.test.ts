@@ -35,8 +35,7 @@ describe('«Tecnico ISO 3098» nella stampa', () => {
     const mm = (v: number) => Math.round((v * 300) / 25.4);
     let outside = 0;
     for (let y = 0; y < b.heightPx; y++)
-      for (let x = 0; x < b.widthPx; x++)
-        if (getPixel(b, x, y) && (y < mm(3) - 1 || y > mm(25) + 1)) outside++;
+      for (let x = 0; x < b.widthPx; x++) if (getPixel(b, x, y) && (y < mm(3) - 1 || y > mm(25) + 1)) outside++;
     expect(outside).toBe(0);
     expect(countBlack(b)).toBeGreaterThan(1000);
   });

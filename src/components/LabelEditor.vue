@@ -184,7 +184,7 @@ function commitNode(group: Group): void {
   const h = Math.max(10, group.height() * Math.abs(group.scaleY()));
   const cx = group.x();
   const cy = group.y();
-  const rotation = ((Math.round(group.rotation() * 10) / 10) % 360 + 360) % 360;
+  const rotation = (((Math.round(group.rotation() * 10) / 10) % 360) + 360) % 360;
   store.updateElement(id, {
     x: dotsToMm(cx - w / 2),
     y: dotsToMm(cy - h / 2),
