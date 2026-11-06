@@ -9,6 +9,7 @@ import {
   fakeClipboard,
   copied,
 } from './helpers';
+import type { Page } from '@playwright/test';
 
 test('«Stampa» dall’editor: stampa subito, senza anteprima, e finisce nei Recenti', async ({ page }) => {
   await connectSimulated(page, { waitForRoll: true });
@@ -35,14 +36,26 @@ test('doppio tocco veloce: un solo lavoro', async ({ page }) => {
   await expectJobs(page, 1);
 });
 
-test('«×1» → «3»: tre copie senza anteprima, poi si torna a 1', async ({ page }) => {
+/** «×1», poi il numero sul tastierino, poi «Stampa N copie». */
+async function printCopies(page: Page, n: number): Promise<void> {
+  await page.getByTestId('open-copies').tap();
+  for (const d of String(n)) await page.getByTestId(`key-${d}`).tap();
+  await page.getByTestId('copies-print').tap();
+}
+
+test('«×1» → 3: tre copie senza anteprima, poi si torna a 1', async ({ page }) => {
   await connectSimulated(page, { waitForRoll: true });
   await writeText(page, 'Tre');
   await page.getByTestId('open-copies').tap();
   await expect(page.getByRole('dialog', { name: 'Quante copie?' })).toBeVisible();
   await noHorizontalScroll(page);
+  // Tastierino dentro l'app: nessuna casella che apra la tastiera del telefono.
+  await expect(page.getByRole('dialog', { name: 'Quante copie?' }).locator('input, textarea')).toHaveCount(0);
+  await expect(page.getByTestId('copies-print')).toBeDisabled();
+  await page.getByTestId('key-3').tap();
+  await expect(page.getByTestId('copies-print')).toHaveText('Stampa 3 copie');
   await page.screenshot({ path: 'test-results/22-quante-copie.png' });
-  await page.getByTestId('copies-3').tap();
+  await page.getByTestId('copies-print').tap();
   await expect(page.getByTestId('toast')).toHaveText('Stampate 3 copie ✓');
   await expectJobs(page, 1);
   await expect(page.getByTestId('preview-canvas')).toHaveCount(0);
@@ -51,16 +64,23 @@ test('«×1» → «3»: tre copie senza anteprima, poi si torna a 1', async ({ 
   await expect(page.getByTestId('print-button')).toHaveText('Stampa');
 });
 
-test('«×1» → + + → «Stampa 4 copie»', async ({ page }) => {
+test('tastierino: 2, 4 → «Stampa 24 copie»; ⌫ e C; al massimo 99', async ({ page }) => {
   await connectSimulated(page, { waitForRoll: true });
-  await writeText(page, 'Quattro');
+  await writeText(page, 'Ventiquattro');
   await page.getByTestId('open-copies').tap();
-  const dialog = page.getByRole('dialog', { name: 'Quante copie?' });
-  await dialog.getByRole('button', { name: 'Una copia in più' }).tap();
-  await dialog.getByRole('button', { name: 'Una copia in più' }).tap();
-  await expect(page.getByTestId('copies-print')).toHaveText('Stampa 4 copie');
+  for (const k of ['9', '9', '9']) await page.getByTestId(`key-${k}`).tap();
+  await expect(page.getByTestId('copies-display')).toContainText('99');
+  await page.getByTestId('key-clear').tap();
+  await expect(page.getByTestId('copies-print')).toBeDisabled();
+  // 2, 4, 7: il 7 è ignorato (247 > 99); ⌫ toglie il 4, poi di nuovo 4.
+  for (const k of ['2', '4', '7']) await page.getByTestId(`key-${k}`).tap();
+  await expect(page.getByTestId('copies-print')).toHaveText('Stampa 24 copie');
+  await page.getByTestId('key-back').tap();
+  await expect(page.getByTestId('copies-print')).toHaveText('Stampa 2 copie');
+  await page.getByTestId('key-4').tap();
+  await expect(page.getByTestId('copies-print')).toHaveText('Stampa 24 copie');
   await page.getByTestId('copies-print').tap();
-  await expect(page.getByTestId('toast')).toHaveText('Stampate 4 copie ✓');
+  await expect(page.getByTestId('toast')).toHaveText('Stampate 24 copie ✓', { timeout: 15_000 });
 });
 
 test('dal pannello del testo: «Stampa» stampa e chiude il pannello', async ({ page }) => {
@@ -87,8 +107,7 @@ test('con un avviso si apre l’anteprima e non si stampa', async ({ page }) => 
   await page.getByRole('option', { name: /Multiuso piccola/ }).tap();
   await page.getByRole('button', { name: 'Chiudi', exact: true }).tap();
   await writeText(page, 'Formato');
-  await page.getByTestId('open-copies').tap();
-  await page.getByTestId('copies-2').tap();
+  await printCopies(page, 2);
   await expect(page.getByTestId('mismatch-warning')).toBeVisible();
   // L'anteprima propone le copie scelte.
   await expect(page.getByTestId('print-button')).toHaveText('Stampa 2 copie');
@@ -156,8 +175,7 @@ test('densità predefinita «Scura» con l’archivio vuoto', async ({ page }) =
 test('più copie: avanzamento «Ferma N/10», poi «Ferma» chiude il lavoro', async ({ page }) => {
   await connectSimulated(page, { waitForRoll: true });
   await writeText(page, 'Ferma');
-  await page.getByTestId('open-copies').tap();
-  await page.getByTestId('copies-10').tap();
+  await printCopies(page, 10);
   const stop = page.getByTestId('open-stop');
   await expect(stop).toBeVisible();
   await expect(stop).toContainText(/Ferma \d+\/10/);
@@ -175,8 +193,7 @@ test('più copie: avanzamento «Ferma N/10», poi «Ferma» chiude il lavoro', a
 test('più copie senza fermare: «Stampate 3 copie ✓»', async ({ page }) => {
   await connectSimulated(page, { waitForRoll: true });
   await writeText(page, 'Tre');
-  await page.getByTestId('open-copies').tap();
-  await page.getByTestId('copies-3').tap();
+  await printCopies(page, 3);
   await expect(page.getByTestId('open-stop')).toBeVisible();
   await expect(page.getByTestId('toast')).toHaveText('Stampate 3 copie ✓');
 });
