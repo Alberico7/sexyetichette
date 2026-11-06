@@ -65,6 +65,7 @@ export function createTextElement(area: AreaMm, text = 'Testo'): TextElement {
     fontSizePt: 14,
     bold: false,
     italic: false,
+    underline: false,
     align: 'center',
     verticalAlign: 'middle',
     invert: false,

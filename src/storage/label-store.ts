@@ -47,6 +47,7 @@ function parseText(v: unknown): TextElement | null {
   if (!['left', 'center', 'right'].includes(e.align as string)) return null;
   if (!['top', 'middle', 'bottom'].includes(e.verticalAlign as string)) return null;
   if (e.autoFit !== undefined && !isBool(e.autoFit)) return null;
+  if (e.underline !== undefined && !isBool(e.underline)) return null;
   const el: TextElement = {
     id: e.id,
     type: 'text',
@@ -65,6 +66,7 @@ function parseText(v: unknown): TextElement | null {
     invert: e.invert as boolean,
   };
   if (e.autoFit !== undefined) el.autoFit = e.autoFit;
+  if (e.underline !== undefined) el.underline = e.underline;
   return el;
 }
 
@@ -180,6 +182,7 @@ export function labelSignature(doc: LabelDocument): string {
       e.fontSizePt,
       e.bold,
       e.italic,
+      e.underline ?? false,
       e.align,
       e.verticalAlign,
       e.invert,
