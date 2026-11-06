@@ -31,7 +31,8 @@ export const usePrinterStore = defineStore('printer', () => {
     (s, before) => diagLog.add('app', `Stato del collegamento: ${before} → ${s}`),
   );
   const copies = ref(1);
-  const density = ref<Density>(loadSettings().density ?? 'normal');
+  // Predefinita «Scura» (130%): sulla 550 vera la «Normale» risultava troppo chiara (2026-11-06).
+  const density = ref<Density>(loadSettings().density ?? 'high');
   watch(density, (d) => saveSettings({ density: d }));
   const lastPrintAt = ref<number | null>(null);
   let unsubscribeStatus: (() => void) | null = null;

@@ -28,7 +28,7 @@ async function connect(page: Page): Promise<void> {
   await expect(page.getByRole('status').first()).toContainText('Pronta');
 }
 
-test('operazione tipica: «+ Testo», scrivi, «Stampa», «Stampa» = 3 tocchi', async ({ page }) => {
+test('operazione tipica: «+ Testo», scrivi, «Stampa» = 2 tocchi, senza anteprima', async ({ page }) => {
   await connect(page);
   let taps = 0;
   const tap = async (testId: string) => {
@@ -47,13 +47,19 @@ test('operazione tipica: «+ Testo», scrivi, «Stampa», «Stampa» = 3 tocchi'
   await noHorizontalScroll(page);
   await page.screenshot({ path: 'test-results/10-pannello-compatto.png' });
 
+  // Stampa rapida: un tocco, nessun pannello di anteprima.
   await tap('text-print');
+  await expect(page.getByTestId('toast')).toHaveText('Stampata ✓');
+  await expect(page.getByTestId('dev-panel')).toContainText('lavori ricevuti: 1');
+  await expect(page.getByTestId('preview-canvas')).toHaveCount(0);
+  await expect(page.getByTestId('text-panel')).toHaveCount(0);
+  expect(taps).toBe(2);
+
+  // L'anteprima resta a un tocco con 👁.
+  await page.getByTestId('open-preview').tap();
   await expect(page.getByTestId('preview-canvas')).toBeVisible();
   await expect(page.getByText('Aggiornamento anteprima')).toHaveCount(0);
   await page.screenshot({ path: 'test-results/11-anteprima-pronta.png' });
-  await tap('print-button');
-  await expect(page.getByText('Etichetta inviata alla stampante')).toBeVisible();
-  expect(taps).toBe(3);
 });
 
 test('testo lasciato vuoto viene eliminato', async ({ page }) => {
@@ -61,8 +67,8 @@ test('testo lasciato vuoto viene eliminato', async ({ page }) => {
   await page.getByTestId('add-text').tap();
   await page.getByTestId('text-done').tap();
   await expect(page.getByText('Tocca «+ Testo» per scrivere')).toBeVisible();
-  // Barra senza selezione: «+ Testo», «Recenti» e «Stampa».
-  await expect(page.getByRole('navigation', { name: 'Azioni' }).getByRole('button')).toHaveCount(3);
+  // Barra senza selezione: «+ Testo», «Recenti», 👁, «Stampa» e «×1».
+  await expect(page.getByRole('navigation', { name: 'Azioni' }).getByRole('button')).toHaveCount(5);
 });
 
 test('barra contestuale e secondo tocco per modificare', async ({ page }) => {
@@ -72,7 +78,7 @@ test('barra contestuale e secondo tocco per modificare', async ({ page }) => {
   await page.getByTestId('text-done').tap();
   // Il testo resta selezionato: la barra mostra anche Modifica ed Elimina.
   const nav = page.getByRole('navigation', { name: 'Azioni' });
-  await expect(nav.getByRole('button')).toHaveCount(4);
+  await expect(nav.getByRole('button')).toHaveCount(6);
   // Un tocco sul testo già selezionato apre il pannello di modifica.
   const box = (await page.getByTestId('editor').boundingBox())!;
   await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
@@ -98,16 +104,17 @@ test('densità e formato ricordati; copie che tornano a 1 dopo la stampa', async
   await page.getByRole('button', { name: 'Chiudi', exact: true }).tap();
   await page.getByTestId('add-text').tap();
   await page.keyboard.type('Copie');
-  await page.getByTestId('text-print').tap();
+  await page.getByTestId('text-done').tap();
+  await page.getByTestId('open-preview').tap();
   await page.getByRole('button', { name: 'Scura' }).tap();
   await page.getByRole('button', { name: 'Una copia in più' }).tap();
   await expect(page.getByTestId('print-button')).toHaveText('Stampa 2 copie');
   await page.getByTestId('print-button').tap();
-  await expect(page.getByText('Etichetta inviata alla stampante')).toBeVisible();
+  await expect(page.getByTestId('toast')).toContainText('Stampate 2 copie ✓');
 
   await page.reload();
   await expect(page.getByTestId('media-chip')).toContainText('Multiuso piccola');
-  await page.getByTestId('open-print').tap();
+  await page.getByTestId('open-preview').tap();
   await expect(page.getByRole('button', { name: 'Scura' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('print-button')).toHaveText('Stampa');
 });
@@ -119,9 +126,10 @@ test('«Collega» toccato subito all’apertura: un solo collegamento, la stampa
   await expect(page.getByRole('status').first()).toContainText('Pronta');
   await page.getByTestId('add-text').tap();
   await page.keyboard.type('Subito');
-  await page.getByTestId('text-print').tap();
+  await page.getByTestId('text-done').tap();
+  await page.getByTestId('open-preview').tap();
   await page.getByTestId('print-button').tap();
-  await expect(page.getByText('Etichetta inviata alla stampante')).toBeVisible();
+  await expect(page.getByTestId('toast')).toContainText('Stampata');
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
@@ -148,7 +156,8 @@ test('scrivere una dimensione spegne l’adattamento automatico', async ({ page 
   await expect(size).toHaveValue('18');
 
   // L'anteprima si genera con la nuova dimensione.
-  await page.getByTestId('text-print').tap();
+  await page.getByTestId('text-done').tap();
+  await page.getByTestId('open-preview').tap();
   await expect(page.getByText('Aggiornamento anteprima')).toHaveCount(0);
   await page.getByRole('button', { name: 'Chiudi', exact: true }).tap();
 

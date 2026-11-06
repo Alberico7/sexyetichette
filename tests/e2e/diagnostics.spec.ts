@@ -250,7 +250,8 @@ test('diagnostica più semplice: 🔧 in alto, schede fisse, «Vai alla stampa d
   await dialog.getByRole('button', { name: 'Chiudi' }).tap();
   await page.getByTestId('add-text').tap();
   await page.keyboard.type('Due');
-  await page.getByTestId('text-print').tap();
+  await page.getByTestId('text-done').tap();
+  await page.getByTestId('open-preview').tap();
   await page.getByRole('button', { name: 'Una copia in più' }).tap();
   await page.getByTestId('print-button').tap();
   await expect(page.getByTestId('dev-panel')).toContainText('lavori ricevuti: 1');
