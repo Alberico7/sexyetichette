@@ -54,7 +54,7 @@ test('collegamento, testo, anteprima e stampa (simulata)', async ({ page }) => {
   await page.getByTestId('text-done').tap();
   await page.screenshot({ path: 'test-results/04-editor.png' });
 
-  await page.getByTestId('open-print').tap();
+  await page.getByTestId('open-preview').tap();
   const preview = page.getByTestId('preview-canvas');
   await expect(preview).toBeVisible();
   await expect.poll(async () => preview.evaluate((c: HTMLCanvasElement) => c.width)).toBe(1051);
@@ -64,7 +64,7 @@ test('collegamento, testo, anteprima e stampa (simulata)', async ({ page }) => {
   await page.screenshot({ path: 'test-results/05-anteprima.png' });
 
   await page.getByTestId('print-button').tap();
-  await expect(page.getByText('Etichetta inviata alla stampante')).toBeVisible();
+  await expect(page.getByTestId('toast')).toContainText('Stampate 2 copie ✓');
   await expect(page.getByTestId('dev-panel')).toContainText('lavori ricevuti: 1');
 });
 
@@ -99,7 +99,7 @@ test('coperchio aperto: stato in rosso e stampa disabilitata', async ({ page }) 
   await page.getByTestId('add-text').tap();
   await page.getByTestId('text-input').fill('Prova');
   await page.getByTestId('text-done').tap();
-  await page.getByTestId('open-print').tap();
+  await page.getByTestId('open-preview').tap();
   await expect(page.getByTestId('print-button')).toBeDisabled();
   await page.screenshot({ path: 'test-results/06-coperchio.png' });
 });
@@ -112,7 +112,7 @@ test('stampante occupata durante la stampa: errore e pulsante di ripristino', as
   const panel = page.getByTestId('dev-panel');
   await panel.locator('summary').tap();
   await panel.getByLabel('Guasto').selectOption('busy');
-  await page.getByTestId('open-print').tap();
+  await page.getByTestId('open-preview').tap();
   await page.getByTestId('print-button').tap();
   await page.getByRole('button', { name: 'Chiudi', exact: true }).tap();
   const alert = page.getByRole('alert');
@@ -178,7 +178,7 @@ test('pulsante diametro: inserisce ⌀ nella posizione del cursore', async ({ pa
 
   // Il simbolo arriva nell'anteprima di stampa.
   await page.getByTestId('text-done').tap();
-  await page.getByTestId('open-print').tap();
+  await page.getByTestId('open-preview').tap();
   await expect.poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width)).toBe(638);
 });
 
@@ -199,7 +199,7 @@ test('pulsante AFKEUR: inserisce la parola nella posizione del cursore', async (
   await page.screenshot({ path: 'test-results/18-afkeur.png' });
 
   await page.getByTestId('text-done').tap();
-  await page.getByTestId('open-print').tap();
+  await page.getByTestId('open-preview').tap();
   await expect.poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width)).toBe(638);
   await expect(page.getByTestId('empty-warning')).toHaveCount(0);
 });
@@ -225,7 +225,7 @@ test('pulsante N. R.: inserisce NON RIPARABILE su due righe', async ({ page }) =
   await page.screenshot({ path: 'test-results/19-non-riparabile.png' });
 
   await page.getByTestId('text-done').tap();
-  await page.getByTestId('open-print').tap();
+  await page.getByTestId('open-preview').tap();
   await expect(page.getByTestId('empty-warning')).toHaveCount(0);
   await expect(page.getByTestId('preview-canvas')).toBeVisible();
 });
@@ -251,7 +251,7 @@ test('adattamento automatico: attivo sui nuovi testi, la dimensione segue il tes
   expect(Number(await size.inputValue())).toBe(fitted);
 
   await page.getByTestId('text-done').tap();
-  await page.getByTestId('open-print').tap();
+  await page.getByTestId('open-preview').tap();
   await expect.poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width)).toBe(638);
 });
 
@@ -266,7 +266,8 @@ test('simbolo del diametro ISO nell’anteprima', async ({ page }) => {
   await input.fill('⌀ 20 · H');
   await page.waitForTimeout(500);
   await page.screenshot({ path: 'test-results/12-diametro-iso.png' });
-  await page.getByTestId('text-print').tap();
+  await page.getByTestId('text-done').tap();
+  await page.getByTestId('open-preview').tap();
   await expect(page.getByText('Aggiornamento anteprima')).toHaveCount(0);
   await page.screenshot({ path: 'test-results/13-diametro-iso-anteprima.png' });
 });
@@ -302,7 +303,8 @@ test('carattere «Tecnico ISO 3098»: predefinito, scaricato all’avvio e usato
 
   // Anteprima con il carattere ISO diversa da quella «Senza grazie».
   const previewPixels = async () => {
-    await page.getByTestId('text-print').tap();
+    await page.getByTestId('text-done').tap();
+    await page.getByTestId('open-preview').tap();
     const canvas = page.getByTestId('preview-canvas');
     await expect(page.getByText('Aggiornamento anteprima')).toHaveCount(0);
     const data = await canvas.evaluate((c: HTMLCanvasElement) => c.toDataURL());
@@ -311,7 +313,7 @@ test('carattere «Tecnico ISO 3098»: predefinito, scaricato all’avvio e usato
   const iso = await previewPixels();
   await page.screenshot({ path: 'test-results/41-anteprima-iso.png' });
   await page.getByTestId('print-button').tap();
-  await expect(page.getByText('Etichetta inviata alla stampante')).toBeVisible();
+  await expect(page.getByTestId('toast')).toContainText('Stampata');
 
   // Dopo la stampa nessun testo è selezionato: un tocco lo seleziona, «Modifica» apre il pannello.
   const box = (await page.getByTestId('editor').boundingBox())!;
