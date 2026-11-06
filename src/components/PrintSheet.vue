@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
-import { sameMediaSize } from '@/printer/media';
+import { usePrintWarnings } from '@/composables/quick-print';
 import { MAX_COPIES, clampCopies } from '@/printer/print-flow';
 import type { Density } from '@/printer/types';
 import { paintPreview } from '@/render/preview';
-import { resolveFontSize } from '@/render/scene';
 import { useDocumentStore } from '@/stores/document';
 import { usePreviewStore } from '@/stores/preview';
 import { usePrinterStore } from '@/stores/printer';
@@ -14,7 +13,7 @@ import type { PreparedLabel } from '@/render/export';
 import { dotsToMm } from '@/model/units';
 
 const props = defineProps<{ active: boolean }>();
-const emit = defineEmits<{ printed: [] }>();
+const emit = defineEmits<{ printed: [copies: number] }>();
 
 const store = useDocumentStore();
 const printer = usePrinterStore();
@@ -51,10 +50,8 @@ watch(() => preview.prepared, () => void paint());
 
 const rendering = computed(() => !preview.ready);
 const isEmpty = computed(() => preview.ready && preview.inkDots === 0);
-const mismatch = computed(() => printer.detected && !sameMediaSize(printer.detected.media, store.doc.media));
-const overflow = computed(() =>
-  store.doc.elements.some((el) => el.type === 'text' && el.autoFit && resolveFontSize(el).overflow),
-);
+// Gli stessi avvisi fermano la stampa rapida (vedi composables/quick-print.ts).
+const { mismatch, overflow } = usePrintWarnings();
 const sizeText = computed(() => {
   const g = store.geometry;
   const mm = (d: number) => dotsToMm(d).toFixed(1).replace('.', ',');
@@ -73,10 +70,11 @@ async function doPrint(): Promise<void> {
   // Stampa esattamente il bitmap dell'anteprima (ricalcolato solo se il documento è cambiato).
   let printed: PreparedLabel | null = null;
   const snapshot = JSON.parse(JSON.stringify(store.doc)) as LabelDocument;
+  const copies = printer.copies;
   const ok = await printer.print(snapshot, async () => (printed = await preview.ensure()));
   if (!ok) return;
   recent.add(snapshot, printed);
-  emit('printed');
+  emit('printed', copies);
 }
 </script>
 
