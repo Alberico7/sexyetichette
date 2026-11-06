@@ -54,6 +54,8 @@ export interface TextElement extends BaseElement {
   fontSizePt: number;
   bold: boolean;
   italic: boolean;
+  /** Sottolineato. Assente negli elementi salvati prima di questa opzione = no. */
+  underline?: boolean;
   align: HorizontalAlign;
   verticalAlign: VerticalAlign;
   /** Testo bianco su fondo nero. */

@@ -179,6 +179,14 @@ function rotate90(): void {
           <button type="button" :aria-pressed="element.italic" @click="update({ italic: !element.italic })">
             <i>C</i> Corsivo
           </button>
+          <button
+            type="button"
+            data-testid="underline"
+            :aria-pressed="!!element.underline"
+            @click="update({ underline: !element.underline })"
+          >
+            <u>S</u> Sottolineato
+          </button>
         </div>
       </div>
 
