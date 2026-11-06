@@ -25,7 +25,10 @@ function text(patch: Partial<TextElement>): TextElement {
 
 /** Riquadro che contiene i punti neri. */
 function blackBounds(b: LabelBitmap) {
-  let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -1,
+    maxY = -1;
   for (let y = 0; y < b.heightPx; y++)
     for (let x = 0; x < b.widthPx; x++)
       if (getPixel(b, x, y)) {

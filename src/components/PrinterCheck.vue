@@ -46,7 +46,7 @@ async function start(): Promise<void> {
         doc: store.doc,
         head: LW550_HEAD,
         settings: { density: printer.density, copies: printer.copies },
-        prepare: async () => (await preview.ensure()),
+        prepare: async () => await preview.ensure(),
         overflow: store.doc.elements.some((el) => el.type === 'text' && el.autoFit && resolveFontSize(el).overflow),
       },
       (s) => (progress.value = [...s]),
@@ -64,18 +64,30 @@ async function start(): Promise<void> {
 <template>
   <p class="intro">
     Controlla la stampante collegata con <strong>soli comandi di lettura</strong>: versione, stato e dati del rotolo,
-    ciascuno ripetuto per scoprire risposte instabili. Prepara anche il lavoro di stampa dell’etichetta attuale
-    e lo verifica <strong>senza inviarlo</strong>. Non stampa e non fa avanzare la carta.
+    ciascuno ripetuto per scoprire risposte instabili. Prepara anche il lavoro di stampa dell’etichetta attuale e lo
+    verifica <strong>senza inviarlo</strong>. Non stampa e non fa avanzare la carta.
   </p>
 
   <div v-if="!connected && !running" class="connect">
     <p>Collega prima la LabelWriter 550.</p>
-    <button type="button" class="primary" data-testid="check-connect" :disabled="printer.state === 'connecting'" @click="printer.connect()">
+    <button
+      type="button"
+      class="primary"
+      data-testid="check-connect"
+      :disabled="printer.state === 'connecting'"
+      @click="printer.connect()"
+    >
       {{ printer.state === 'connecting' ? 'Collegamento…' : 'Collega' }}
     </button>
   </div>
 
-  <section v-if="report && !running" class="summary" :class="report.problems.some((p) => p.severity === 'grave') ? 'fail' : report.problems.length ? 'warn' : 'ok'" data-testid="check-summary" role="status">
+  <section
+    v-if="report && !running"
+    class="summary"
+    :class="report.problems.some((p) => p.severity === 'grave') ? 'fail' : report.problems.length ? 'warn' : 'ok'"
+    data-testid="check-summary"
+    role="status"
+  >
     <strong>{{ report.summary }}</strong>
     <ul v-if="report.problems.length">
       <li v-for="(p, i) in report.problems" :key="i" :class="p.severity">{{ p.message }}</li>
@@ -90,7 +102,9 @@ async function start(): Promise<void> {
       <span class="icon" aria-hidden="true">{{ ICONS[s.state] }}</span>
       <div class="body">
         <strong>{{ s.title }}</strong>
-        <span>{{ s.message }}<small v-if="s.ms !== undefined"> · {{ s.ms }} ms</small></span>
+        <span
+          >{{ s.message }}<small v-if="s.ms !== undefined"> · {{ s.ms }} ms</small></span
+        >
         <details v-if="s.details.length">
           <summary>Dettagli</summary>
           <dl>

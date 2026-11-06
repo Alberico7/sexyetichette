@@ -193,12 +193,12 @@ const ROLL_SIZE_MAX_FIX_MM = 2;
  * dà la misura vera: con la larghezza arrotondata il contenuto usciva spostato
  * di 0,4 mm (prova del 2026-11-05). Il nome del formato non cambia.
  */
-export function withRollSize(
-  media: MediaFormat,
-  sku: Pick<SkuInfo, 'labelWidthMm' | 'labelLengthMm'>,
-): MediaFormat {
+export function withRollSize(media: MediaFormat, sku: Pick<SkuInfo, 'labelWidthMm' | 'labelLengthMm'>): MediaFormat {
   const fix = (catalog: number | undefined, roll: number) =>
-    catalog !== undefined && roll > 0 && Math.abs(roll - catalog) > 0.05 && Math.abs(roll - catalog) <= ROLL_SIZE_MAX_FIX_MM;
+    catalog !== undefined &&
+    roll > 0 &&
+    Math.abs(roll - catalog) > 0.05 &&
+    Math.abs(roll - catalog) <= ROLL_SIZE_MAX_FIX_MM;
   if (fix(media.widthMm, sku.labelWidthMm)) media.widthMm = sku.labelWidthMm;
   if (fix(media.lengthMm, sku.labelLengthMm) && Math.abs(sku.labelLengthMm - media.lengthMm!) > 0.2) {
     media.lengthMm = sku.labelLengthMm;
@@ -209,8 +209,7 @@ export function withRollSize(
 
 /** Confronto tra formato scelto e formato rilevato, a meno di mezzo millimetro. */
 export function sameMediaSize(a: MediaFormat, b: MediaFormat): boolean {
-  const near = (x?: number, y?: number) =>
-    x === undefined || y === undefined ? x === y : Math.abs(x - y) <= 0.6;
+  const near = (x?: number, y?: number) => (x === undefined || y === undefined ? x === y : Math.abs(x - y) <= 0.6);
   return near(a.widthMm, b.widthMm) && near(a.lengthMm, b.lengthMm);
 }
 

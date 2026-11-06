@@ -60,7 +60,9 @@ function clearAll(): void {
       <p>Togliere tutte le etichette dall'elenco?</p>
       <div class="row">
         <button type="button" class="grow" @click="confirmClear = false">No</button>
-        <button type="button" class="danger grow" data-testid="recent-clear-confirm" @click="clearAll">Sì, svuota</button>
+        <button type="button" class="danger grow" data-testid="recent-clear-confirm" @click="clearAll">
+          Sì, svuota
+        </button>
       </div>
     </template>
     <button v-else type="button" class="danger" data-testid="recent-clear" @click="confirmClear = true">

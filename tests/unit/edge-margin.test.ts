@@ -9,7 +9,13 @@ import { EDGE_SAFETY_DOTS, computeGeometry } from '@/model/geometry';
 import { versionProductId } from '@/printer/engine-version';
 import { LW550_HEAD, findMediaById, mediaFromSku, withRollSize } from '@/printer/media';
 
-const hex = (s: string) => new Uint8Array(s.trim().split(/\s+/).map((b) => parseInt(b, 16)));
+const hex = (s: string) =>
+  new Uint8Array(
+    s
+      .trim()
+      .split(/\s+/)
+      .map((b) => parseInt(b, 16)),
+  );
 
 /** Risposta a ESC U del rotolo S0722520, letta sulla 550 vera. */
 const REAL_ROLL = hex(

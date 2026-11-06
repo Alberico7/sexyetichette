@@ -67,9 +67,11 @@ export function ensureDiameterFont(family: string): Promise<void> {
     document.fonts.add(face);
     ready.set(family, face.family);
     for (const cb of listeners) cb();
-  })().catch(() => {
-    // Senza il mini-font ⌀ viene comunque disegnato con il font di sistema.
-  }).finally(() => pending.delete(family));
+  })()
+    .catch(() => {
+      // Senza il mini-font ⌀ viene comunque disegnato con il font di sistema.
+    })
+    .finally(() => pending.delete(family));
   pending.set(family, task);
   return task;
 }

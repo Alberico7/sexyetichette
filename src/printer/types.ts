@@ -42,14 +42,7 @@ export interface DetectedMedia {
 
 /** Motivo per cui il rotolo non è stato letto. */
 export type MediaReadReason =
-  | 'timeout'
-  | 'short'
-  | 'bad-magic'
-  | 'no-size'
-  | 'invalid'
-  | 'error'
-  | 'unsupported'
-  | 'not-connected';
+  'timeout' | 'short' | 'bad-magic' | 'no-size' | 'invalid' | 'error' | 'unsupported' | 'not-connected';
 
 /** Esito della lettura del rotolo via NFC. */
 export type MediaReadResult =

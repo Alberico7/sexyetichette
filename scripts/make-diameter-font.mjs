@@ -122,7 +122,10 @@ export function buildDiameterFont() {
   });
 }
 
-if (import.meta.url === `file:///${process.argv[1]?.replace(/\\/g, '/')}` || process.argv[1]?.endsWith('make-diameter-font.mjs')) {
+if (
+  import.meta.url === `file:///${process.argv[1]?.replace(/\\/g, '/')}` ||
+  process.argv[1]?.endsWith('make-diameter-font.mjs')
+) {
   const font = buildDiameterFont();
   mkdirSync('src/assets/fonts', { recursive: true });
   writeFileSync('src/assets/fonts/diametro.otf', Buffer.from(font.toArrayBuffer()));

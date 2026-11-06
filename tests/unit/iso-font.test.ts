@@ -14,11 +14,13 @@ describe('carattere «Tecnico ISO 3098» (osifont)', () => {
     expect(font.names.windows?.fontFamily?.en ?? font.names.fontFamily?.en).toBe('osifont');
     const copyright = font.names.windows?.copyright?.en ?? '';
     expect(copyright).toContain('GNU LGPL version 3 with GPL font exception');
-    for (const f of ['README.txt', 'lgpl-3.0.txt', 'gpl-3.0.txt']) expect(existsSync(`public/licenses/osifont/${f}`), f).toBe(true);
+    for (const f of ['README.txt', 'lgpl-3.0.txt', 'gpl-3.0.txt'])
+      expect(existsSync(`public/licenses/osifont/${f}`), f).toBe(true);
   });
 
   it('contiene lettere, cifre, accentate italiane e simboli usati sulle etichette', () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789àèéìòùÀÈÉÌÒÙ.,;:!?()[]-+=/%°±×⌀Ø€&@#"\'';
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789àèéìòùÀÈÉÌÒÙ.,;:!?()[]-+=/%°±×⌀Ø€&@#"\'';
     const missing = [...chars].filter((c) => font.charToGlyph(c).index === 0);
     expect(missing).toEqual([]);
   });

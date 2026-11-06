@@ -1,5 +1,14 @@
 /** Stampa rapida e copie senza anteprima. Vedi docs/2026-11-06-stampa-rapida.md. */
-import { test, expect, noHorizontalScroll, connectSimulated, writeText, expectJobs, fakeClipboard, copied } from './helpers';
+import {
+  test,
+  expect,
+  noHorizontalScroll,
+  connectSimulated,
+  writeText,
+  expectJobs,
+  fakeClipboard,
+  copied,
+} from './helpers';
 import type { Page } from '@playwright/test';
 
 test('«Stampa» dall’editor: stampa subito, senza anteprima, e finisce nei Recenti', async ({ page }) => {
@@ -90,7 +99,9 @@ test('con un avviso si apre l’anteprima e non si stampa', async ({ page }) => 
 test('testo troppo lungo per il riquadro: anteprima con avviso', async ({ page }) => {
   await connectSimulated(page, { waitForRoll: true });
   await page.getByTestId('add-text').tap();
-  await page.keyboard.type('Un testo lunghissimo che non entra mai nel riquadro piccolo di questa etichetta '.repeat(6));
+  await page.keyboard.type(
+    'Un testo lunghissimo che non entra mai nel riquadro piccolo di questa etichetta '.repeat(6),
+  );
   await page.getByTestId('text-print').tap();
   await expect(page.getByTestId('overflow-warning')).toBeVisible();
   await expectJobs(page, 0);
@@ -100,7 +111,9 @@ test('stampante non collegata o coperchio aperto: anteprima con avviso', async (
   await page.goto('/?sim');
   await writeText(page, 'Scollegata');
   await page.getByTestId('open-print').tap();
-  await expect(page.getByRole('dialog', { name: 'Anteprima e stampa' })).toContainText('Collega la stampante per stampare');
+  await expect(page.getByRole('dialog', { name: 'Anteprima e stampa' })).toContainText(
+    'Collega la stampante per stampare',
+  );
 
   await connectSimulated(page, { fault: 'cover-open' });
   await writeText(page, 'Coperchio');

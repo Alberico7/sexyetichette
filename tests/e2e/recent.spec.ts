@@ -120,7 +120,9 @@ test('etichetta salvata con misura arrotondata: prende la misura vera del rotolo
   await page.getByTestId('add-text').tap();
   await page.keyboard.type('Misura');
   await page.getByTestId('text-done').tap();
-  await expect.poll(() => page.evaluate(() => localStorage.getItem('etichettatrice.etichetta') ?? '')).toContain('Misura');
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem('etichettatrice.etichetta') ?? ''))
+    .toContain('Misura');
   // Come se fosse stata salvata con la misura arrotondata del catalogo.
   await page.evaluate(() => {
     const doc = JSON.parse(localStorage.getItem('etichettatrice.etichetta')!);

@@ -11,11 +11,7 @@ export function wireToReading(bitmap: LabelBitmap, wireRotation: 0 | 90): LabelB
   return wireRotation === 90 ? rotateBitmap(bitmap, 270) : bitmap;
 }
 
-export function paintPreview(
-  canvas: HTMLCanvasElement,
-  wireBitmap: LabelBitmap,
-  geometry: LabelGeometry,
-): void {
+export function paintPreview(canvas: HTMLCanvasElement, wireBitmap: LabelBitmap, geometry: LabelGeometry): void {
   const { label, printable, deadZones, safetyZones } = geometry;
   canvas.width = label.width;
   canvas.height = label.height;

@@ -216,7 +216,13 @@ export async function checkBrowser(env: Environment): Promise<DiagnosticStep[]> 
           : `${devices.length} dispositivo/i già autorizzato/i: ${devices.map((d) => d.productName || hex4(d.productId)).join(', ')}.`,
     });
   } catch (err) {
-    steps.push({ id: 'authorized', title: 'Dispositivi già autorizzati', state: 'fail', message: 'Impossibile leggere l’elenco.', detail: describeError(err) });
+    steps.push({
+      id: 'authorized',
+      title: 'Dispositivi già autorizzati',
+      state: 'fail',
+      message: 'Impossibile leggere l’elenco.',
+      detail: describeError(err),
+    });
   }
   return steps;
 }
@@ -277,7 +283,13 @@ export async function runDiagnostics(env: Environment, pre?: DiagnosticStep[]): 
     if (!wasOpen) await device.open();
     steps.push({ id: 'open', title: 'Apertura', state: 'ok', message: 'Dispositivo aperto.' });
   } catch (err) {
-    steps.push({ id: 'open', title: 'Apertura', state: 'fail', message: 'Impossibile aprire il dispositivo.', detail: describeError(err) });
+    steps.push({
+      id: 'open',
+      title: 'Apertura',
+      state: 'fail',
+      message: 'Impossibile aprire il dispositivo.',
+      detail: describeError(err),
+    });
     return finish('open-failed', info);
   }
 
@@ -290,7 +302,13 @@ export async function runDiagnostics(env: Environment, pre?: DiagnosticStep[]): 
       steps.push({ id: 'configuration', title: 'Configurazione', state: 'ok', message: 'Configurazione già attiva.' });
     }
   } catch (err) {
-    steps.push({ id: 'configuration', title: 'Configurazione', state: 'fail', message: 'Impossibile selezionare la configurazione.', detail: describeError(err) });
+    steps.push({
+      id: 'configuration',
+      title: 'Configurazione',
+      state: 'fail',
+      message: 'Impossibile selezionare la configurazione.',
+      detail: describeError(err),
+    });
     await closeQuietly(device, wasOpen, steps);
     return finish('open-failed', info);
   }
@@ -299,9 +317,15 @@ export async function runDiagnostics(env: Environment, pre?: DiagnosticStep[]): 
   const target = info.interfaces.find((i) => i.classCode === PRINTER_CLASS) ?? info.interfaces[0];
   let outcome: Outcome = 'ok';
   if (!target) {
-    steps.push({ id: 'claim', title: 'Presa di controllo', state: 'skip', message: 'Il dispositivo non espone interfacce.' });
+    steps.push({
+      id: 'claim',
+      title: 'Presa di controllo',
+      state: 'skip',
+      message: 'Il dispositivo non espone interfacce.',
+    });
   } else {
-    const which = target.classCode === PRINTER_CLASS ? 'stampante' : `${target.className} (nessuna interfaccia stampante)`;
+    const which =
+      target.classCode === PRINTER_CLASS ? 'stampante' : `${target.className} (nessuna interfaccia stampante)`;
     try {
       await device.claimInterface(target.number);
       await device.releaseInterface(target.number);
@@ -329,14 +353,25 @@ export async function runDiagnostics(env: Environment, pre?: DiagnosticStep[]): 
 
 async function closeQuietly(device: USBDevice, wasOpen: boolean, steps: DiagnosticStep[]): Promise<void> {
   if (wasOpen) {
-    steps.push({ id: 'close', title: 'Chiusura', state: 'skip', message: 'Il dispositivo era già aperto da questa pagina: lasciato aperto.' });
+    steps.push({
+      id: 'close',
+      title: 'Chiusura',
+      state: 'skip',
+      message: 'Il dispositivo era già aperto da questa pagina: lasciato aperto.',
+    });
     return;
   }
   try {
     await device.close();
     steps.push({ id: 'close', title: 'Chiusura', state: 'ok', message: 'Dispositivo chiuso.' });
   } catch (err) {
-    steps.push({ id: 'close', title: 'Chiusura', state: 'fail', message: 'Errore alla chiusura.', detail: describeError(err) });
+    steps.push({
+      id: 'close',
+      title: 'Chiusura',
+      state: 'fail',
+      message: 'Errore alla chiusura.',
+      detail: describeError(err),
+    });
   }
 }
 
@@ -353,7 +388,9 @@ export function reportToText(report: DiagnosticReport, when = new Date()): strin
     const d = report.device;
     lines.push('', 'Dispositivo:');
     lines.push(`  ${d.manufacturerName} – ${d.productName}`);
-    lines.push(`  ID ${d.vendorId}:${d.productId}, USB ${d.usbVersion}, versione ${d.deviceVersion}${d.serialTail ? `, serie ${d.serialTail}` : ''}`);
+    lines.push(
+      `  ID ${d.vendorId}:${d.productId}, USB ${d.usbVersion}, versione ${d.deviceVersion}${d.serialTail ? `, serie ${d.serialTail}` : ''}`,
+    );
     if (d.labelWriter) lines.push(`  ${d.labelWriter}`);
     for (const i of d.interfaces) {
       const eps = i.endpoints.map(endpointText).join(', ');

@@ -6,7 +6,13 @@ import { describe, expect, it } from 'vitest';
 import { DEVICES, parseSkuInfo } from '@thermal-label/labelwriter-core';
 import { WebLabelWriterPrinter } from '@thermal-label/labelwriter-web';
 import { DiagnosticLog } from '@/diagnostics/log';
-import { classifyMediaRead, compareWithCatalog, mediaReadToText, readWithRetry, skuFields } from '@/diagnostics/media-read';
+import {
+  classifyMediaRead,
+  compareWithCatalog,
+  mediaReadToText,
+  readWithRetry,
+  skuFields,
+} from '@/diagnostics/media-read';
 import { traceTransport } from '@/diagnostics/usb-trace';
 import { buildSkuBytes } from '@/printer/sim-sku';
 import type { MediaReadResult } from '@/printer/types';
@@ -125,7 +131,9 @@ describe('dati del tag e testo', () => {
     expect(compareWithCatalog(sku).sizeMatches).toBe(true);
     const wrong = parseSkuInfo(buildSkuBytes({ sku: '1976411', widthMm: 28, lengthMm: 89 }));
     expect(compareWithCatalog(wrong).sizeMatches).toBe(false);
-    expect(compareWithCatalog(parseSkuInfo(buildSkuBytes({ sku: 'ZZZ', widthMm: 1, lengthMm: 1 }))).catalogName).toBeUndefined();
+    expect(
+      compareWithCatalog(parseSkuInfo(buildSkuBytes({ sku: 'ZZZ', widthMm: 1, lengthMm: 1 }))).catalogName,
+    ).toBeUndefined();
   });
 
   it('campi in italiano e testo con i byte in esadecimale', async () => {

@@ -38,7 +38,10 @@ async function drawPreview(): Promise<void> {
   const canvas = previewCanvas.value;
   if (!canvas) return;
   const { drawTestLabel } = await import('@/diagnostics/test-label');
-  const image = drawTestLabel(geometryNow(), { format: formatSize(media.value), density: DENSITY_NAMES[printer.density] });
+  const image = drawTestLabel(geometryNow(), {
+    format: formatSize(media.value),
+    density: DENSITY_NAMES[printer.density],
+  });
   canvas.width = image.width;
   canvas.height = image.height;
   const ctx = canvas.getContext('2d');
@@ -55,7 +58,14 @@ const QUESTIONS = [
   {
     key: 'border',
     text: 'Il bordo esterno è completo su tutti e quattro i lati?',
-    options: ['sì, completo', 'manca a sinistra', 'manca a destra', 'manca in alto', 'manca in basso', 'manca su più lati'],
+    options: [
+      'sì, completo',
+      'manca a sinistra',
+      'manca a destra',
+      'manca in alto',
+      'manca in basso',
+      'manca su più lati',
+    ],
   },
   {
     key: 'edgeLine',
@@ -109,10 +119,16 @@ async function print(): Promise<void> {
       copies: 1,
       density: printer.density,
     };
-    diagLog.add('app', `Stampa di prova: ${formatSize(m)} (${fromRoll.value ? 'dal rotolo' : 'formato scelto'}), ${prepared.blackDots} punti neri`);
+    diagLog.add(
+      'app',
+      `Stampa di prova: ${formatSize(m)} (${fromRoll.value ? 'dal rotolo' : 'formato scelto'}), ${prepared.blackDots} punti neri`,
+    );
     const ok = await printer.printJob(job);
     const result: NonNullable<typeof diagnostics.testPrint> = { printedAt: new Date(), format: formatSize(m), density };
-    if (!ok) result.error = printer.error ? `${printer.error.title}${printer.error.detail ? ` (${printer.error.detail})` : ''}` : 'stampa non riuscita';
+    if (!ok)
+      result.error = printer.error
+        ? `${printer.error.title}${printer.error.detail ? ` (${printer.error.detail})` : ''}`
+        : 'stampa non riuscita';
     diagnostics.testPrint = result;
     ticks.left = ticks.right = ticks.top = ticks.bottom = '';
   } catch (err) {
@@ -125,16 +141,22 @@ async function print(): Promise<void> {
 
 <template>
   <p class="intro">
-    Stampa <strong>una</strong> etichetta con un bordo a 0,5 mm dai bordi lunghi (margine di sicurezza), una linea sul bordo esatto, tacche ogni millimetro, la
-    scritta «ALTO», gli angoli numerati 1–4 e un triangolo sul lato che dovrebbe uscire per primo. Serve a verificare
-    verso, margini e allineamento.
+    Stampa <strong>una</strong> etichetta con un bordo a 0,5 mm dai bordi lunghi (margine di sicurezza), una linea sul
+    bordo esatto, tacche ogni millimetro, la scritta «ALTO», gli angoli numerati 1–4 e un triangolo sul lato che
+    dovrebbe uscire per primo. Serve a verificare verso, margini e allineamento.
   </p>
   <p class="format" data-testid="test-format">
-    Formato: <strong>{{ media.name }}</strong> ({{ fromRoll ? 'letto dal rotolo' : 'scelto nell’app: rotolo non letto' }}) ·
-    densità {{ DENSITY_NAMES[printer.density] }}
+    Formato: <strong>{{ media.name }}</strong> ({{
+      fromRoll ? 'letto dal rotolo' : 'scelto nell’app: rotolo non letto'
+    }}) · densità {{ DENSITY_NAMES[printer.density] }}
   </p>
 
-  <canvas ref="previewCanvas" class="preview" aria-label="Anteprima dell’etichetta di prova" data-testid="test-preview" />
+  <canvas
+    ref="previewCanvas"
+    class="preview"
+    aria-label="Anteprima dell’etichetta di prova"
+    data-testid="test-preview"
+  />
 
   <p v-if="!connected && !busy" class="muted">Collega la stampante per stampare l’etichetta di prova.</p>
 
@@ -153,7 +175,13 @@ async function print(): Promise<void> {
     :disabled="!connected || busy"
     @click="confirming = true"
   >
-    {{ busy ? 'Stampa in corso…' : answers?.printedAt ? 'Stampa un’altra etichetta di prova' : 'Stampa un’etichetta di prova' }}
+    {{
+      busy
+        ? 'Stampa in corso…'
+        : answers?.printedAt
+          ? 'Stampa un’altra etichetta di prova'
+          : 'Stampa un’etichetta di prova'
+    }}
   </button>
 
   <section v-if="answers?.printedAt" class="questions" data-testid="test-questions">
@@ -182,9 +210,13 @@ async function print(): Promise<void> {
         </div>
       </fieldset>
       <fieldset>
-        <legend>Su ogni lato, fino a quale tacca (mm) manca o è tagliata la stampa? Lascia vuoto se è tutto visibile.</legend>
+        <legend>
+          Su ogni lato, fino a quale tacca (mm) manca o è tagliata la stampa? Lascia vuoto se è tutto visibile.
+        </legend>
         <div class="ticks">
-          <label class="field">Sinistra <input v-model="ticks.left" inputmode="decimal" data-testid="ticks-left" @change="saveTicks" /></label>
+          <label class="field"
+            >Sinistra <input v-model="ticks.left" inputmode="decimal" data-testid="ticks-left" @change="saveTicks"
+          /></label>
           <label class="field">Destra <input v-model="ticks.right" inputmode="decimal" @change="saveTicks" /></label>
           <label class="field">Alto <input v-model="ticks.top" inputmode="decimal" @change="saveTicks" /></label>
           <label class="field">Basso <input v-model="ticks.bottom" inputmode="decimal" @change="saveTicks" /></label>

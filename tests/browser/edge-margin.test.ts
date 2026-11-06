@@ -12,8 +12,7 @@ const SMALL = { ...findMediaById('multi-purpose-small')!, widthMm: 25.4 };
 /** Punti neri nelle colonne [from, to) della testina. */
 function blackInHeadColumns(bitmap: { widthPx: number; heightPx: number }, from: number, to: number): number {
   let n = 0;
-  for (let y = 0; y < bitmap.heightPx; y++)
-    for (let x = from; x < to; x++) if (getPixel(bitmap as never, x, y)) n++;
+  for (let y = 0; y < bitmap.heightPx; y++) for (let x = from; x < to; x++) if (getPixel(bitmap as never, x, y)) n++;
   return n;
 }
 
