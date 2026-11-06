@@ -119,3 +119,12 @@ I punti 4 e 5 del controllo, cioè «Ultime stampe» registrato in un posto solo
 - **Scelta:** il test di prestazioni resta nel flusso ma con `continue-on-error`, quindi è solo informativo. Le soglie vere si verificano in locale, prima di ogni modifica all'interfaccia.
   - Il documento prevedeva fino a 3 tentativi. Ne è bastato uno: i tempi di un server condiviso con la CPU rallentata 4 volte non dicono nulla sul Pixel 7a.
   - Tutti gli altri controlli restano bloccanti.
+- **Azioni di GitHub aggiornate** (richiesta dell'utente, 2026-11-06). Le versioni precedenti usavano Node 20, in dismissione sui server di GitHub:
+
+  | Azione | Prima | Dopo |
+  |---|---|---|
+  | `checkout` | v4 | v7 |
+  | `setup-node` | v4 | v7 |
+  | `upload-artifact` | v4 | v7 |
+  | `upload-pages-artifact` | v3 | v5 |
+  | `deploy-pages` | v4 | v5 |
