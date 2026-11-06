@@ -61,7 +61,7 @@ function fakeDevice(o: FakeOptions = {}) {
   // Registra tutte le chiamate, comprese quelle che non dovrebbero mai avvenire.
   const proxy = new Proxy(device, {
     get(target, prop, receiver) {
-      const value = Reflect.get(target, prop, receiver);
+      const value: unknown = Reflect.get(target, prop, receiver);
       if (typeof value === 'function') {
         return (...args: unknown[]) => {
           calls.push(String(prop));
