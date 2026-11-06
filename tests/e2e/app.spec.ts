@@ -334,3 +334,20 @@ test('sottolineato: pulsante nello stile, anteprima diversa, nessuno scorrimento
   await expect(page.getByText('Aggiornamento anteprima')).toHaveCount(0);
   await page.screenshot({ path: 'test-results/25-sottolineato-anteprima.png' });
 });
+
+test('stile: pulsanti G, C, S con il nome completo per gli screen reader', async ({ page }) => {
+  await connectSimulated(page);
+  await page.getByTestId('add-text').tap();
+  await page.keyboard.type('Stile');
+  await page.getByTestId('more-options').locator('summary').tap();
+  const style = page.getByRole('group', { name: 'Stile' });
+  await expect(style.getByRole('button')).toHaveText(['G', 'C', 'S']);
+  for (const name of ['Grassetto', 'Corsivo', 'Sottolineato']) {
+    const b = style.getByRole('button', { name });
+    await expect(b).toHaveAttribute('aria-pressed', 'false');
+    await b.tap();
+    await expect(b).toHaveAttribute('aria-pressed', 'true');
+  }
+  await noHorizontalScroll(page);
+  await page.locator('[data-testid=more-options]').screenshot({ path: 'test-results/27-stile-gcs.png' });
+});
