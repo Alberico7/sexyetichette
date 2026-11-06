@@ -106,7 +106,7 @@ test('tema: automatico → chiaro → scuro, la scelta resta dopo il ricaricamen
   await expect(toggle).toHaveAttribute('data-theme-pref', 'dark');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   expect(await bg()).not.toBe(lightBg);
-  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#1c1f26');
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#24272c');
 
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');

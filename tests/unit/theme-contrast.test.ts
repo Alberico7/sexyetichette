@@ -10,7 +10,7 @@ const css = readFileSync(new URL('../../src/styles/base.css', import.meta.url), 
 
 /** `--nome: light-dark(#chiaro, #scuro)` oppure `--nome: #colore`. */
 function themeColor(name: string, theme: 'light' | 'dark'): string {
-  const m = new RegExp(`--${name}:\s*([^;]+);`).exec(css);
+  const m = new RegExp(`--${name}:\\s*([^;]+);`).exec(css);
   if (!m) throw new Error(`variabile --${name} non trovata`);
   const value = m[1]!.trim();
   const pair = /^light-dark\(\s*(#[0-9a-f]{6})\s*,\s*(#[0-9a-f]{6})\s*\)$/i.exec(value);
