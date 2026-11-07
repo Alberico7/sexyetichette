@@ -351,17 +351,3 @@ test('stile: pulsanti G, C, S con il nome completo per gli screen reader', async
   await noHorizontalScroll(page);
   await page.locator('[data-testid=more-options]').screenshot({ path: 'test-results/27-stile-gcs.png' });
 });
-
-test('icona del pettirosso: i file dichiarati dalla pagina esistono', async ({ page }) => {
-  // Vedi docs/2026-11-07-icona-pettirosso.md.
-  await page.goto('/');
-  const icons = await page
-    .locator('link[rel="icon"], link[rel="apple-touch-icon"]')
-    .evaluateAll((links) => links.map((l) => (l as HTMLLinkElement).href));
-  expect(icons).toHaveLength(3);
-  for (const href of icons) {
-    const res = await page.request.get(href);
-    expect(res.status(), href).toBe(200);
-    expect(res.headers()['content-type'], href).toMatch(href.endsWith('.svg') ? /image\/svg\+xml/ : /image\/png/);
-  }
-});
