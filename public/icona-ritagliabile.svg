@@ -3,7 +3,7 @@
     <clipPath id="bird"><ellipse cx="215" cy="300" rx="125" ry="110"/><circle cx="280" cy="195" r="80"/></clipPath>
   </defs>
   <rect width="512" height="512" fill="#274e76"/>
-  <g transform="translate(100 76) scale(0.6)">
+  <g transform="translate(87 61) scale(0.65)">
   <path d="M110 320 L30 385 L62 408 L140 350 Z" fill="#5f4d3a"/>
   <g clip-path="url(#bird)">
     <rect width="512" height="512" fill="#8a7457"/>
