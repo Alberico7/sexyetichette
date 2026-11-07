@@ -51,7 +51,7 @@ test('manifest: nome, apertura nel browser, icone normali e ritagliabili', async
   }
 });
 
-test('icona ritagliabile: fuori dalla zona sicura (raggio 40 %) c’è solo il fondo', async ({ page }) => {
+test('icona ritagliabile: fuori dalla zona sicura di Android (raggio 30,5 %) c’è solo il fondo', async ({ page }) => {
   await page.goto('/');
   const outside = await page.evaluate(async () => {
     const img = new Image();
@@ -62,7 +62,8 @@ test('icona ritagliabile: fuori dalla zona sicura (raggio 40 %) c’è solo il f
     ctx.drawImage(img, 0, 0);
     const { data } = ctx.getImageData(0, 0, n, n);
     const bg = [0x27, 0x4e, 0x76];
-    const safe = n * 0.4;
+    // Android mostra i 72dp centrali di 108dp; la zona sicura è un cerchio di 66dp (61 %).
+    const safe = n * 0.305;
     let count = 0;
     for (let y = 0; y < n; y++)
       for (let x = 0; x < n; x++) {
