@@ -76,3 +76,10 @@ Queste cose vanno provate sulla stampante. Per ora `browser` corregge solo l'ico
   - il test controlla il cerchio di raggio 30,5 %;
   - `anteprima-ritagli.png` simula il taglio di Android.
 - **Da verificare di nuovo sul Pixel:** togliere e rimettere l'icona.
+
+## Pettirosso un po' più grande (2026-11-07)
+
+- **Risultato sul Pixel con la scala 0,6:** etichetta e coda intere. L'utente chiede il pettirosso leggermente più grande.
+- **Nuova scala 0,65** (`translate(87 61) scale(0.65)`): il disegno arriva al 32 % circa del raggio. Il ritaglio a cerchio di Android mostra fino al 33,3 %.
+- **Cosa si perde:** si esce di poco dalla zona sicura teorica del 30,5 %. Su un launcher che ritaglia più stretto, o durante le animazioni, la punta dell'etichetta potrebbe sfiorare il bordo. È una scelta accettata per avere il pettirosso più grande.
+- **Test:** controlla il raggio del 32,5 %.
