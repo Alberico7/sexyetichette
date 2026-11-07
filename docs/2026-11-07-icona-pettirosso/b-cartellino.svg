@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <clipPath id="bird"><ellipse cx="215" cy="300" rx="125" ry="110"/><circle cx="280" cy="195" r="80"/></clipPath>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#274e76"/>
+  <g transform="translate(30 20) scale(0.88)">
+  <path d="M110 320 L30 385 L62 408 L140 350 Z" fill="#5f4d3a"/>
+  <g clip-path="url(#bird)">
+    <rect width="512" height="512" fill="#8a7457"/>
+    <ellipse cx="290" cy="257" rx="92" ry="108" fill="#e06a30"/>
+    <ellipse cx="240" cy="385" rx="110" ry="55" fill="#f1e6d2"/>
+  </g>
+  <ellipse cx="180" cy="300" rx="85" ry="55" transform="rotate(-18 180 300)" fill="#6f5c45"/>
+  <circle cx="308" cy="181" r="13" fill="#1f1a16"/><circle cx="312" cy="176" r="4.5" fill="#fff"/>
+  <path d="M352 191 L398 205 L352 219 Z" fill="#3a2f25"/>
+  <g stroke="#3a2f25" stroke-width="10" stroke-linecap="round"><path d="M205 405 L200 450"/><path d="M245 405 L248 450"/></g>
+  <path d="M392 205 Q410 230 420 262" fill="none" stroke="#f1e6d2" stroke-width="5"/>
+  <g transform="rotate(10 440 320)">
+    <path d="M395 270 L430 252 L490 252 L490 360 L395 360 Z" fill="#fff"/>
+    <circle cx="420" cy="275" r="8" fill="#274e76"/>
+    <rect x="410" y="300" width="64" height="10" rx="5" fill="#2e2c29"/>
+    <rect x="410" y="322" width="42" height="10" rx="5" fill="#2e2c29"/>
+  </g>
+  </g>
+</svg>
