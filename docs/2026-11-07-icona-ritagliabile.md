@@ -64,3 +64,15 @@ Queste cose vanno provate sulla stampante. Per ora `browser` corregge solo l'ico
   - il manifest, con tipi e dimensioni di ogni icona;
   - la zona sicura: fuori dal cerchio di raggio 40 % i pixel sono solo blu.
 - **Differenza dal piano:** il controllo della zona sicura è un test e2e e non unitario, perché leggere i pixel del PNG è più semplice nel browser.
+
+## Correzione dopo la prova su GrapheneOS (2026-11-07)
+
+- **Prova sul Pixel:** il bordo bianco è sparito, ma etichetta e coda erano un po' tagliate.
+- **Causa:** Vanadium passa l'icona ad Android come icona adattiva nativa:
+  - livello da 108dp, di cui sono visibili i 72dp centrali (66,7 %);
+  - zona sicura: cerchio da 66dp, cioè il **61 %**, più stretto dell'80 % dello standard web.
+- **Correzione:**
+  - pettirosso ridotto al 60 % (`translate(100 76) scale(0.6)`);
+  - il test controlla il cerchio di raggio 30,5 %;
+  - `anteprima-ritagli.png` simula il taglio di Android.
+- **Da verificare di nuovo sul Pixel:** togliere e rimettere l'icona.
