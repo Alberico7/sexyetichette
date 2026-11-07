@@ -1,7 +1,7 @@
 # Icona dell'app: pettirosso con l'etichetta nel becco
 
 - Data: 2026-11-07
-- Stato: **confermato e realizzato (2026-11-07), versione D**
+- Stato: **confermato e realizzato (2026-11-07)**: prima versione D, poi **F** (scelta dell'utente, 2026-11-07)
 
 ## Perché
 
@@ -17,6 +17,7 @@ I disegni stanno nella cartella `docs/2026-11-07-icona-pettirosso/`. `anteprima.
 | **B** | `b-cartellino.svg` | Stesso pettirosso. Tiene per un filo un cartellino con il buco. Fondo blu ardesia dell'app (`#274e76`). |
 | **C** | `c-semplice.svg` | Pettirosso ridotto a un tondo: dorso bruno, petto arancio, occhio, becco, etichetta. Fondo antracite del tema scuro. È la più leggibile da piccola, ma è la meno "pettirosso". |
 | **D** | `d-blu-etichetta-dritta.svg` | Il pettirosso di B sul fondo blu, con l'etichetta rettangolare di A nel becco. Aggiunta su richiesta dell'utente. |
+| **F** | `f-diametro.svg`, `f-diametro-ritagliabile.svg` | Come D, ma sull'etichetta c'è il simbolo del diametro ⌀ dell'app al posto delle due righe. Le proporzioni sono quelle della ISO 3098 (cerchio 0,77 h, barra a 75°); il tratto è più spesso, per leggerlo nell'icona. Confronto in `anteprima-diametro.png`. Scelta dall'utente il 2026-11-07, al posto della D. |
 
 Colori:
 - dorso bruno-oliva `#8a7457`, ali più scure;
@@ -63,3 +64,7 @@ Le bozze si possono ritoccare: colori, fondo, posizione dell'etichetta, anche me
   - `icona-180.png`, come `apple-touch-icon`.
 - **PNG:** li genera `scripts/make-icons.mjs` con Chromium di Playwright. Lo script toglie gli angoli arrotondati del fondo, perché la forma la dà il telefono. Va rilanciato solo se cambia il disegno.
 - **Test:** e2e in `tests/e2e/app.spec.ts`: le 3 icone dichiarate rispondono 200 con il tipo giusto. Controllato anche che finiscano in `dist/`.
+- **Passaggio alla F (2026-11-07):**
+  - `public/icona.svg` e `public/icona-ritagliabile.svg` ora hanno il simbolo ⌀ sull'etichetta;
+  - PNG rigenerati con `scripts/make-icons.mjs`;
+  - test delle icone verdi, compresa la zona sicura di Android.
