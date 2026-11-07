@@ -1,7 +1,7 @@
 # Icona ritagliabile per la schermata home (manifest)
 
 - Data: 2026-11-07
-- Stato: **confermato e realizzato (2026-11-07)**, da verificare a vista su GrapheneOS
+- Stato: **confermato, realizzato e verificato sul Pixel con GrapheneOS (2026-11-07)**: niente bordo bianco, pettirosso intero alla scala 0,65
 
 ## Perché
 
