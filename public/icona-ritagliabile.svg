@@ -16,8 +16,8 @@
   <g stroke="#3a2f25" stroke-width="10" stroke-linecap="round"><path d="M205 405 L200 450"/><path d="M245 405 L248 450"/></g>
   <g transform="rotate(14 430 235)">
     <rect x="382" y="193" width="104" height="66" rx="10" fill="#fff" stroke="#2e2c29" stroke-width="6"/>
-    <rect x="396" y="212" width="66" height="9" rx="4" fill="#2e2c29"/>
-    <rect x="396" y="231" width="44" height="9" rx="4" fill="#2e2c29"/>
+    <circle cx="434" cy="226" r="17.5" fill="none" stroke="#2e2c29" stroke-width="7"/>
+    <path d="M428 248 L440 204" stroke="#2e2c29" stroke-width="7" stroke-linecap="round"/>
   </g>
   </g>
 </svg>
