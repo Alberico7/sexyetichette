@@ -37,3 +37,26 @@ export function insertAtSelection(
   const e = Math.min(len, Math.max(s, end ?? s));
   return { text: text.slice(0, s) + insert + text.slice(e), cursor: s + insert.length };
 }
+
+/** Cuore pieno (U+2665): nero, adatto alla stampa termica. Disegnato nel mini-font `diametro.otf`. */
+export const HEART = '♥';
+
+/**
+ * Codice nascosto che diventa ♥ mentre si scrive (nessun pulsante).
+ * Il `#` evita di trasformare un `<3` scritto apposta. Vedi docs/2026-11-08-cuore-nascosto.md.
+ */
+export const HEART_CODE = '#<3';
+
+/**
+ * Sostituisce ogni `#<3` con ♥ e sposta il cursore di conseguenza.
+ * Restituisce `null` se il testo non contiene il codice.
+ */
+export function replaceHeartCode(text: string, cursor: number | null = text.length): TextEdit | null {
+  if (!text.includes(HEART_CODE)) return null;
+  const pos = Math.min(text.length, Math.max(0, cursor ?? text.length));
+  const before = text.slice(0, pos).split(HEART_CODE).join(HEART);
+  const after = text.slice(pos).split(HEART_CODE).join(HEART);
+  // Un codice a cavallo del cursore (raro: cursore in mezzo al codice incollato) si sistema sul testo intero.
+  const joined = (before + after).split(HEART_CODE).join(HEART);
+  return { text: joined, cursor: Math.min(joined.length, before.length) };
+}

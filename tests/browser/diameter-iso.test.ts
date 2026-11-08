@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getPixel, type LabelBitmap } from '@mbtech-nl/bitmap';
 import { createDocument, createTextElement } from '@/model/document';
-import { DIAMETER_SIGN } from '@/model/text';
+import { DIAMETER_SIGN, HEART } from '@/model/text';
 import { ISO_FONT } from '@/model/fonts';
 import { LW550_HEAD, findMediaById } from '@/printer/media';
 import { bitmapsEqual } from '@/printer/raster';
@@ -81,5 +81,37 @@ describe('⌀ proporzionato al testo (mini-font ISO)', () => {
     await reading(`${DIAMETER_SIGN} 20`); // registra il mini-font
     const after = await reading('Tubo 20 mm');
     expect(bitmapsEqual(before, after)).toBe(true);
+  });
+});
+
+describe('cuore ♥ nascosto (docs/2026-11-08-cuore-nascosto.md)', () => {
+  it.each(['sans-serif', 'serif', ISO_FONT])('%s: cuore pieno, alto come le maiuscole, sulla riga', async (font) => {
+    const heart = await reading(HEART, font);
+    const H = await reading('H', font);
+    const ratio = inkHeight(heart) / inkHeight(H);
+    expect(ratio).toBeGreaterThan(0.95);
+    expect(ratio).toBeLessThan(1.05);
+    // Appoggiato sulla riga: il fondo (la punta) coincide con il fondo della H.
+    expect(Math.abs(rows(heart).at(-1)!.y - rows(H).at(-1)!.y)).toBeLessThanOrEqual(2);
+    // Pieno: la riga a metà altezza è continua da un bordo all'altro.
+    const r = rows(heart);
+    const mid = r[Math.floor(r.length / 2)]!;
+    expect(mid.xs.length).toBe(mid.xs.at(-1)! - mid.xs[0]! + 1);
+  });
+
+  it('con le lettere: «A♥B» è largo quanto «A», cuore e «B» insieme, senza sovrapposizioni', async () => {
+    const width = (b: LabelBitmap) => {
+      let min = Infinity,
+        max = -1;
+      for (const row of rows(b)) {
+        min = Math.min(min, row.xs[0]!);
+        max = Math.max(max, row.xs.at(-1)!);
+      }
+      return max - min + 1;
+    };
+    const all = width(await reading(`A${HEART}B`, ISO_FONT));
+    const parts =
+      width(await reading('A', ISO_FONT)) + width(await reading(HEART, ISO_FONT)) + width(await reading('B', ISO_FONT));
+    expect(all).toBeGreaterThan(parts);
   });
 });
