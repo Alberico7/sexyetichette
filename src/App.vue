@@ -25,6 +25,8 @@ import { checkEnvironment } from '@/printer/errors';
 import { useDocumentStore } from '@/stores/document';
 import { usePreviewStore } from '@/stores/preview';
 import { usePrinterStore } from '@/stores/printer';
+import { diagLog } from '@/diagnostics/log';
+import { viewportInfo } from '@/screen-shape';
 
 // Diagnostica USB: caricata solo quando serve.
 const DiagnosticsPanel = defineAsyncComponent(() => import('@/components/DiagnosticsPanel.vue'));
@@ -106,6 +108,13 @@ function onPrinted(copies = 1): void {
   if (o?.stopped) toast.show(`Fermata: stampate ${o.sent} ${o.sent === 1 ? 'copia' : 'copie'} su ${o.total}`);
   else toast.show(copies > 1 ? `Stampate ${copies} copie ✓` : 'Stampata ✓');
 }
+
+// Registro della diagnostica: perché si chiude il pannello del testo (docs/2026-11-08-orizzontale-tastiera.md).
+watch(textOpen, (open, wasOpen) => {
+  if (!wasOpen || open) return;
+  const why = sheet.value !== 'text' ? `pannello «${sheet.value}»` : 'nessun testo selezionato';
+  diagLog.add('app', `Pannello del testo chiuso: ${why}`, viewportInfo());
+});
 
 // Un pannello aperto copre l'avviso: lo tolgo.
 watch(sheet, (s) => {

@@ -14,6 +14,8 @@ import { dotsToMm } from '@/model/units';
 import { cssColor, effectiveTheme } from '@/theme';
 import { onDiameterFontReady } from '@/render/diameter-font';
 import { onWebFontReady } from '@/render/web-fonts';
+import { keyboardCompact, viewportInfo } from '@/screen-shape';
+import { diagLog } from '@/diagnostics/log';
 
 const emit = defineEmits<{ edit: [id: string] }>();
 
@@ -27,6 +29,8 @@ let uiLayer: Layer;
 let content: Group;
 let transformer: Transformer;
 let resizeObserver: ResizeObserver | null = null;
+/** La tastiera era aperta quando il dito ha toccato l'editor (vedi il tocco sullo sfondo). */
+let keyboardOpenAtPress = false;
 let isTransforming = false;
 let frame = 0;
 let stopFontListener: (() => void) | null = null;
@@ -227,9 +231,30 @@ onMounted(async () => {
   // Solo in sviluppo e nei test e2e: accesso alla scena (non entra nella build pubblicata).
   if (import.meta.env.DEV) (window as unknown as { __labelStage?: Stage }).__labelStage = stage;
 
+  // Prima che il browser sposti il cursore: c'era la tastiera aperta (casella attiva, disposizione compatta)?
+  host.value.addEventListener(
+    'pointerdown',
+    () => {
+      const active = document.activeElement;
+      keyboardOpenAtPress = keyboardCompact() && active instanceof HTMLElement && active.matches('textarea, input');
+    },
+    { capture: true },
+  );
+
   stage.on('click tap', (e) => {
     const target = e.target as Node | Stage;
-    if (target === stage || (target as Node).hasName('paper')) store.select(null);
+    if (target !== stage && !(target as Node).hasName('paper')) return;
+    // Orizzontale con la tastiera aperta: il tocco fuori dal testo chiude solo la tastiera,
+    // il pannello resta (docs/2026-11-08-orizzontale-tastiera.md). Lo stato è quello di quando
+    // il dito ha toccato: a quel punto il browser ha già tolto il cursore dalla casella.
+    // Un tocco arriva sia come «tap» sia come «click»: l'indicazione vale fino al prossimo appoggio del dito.
+    if (keyboardOpenAtPress) {
+      (document.activeElement as HTMLElement | null)?.blur?.();
+      diagLog.add('app', 'Tocco fuori dal testo con la tastiera aperta: chiusa solo la tastiera', viewportInfo());
+      return;
+    }
+    if (store.selectedId) diagLog.add('app', 'Tocco fuori dal testo: selezione tolta', viewportInfo());
+    store.select(null);
   });
 
   drawBackground();

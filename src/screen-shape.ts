@@ -23,3 +23,15 @@ export function trackScreenShape(root: HTMLElement = document.documentElement): 
   window.addEventListener('resize', update);
   screen.orientation?.addEventListener('change', update);
 }
+
+/** Orizzontale con la tastiera aperta (spazio visibile alto al massimo 260 punti): la disposizione compatta. */
+export function keyboardCompact(): boolean {
+  return screenShape() === 'landscape' && window.matchMedia('(max-height: 260px)').matches;
+}
+
+/** Riga per il registro della diagnostica: spazio visibile, schermo ed elemento attivo. */
+export function viewportInfo(): string {
+  const a = document.activeElement;
+  const active = a && a !== document.body ? a.tagName.toLowerCase() : 'nessuno';
+  return `spazio ${window.innerWidth}×${window.innerHeight}, schermo ${screen.width}×${screen.height} (${screenShape()}), elemento attivo: ${active}`;
+}
