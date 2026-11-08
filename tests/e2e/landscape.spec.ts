@@ -1,6 +1,9 @@
 /**
  * Uso in orizzontale sul telefono. Il verticale è coperto da tutti gli altri test.
- * Vedi docs/2026-11-08-orizzontale.md.
+ * Vedi docs/2026-11-08-orizzontale.md e docs/2026-11-08-orizzontale-tastiera.md.
+ *
+ * `screen` è la forma del telefono (ruotato), `viewport` lo spazio visibile: con la
+ * tastiera aperta il secondo si abbassa, il primo no.
  */
 import type { Locator, Page } from '@playwright/test';
 import type { Stage } from 'konva/lib/Stage';
@@ -8,8 +11,8 @@ import { test, expect, noHorizontalScroll, connectSimulated, writeText } from '.
 
 /** Pixel 7a in orizzontale con le barre del browser e di Android; Realme a schermo intero. */
 const SIZES = [
-  { name: 'pixel', width: 915, height: 340 },
-  { name: 'realme', width: 873, height: 393 },
+  { name: 'pixel', width: 915, height: 340, screen: { width: 915, height: 412 } },
+  { name: 'realme', width: 873, height: 393, screen: { width: 873, height: 393 } },
 ] as const;
 
 interface Box {
@@ -50,9 +53,7 @@ async function hideDevPanel(page: Page): Promise<void> {
 
 for (const size of SIZES) {
   test.describe(`orizzontale ${size.name} ${size.width}×${size.height}`, () => {
-    test.beforeEach(async ({ page }) => {
-      await page.setViewportSize({ width: size.width, height: size.height });
-    });
+    test.use({ viewport: { width: size.width, height: size.height }, screen: size.screen });
 
     test('editor: formato e aiuto non coprono l’etichetta', async ({ page }) => {
       await connectSimulated(page, { waitForRoll: true });
@@ -143,12 +144,89 @@ for (const size of SIZES) {
   });
 }
 
-test('orizzontale, tema scuro: testo in modifica', async ({ page }) => {
-  await page.emulateMedia({ colorScheme: 'dark' });
-  await page.setViewportSize({ width: 915, height: 340 });
-  await connectSimulated(page, { waitForRoll: true });
-  await hideDevPanel(page);
-  await page.getByTestId('add-text').tap();
-  await page.keyboard.type('Scuro');
-  await page.screenshot({ path: 'test-results/land-scuro-testo.png' });
+test.describe('orizzontale, tema scuro', () => {
+  test.use({ viewport: { width: 915, height: 340 }, screen: { width: 915, height: 412 } });
+  test('testo in modifica', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await connectSimulated(page, { waitForRoll: true });
+    await hideDevPanel(page);
+    await page.getByTestId('add-text').tap();
+    await page.keyboard.type('Scuro');
+    await page.screenshot({ path: 'test-results/land-scuro-testo.png' });
+  });
+});
+
+/** Orizzontale con la tastiera aperta: lo spazio visibile si abbassa, lo schermo resta largo. */
+const KEYBOARD = [
+  { name: 'pixel', viewport: { width: 915, height: 130 }, screen: { width: 915, height: 412 } },
+  { name: 'realme', viewport: { width: 873, height: 150 }, screen: { width: 873, height: 393 } },
+] as const;
+
+for (const k of KEYBOARD) {
+  test.describe(`orizzontale con tastiera ${k.name} ${k.viewport.width}×${k.viewport.height}`, () => {
+    test.use({ viewport: k.viewport, screen: k.screen });
+
+    test('si vedono etichetta, casella del testo, Fine e Stampa; niente barra in alto', async ({ page }) => {
+      await connectSimulated(page, { waitForRoll: true });
+      await hideDevPanel(page);
+      await page.getByTestId('add-text').tap();
+      await page.keyboard.type('Tastiera');
+      const input = page.getByTestId('text-input');
+      await fullyVisible(page, input);
+      expect((await input.boundingBox())!.height, 'casella alta almeno 40').toBeGreaterThanOrEqual(40);
+      await fullyVisible(page, page.getByTestId('text-done'));
+      await fullyVisible(page, page.getByTestId('text-print'));
+      await expect(page.locator('header.bar')).toBeHidden();
+      await expect(page.getByRole('button', { name: 'Inserisci il simbolo del diametro' })).toBeHidden();
+      await expect(page.getByRole('button', { name: 'Elimina il testo' })).toBeHidden();
+      const editor = (await page.getByTestId('editor').boundingBox())!;
+      expect(editor.height, 'etichetta visibile').toBeGreaterThanOrEqual(80);
+      expect(editor.y + editor.height).toBeLessThanOrEqual(k.viewport.height + 0.5);
+      await noHorizontalScroll(page);
+      await page.screenshot({ path: `test-results/land-tastiera-${k.name}.png` });
+      await page.getByTestId('text-done').tap();
+      await expect(page.getByTestId('text-panel')).toHaveCount(0);
+      await expect(page.locator('header.bar')).toBeVisible();
+    });
+
+    test('formato: la ricerca è visibile', async ({ page }) => {
+      await connectSimulated(page, { waitForRoll: true });
+      await page.getByTestId('media-chip').tap();
+      const dialog = page.getByRole('dialog', { name: 'Formato etichetta' });
+      const search = dialog.getByRole('textbox').first();
+      await search.focus();
+      await fullyVisible(page, search);
+      await noHorizontalScroll(page);
+    });
+  });
+}
+
+test.describe('verticale piccolo con tastiera 360×300', () => {
+  test.use({ viewport: { width: 360, height: 300 }, screen: { width: 360, height: 640 } });
+  test('mentre si scrive la barra in alto è nascosta; casella e Fine visibili; non diventa orizzontale', async ({
+    page,
+  }) => {
+    await connectSimulated(page, { waitForRoll: true });
+    await hideDevPanel(page);
+    await page.getByTestId('add-text').tap();
+    await page.keyboard.type('Piccolo');
+    await expect(page.locator('header.bar')).toBeHidden();
+    await fullyVisible(page, page.getByTestId('text-input'));
+    await fullyVisible(page, page.getByTestId('text-done'));
+    // Lo schermo è verticale: il pannello resta sotto l'etichetta, non a destra.
+    const panel = (await page.getByTestId('text-panel').boundingBox())!;
+    expect(panel.x).toBeLessThanOrEqual(1);
+    await noHorizontalScroll(page);
+    await page.screenshot({ path: 'test-results/vert-piccolo-tastiera.png' });
+  });
+});
+
+test.describe('verticale Pixel con tastiera 412×560', () => {
+  test.use({ viewport: { width: 412, height: 560 }, screen: { width: 412, height: 915 } });
+  test('la barra in alto resta', async ({ page }) => {
+    await connectSimulated(page, { waitForRoll: true });
+    await page.getByTestId('add-text').tap();
+    await page.keyboard.type('Pixel');
+    await expect(page.locator('header.bar')).toBeVisible();
+  });
 });

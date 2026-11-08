@@ -112,17 +112,17 @@ const logoUrl = `url("${import.meta.env.BASE_URL}icona-ritagliabile.svg")`;
   box-shadow: 0 0 0 2px var(--surface);
 }
 /* Orizzontale su telefono: logo da 32 px nella barra più bassa (docs/2026-11-08-orizzontale.md). */
-@media (orientation: landscape) and (max-height: 500px) {
-  .logo {
+@media (max-height: 500px) {
+  :root[data-screen='landscape'] .logo {
     width: 32px;
     height: 32px;
   }
 
-  .img {
+  :root[data-screen='landscape'] .img {
     inset: 3px;
   }
 
-  .badge {
+  :root[data-screen='landscape'] .badge {
     width: 14px;
     height: 14px;
     font-size: 10px;

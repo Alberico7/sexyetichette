@@ -119,8 +119,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 }
 
 /* Orizzontale su telefono (docs/2026-11-08-orizzontale.md). */
-@media (orientation: landscape) and (max-height: 500px) {
-  .copies-picker {
+@media (max-height: 500px) {
+  :root[data-screen='landscape'] .copies-picker {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
     grid-template-areas:
@@ -130,21 +130,21 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
     gap: 6px 16px;
   }
 
-  .display {
+  :root[data-screen='landscape'] .display {
     grid-area: display;
     align-self: center;
   }
 
-  .keypad {
+  :root[data-screen='landscape'] .keypad {
     grid-area: keypad;
     gap: 6px;
   }
 
-  .keypad button {
+  :root[data-screen='landscape'] .keypad button {
     min-height: 48px;
   }
 
-  .go {
+  :root[data-screen='landscape'] .go {
     grid-area: go;
     min-height: 52px;
   }

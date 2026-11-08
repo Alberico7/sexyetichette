@@ -124,7 +124,7 @@ function reprintRecent(doc: LabelDocument): void {
 </script>
 
 <template>
-  <div class="app">
+  <div class="app" :class="{ editing: textOpen && selectedText }">
     <PrinterBar @diagnostics="sheet = 'diagnostics'" />
 
     <div v-if="envError" class="env-error" role="alert">
@@ -274,20 +274,20 @@ function reprintRecent(doc: LabelDocument): void {
 }
 
 /* Orizzontale su telefono (docs/2026-11-08-orizzontale.md). Il verticale non cambia. */
-@media (orientation: landscape) and (max-height: 500px) {
-  .stage {
+@media (max-height: 500px) {
+  :root[data-screen='landscape'] .stage {
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
     min-height: 0;
   }
 
-  .stage.text-open {
+  :root[data-screen='landscape'] .stage.text-open {
     flex-direction: row;
   }
 
   /* Formato sopra, etichetta in mezzo, aiuto sotto: niente sovrapposizioni. */
-  .workspace {
+  :root[data-screen='landscape'] .workspace {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -297,22 +297,38 @@ function reprintRecent(doc: LabelDocument): void {
     padding: 6px 0 4px;
   }
 
-  .media-chip {
+  :root[data-screen='landscape'] .media-chip {
     position: static;
     transform: none;
     flex: none;
     min-height: 36px;
   }
 
-  .workspace > .editor {
+  :root[data-screen='landscape'] .workspace > .editor {
     flex: 1 1 0;
     min-height: 0;
     height: auto;
   }
 
-  .hint {
+  :root[data-screen='landscape'] .hint {
     position: static;
     flex: none;
+  }
+}
+/*
+ * Mentre si scrive con la tastiera aperta e lo spazio è poco, la barra in alto si nasconde
+ * (docs/2026-11-08-orizzontale-tastiera.md): orizzontale fino a 260 punti, verticale fino a 480
+ * (telefoni piccoli; Pixel e Realme in verticale hanno circa 520–560 punti e non cambiano).
+ */
+@media (max-height: 260px) {
+  :root[data-screen='landscape'] .app.editing > .bar {
+    display: none;
+  }
+}
+
+@media (max-height: 480px) {
+  :root[data-screen='portrait'] .app.editing > .bar {
+    display: none;
   }
 }
 </style>
