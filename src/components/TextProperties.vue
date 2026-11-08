@@ -381,4 +381,25 @@ function rotate90(): void {
 .symbols button.short {
   flex: 0.6 1 0;
 }
+/* Orizzontale con la tastiera aperta: resta solo la casella, alta quanto lo spazio (docs/2026-11-08-orizzontale-tastiera.md). */
+@media (max-height: 260px) {
+  :root[data-screen='landscape'] .symbols,
+  :root[data-screen='landscape'] .toggle,
+  :root[data-screen='landscape'] .overflow,
+  :root[data-screen='landscape'] .more {
+    display: none;
+  }
+
+  :root[data-screen='landscape'] .field {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+  }
+
+  :root[data-screen='landscape'] .field textarea {
+    flex: 1 1 auto;
+    min-height: 40px;
+    resize: none;
+  }
+}
 </style>

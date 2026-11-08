@@ -249,23 +249,23 @@ async function doPrint(): Promise<void> {
 }
 
 /* Orizzontale su telefono: anteprima a sinistra, impostazioni e Stampa a destra (docs/2026-11-08-orizzontale.md). */
-@media (orientation: landscape) and (max-height: 500px) {
-  .print-sheet {
+@media (max-height: 500px) {
+  :root[data-screen='landscape'] .print-sheet {
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
     gap: 16px;
     align-items: start;
   }
 
-  .ps-preview,
-  .ps-controls {
+  :root[data-screen='landscape'] .ps-preview,
+  :root[data-screen='landscape'] .ps-controls {
     display: grid;
     gap: 10px;
     min-width: 0;
   }
 
   /* «Stampa» sempre in vista anche se gli avvisi allungano la colonna. */
-  .print {
+  :root[data-screen='landscape'] .print {
     position: sticky;
     bottom: 0;
     min-height: 52px;

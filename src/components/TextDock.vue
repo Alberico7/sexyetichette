@@ -61,8 +61,8 @@ const emit = defineEmits<{ remove: []; done: []; print: []; copies: [] }>();
   text-overflow: ellipsis;
 }
 /* Orizzontale su telefono: colonna a destra, etichetta visibile a sinistra (docs/2026-11-08-orizzontale.md). */
-@media (orientation: landscape) and (max-height: 500px) {
-  .dock {
+@media (max-height: 500px) {
+  :root[data-screen='landscape'] .dock {
     flex: none;
     width: min(460px, 52vw);
     max-height: none;
@@ -72,15 +72,37 @@ const emit = defineEmits<{ remove: []; done: []; print: []; copies: [] }>();
     box-shadow: -4px 0 16px rgb(0 0 0 / 0.1);
   }
 
-  .dock-body {
+  :root[data-screen='landscape'] .dock-body {
     flex: 1 1 auto;
     min-height: 0;
     padding: 8px 8px 4px;
     gap: 8px;
   }
 
-  .dock-actions :deep(button) {
+  :root[data-screen='landscape'] .dock-actions :deep(button) {
     min-height: 48px;
+  }
+}
+/* Orizzontale con la tastiera aperta: solo casella del testo, Fine e Stampa (docs/2026-11-08-orizzontale-tastiera.md). */
+@media (max-height: 260px) {
+  :root[data-screen='landscape'] .dock-body {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 6px 0;
+  }
+
+  :root[data-screen='landscape'] .dock-actions {
+    grid-template-columns: 1fr 1.4fr;
+    padding: 6px;
+  }
+
+  :root[data-screen='landscape'] .dock-actions > .danger,
+  :root[data-screen='landscape'] .dock-actions :deep(.copies) {
+    display: none;
+  }
+
+  :root[data-screen='landscape'] .dock-actions :deep(button) {
+    min-height: 40px;
   }
 }
 </style>
