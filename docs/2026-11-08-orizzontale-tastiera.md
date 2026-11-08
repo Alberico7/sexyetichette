@@ -134,3 +134,22 @@ Solo CSS, senza logica nuova: le funzioni restano le stesse.
   - si parte con la casella attiva, si toccano ⌀, AFKEUR e N. R.: il testo viene inserito e la casella non è più attiva;
   - un altro ⌀ va in fondo, quindi la posizione del cursore è conservata.
   - Senza la correzione il test fallisce.
+
+## Il pannello si chiudeva insieme alla tastiera (2026-11-08)
+
+- **Segnalazione dell'utente:** in orizzontale, chiudendo la tastiera con un tocco fuori dal testo o con il tasto indietro, si chiudeva anche il pannello del testo.
+- **Tocco fuori dal testo: corretto.**
+  - Il tocco sullo sfondo dell'editor toglieva la selezione, e il pannello si chiudeva. Prima c'era «Fine» da premere; ora, con la tastiera aperta, viene naturale toccare a sinistra.
+  - **Ora**, se al momento dell'appoggio del dito la tastiera era aperta (casella attiva e disposizione compatta), il tocco chiude solo la tastiera. Il pannello resta, e un secondo tocco a tastiera chiusa toglie la selezione come prima.
+  - Due dettagli tecnici:
+    - lo stato va letto a `pointerdown`, perché il browser toglie il cursore dalla casella prima che arrivi il tocco;
+    - un tocco arriva sia come «tap» sia come «click», quindi l'indicazione vale fino al prossimo appoggio.
+- **Tasto indietro: causa non trovata nel codice.** Nessuna parte dell'app reagisce al tasto indietro, e il browser non lo comunica alla pagina. Per scoprirlo, nel registro della diagnostica ora compaiono:
+  - «Pannello del testo chiuso: …», con il motivo (nessun testo selezionato, oppure un altro pannello), lo spazio visibile, lo schermo e l'elemento attivo;
+  - «Tocco fuori dal testo: selezione tolta» e «Tocco fuori dal testo con la tastiera aperta: chiusa solo la tastiera».
+  - Se succede ancora, «Copia tutto» dirà perché.
+- **Test e2e** a 915×130, 915×100 e 873×150:
+  - con la tastiera aperta, il tocco a sinistra lascia il pannello aperto e la casella non attiva;
+  - a tastiera chiusa, lo stesso tocco chiude il pannello;
+  - le righe compaiono nel registro.
+  - Senza la correzione il test falliva.
