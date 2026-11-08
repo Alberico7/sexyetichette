@@ -130,4 +130,24 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
     padding: 8px 16px;
   }
 }
+/* Orizzontale con la tastiera aperta: intestazione minima, per lasciare spazio alla ricerca (docs/2026-11-08-orizzontale-tastiera.md). */
+@media (max-height: 260px) {
+  :root[data-screen='landscape'] .sheet {
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  :root[data-screen='landscape'] .sheet-header {
+    padding: 0 4px 0 16px;
+  }
+
+  :root[data-screen='landscape'] .close {
+    min-height: 36px;
+    width: 40px;
+  }
+
+  :root[data-screen='landscape'] .sheet-body {
+    padding: 4px 16px;
+  }
+}
 </style>
