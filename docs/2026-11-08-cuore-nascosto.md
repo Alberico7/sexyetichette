@@ -62,3 +62,15 @@ L'utente vuole poter stampare un cuore sulle etichette, senza un pulsante visibi
   - 4 di rendering: cuore pieno, alto come la «H» entro il 5 %, sulla riga, in ISO, sans-serif e serif, e «A♥B» senza sovrapposizioni;
   - 1 e2e: si scrive «Ti #<3» e la casella mostra «Ti ♥»; `<3` da solo resta; la stampa simulata va a buon fine.
 - **Da verificare sulla carta:** che il cuore stampato sia netto.
+
+## Correzione dopo la prova sul telefono (2026-11-08)
+
+- **Problema:** sul telefono la punta del cuore era tagliata.
+- **Causa:** il mini-font veniva caricato per il disegno solo se il testo conteneva ⌀. Con solo ♥, il cuore lo disegnava il font di Android, più grande e sotto la riga.
+  - I test non se ne erano accorti: i test del ⌀, nello stesso file, caricavano il font prima.
+- **Correzione:**
+  - `usesSymbolFont(text)` in `src/model/text.ts` riconosce ⌀ e ♥;
+  - è usata in `scene.ts`, sia nell'editor sia prima della stampa.
+- **Test:**
+  - i test di rendering del cuore stanno ora in `tests/browser/heart.test.ts`, da soli: senza correzione 3 su 4 fallivano;
+  - più un test unitario per `usesSymbolFont`.
