@@ -96,7 +96,7 @@ describe('etichette recenti', () => {
   it('contenuto diverso = etichetta diversa', () => {
     const a = docWith('A');
     const b = structuredClone(a);
-    b.elements[0]!.bold = true;
+    b.elements[0]!.bold = !b.elements[0]!.bold;
     const c = structuredClone(a);
     c.direction = c.direction === 'along' ? 'across' : 'along';
     expect(labelSignature(a)).not.toBe(labelSignature(b));
