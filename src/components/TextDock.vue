@@ -83,26 +83,19 @@ const emit = defineEmits<{ remove: []; done: []; print: []; copies: [] }>();
     min-height: 48px;
   }
 }
-/* Orizzontale con la tastiera aperta: solo casella del testo, Fine e Stampa (docs/2026-11-08-orizzontale-tastiera.md). */
+/*
+ * Orizzontale con la tastiera aperta: solo la casella del testo, per vedere cosa si scrive.
+ * Fine e Stampa tornano chiudendo la tastiera (docs/2026-11-08-orizzontale-tastiera.md).
+ */
 @media (max-height: 260px) {
   :root[data-screen='landscape'] .dock-body {
     display: flex;
     flex-direction: column;
-    padding: 6px 6px 0;
-  }
-
-  :root[data-screen='landscape'] .dock-actions {
-    grid-template-columns: 1fr 1.4fr;
     padding: 6px;
   }
 
-  :root[data-screen='landscape'] .dock-actions > .danger,
-  :root[data-screen='landscape'] .dock-actions :deep(.copies) {
+  :root[data-screen='landscape'] .dock-actions {
     display: none;
-  }
-
-  :root[data-screen='landscape'] .dock-actions :deep(button) {
-    min-height: 40px;
   }
 }
 </style>

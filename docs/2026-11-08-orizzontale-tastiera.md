@@ -110,3 +110,14 @@ Solo CSS, senza logica nuova: le funzioni restano le stesse.
     - Pixel in verticale con la tastiera, 412×560: la barra resta;
   - più un test unitario di `screenShape`.
 - **Verticale normale:** le 10 schermate di riferimento sono identiche. Nelle due della diagnostica cambia solo la riga con la versione dell'app.
+
+## Correzione dopo la prova sul telefono (2026-11-08)
+
+- **Problema:** con la tastiera vera, Fine e Stampa occupavano lo spazio e non si vedeva cosa si scriveva.
+- **Correzione:** con la tastiera aperta (orizzontale, fino a 260 punti) nel pannello resta **solo la casella del testo**, e a sinistra l'etichetta.
+  - Fine, Stampa ed Elimina tornano chiudendo la tastiera con il tasto «giù», e il testo resta aperto.
+  - Nei pannelli dal basso l'intestazione diventa minima, così la ricerca del formato ci sta anche a 100 punti.
+- **Test:**
+  - aggiunta l'altezza 915×100;
+  - con la tastiera aperta Fine e Stampa sono nascosti;
+  - riportando l'altezza a quella senza tastiera ricompaiono, e il testo scritto resta.
