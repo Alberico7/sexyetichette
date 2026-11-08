@@ -10,6 +10,7 @@ import {
   usesSymbolFont,
 } from '@/model/text';
 import { statusMark } from '@/components/status-logo';
+import { screenShape } from '@/screen-shape';
 import { isThemePreference, nextPreference, resolveTheme } from '@/theme';
 
 describe('simbolo del diametro', () => {
@@ -118,5 +119,13 @@ describe('logo di stato (docs/2026-11-08-logo-stato.md)', () => {
     expect(statusMark('error')).toBe('✕');
     expect(statusMark('off')).toBe('');
     expect(statusMark('busy')).toBe('');
+  });
+});
+
+describe('forma dello schermo (docs/2026-11-08-orizzontale-tastiera.md)', () => {
+  it('segue lo schermo, non lo spazio visibile', () => {
+    expect(screenShape({ width: 915, height: 412 })).toBe('landscape');
+    expect(screenShape({ width: 412, height: 915 })).toBe('portrait');
+    expect(screenShape({ width: 360, height: 360 })).toBe('portrait');
   });
 });

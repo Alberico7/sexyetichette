@@ -244,4 +244,10 @@ dd {
   display: grid;
   gap: 10px;
 }
+/* Orizzontale con la tastiera aperta: la ricerca e i primi risultati restano in vista (docs/2026-11-08-orizzontale-tastiera.md). */
+@media (max-height: 260px) {
+  :root[data-screen='landscape'] .detected {
+    display: none;
+  }
+}
 </style>
