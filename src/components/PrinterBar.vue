@@ -127,7 +127,7 @@ const themeLabel = computed(
   color: var(--muted);
 }
 /* Orizzontale su telefono: barra più bassa per lasciare spazio all'etichetta (docs/2026-11-08-orizzontale.md). */
-@media (max-height: 500px) {
+@media (max-height: 600px) {
   :root[data-screen='landscape'] .bar {
     padding-top: calc(4px + var(--safe-top));
     padding-bottom: 4px;

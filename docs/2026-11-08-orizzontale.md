@@ -106,3 +106,19 @@ Tutto in CSS con la media query indicata sopra, senza logica nuova.
   - `tests/e2e/landscape.spec.ts`, 11 test a 915×340 e 873×393, più una schermata nel tema scuro;
   - **verticale:** le 10 schermate di `theme-screens.spec.ts` (temi chiaro e scuro) sono identiche byte per byte prima e dopo la modifica, e tutti gli e2e esistenti passano.
 - **Da verificare sul telefono:** orizzontale con la tastiera aperta.
+
+## Soglia alzata a 600 punti, per i tablet (2026-11-08)
+
+- **Controllo sui tablet**, richiesto dall'utente: 10" (1280×800) e 8" (962×601), orizzontale e verticale, con e senza tastiera.
+  - Nessuno scorrimento orizzontale.
+  - **Unico problema:** sul tablet da 8" in orizzontale, con 545 punti visibili, «Stampa» dell'anteprima era sotto il bordo. La disposizione orizzontale scattava solo fino a 500 punti.
+- **Correzione:** la disposizione orizzontale vale fino a **600 punti** (`@media (max-height: 600px)` con `:root[data-screen='landscape']`).
+  - Il tablet da 8" ora ha l'anteprima a due colonne e il testo a destra.
+  - I telefoni non cambiano: sono sotto i 500 punti.
+  - Il tablet da 10" in orizzontale non cambia: ha 744 punti.
+  - Il verticale non cambia: la regola richiede lo schermo orizzontale.
+- **Test:** due nuovi e2e in `landscape.spec.ts`:
+  - 8" a 962×545: «Stampa» dell'anteprima visibile e pannello del testo a destra;
+  - 10" a 1280×744: pannello del testo sotto, a tutta larghezza.
+  - Schermate del verticale invariate: nella diagnostica cambia solo la riga con la versione.
+- **Lasciato com'è:** tablet da 8" in verticale con la tastiera aperta nell'anteprima, cioè mentre si scrive il numero di copie. «Stampa» torna visibile chiudendo la tastiera.
