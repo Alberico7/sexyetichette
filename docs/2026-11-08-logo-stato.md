@@ -73,3 +73,13 @@ Anteprima nei due temi: `docs/2026-11-08-logo-stato/anteprima-stati.png`. L'anel
   - 4 e2e in `tests/e2e/status-logo.spec.ts`: non collegata grigia e senza anello; pronta ✓; coperchio aperto ✕; stampa in corso con anello che gira e si ferma con «riduci animazioni»; screenshot nei due temi.
 - **Differenza dal piano:** lo stato «avviso» non è provato negli e2e, perché il simulatore non produce «Rotolo quasi finito». È coperto dal test unitario del segno.
 - **Nota:** il logo è più largo del pallino (40 px contro 14), quindi il nome del modello sotto lo stato ha un po' meno spazio. «LabelWriter 550 (simulata)» viene troncato; il nome reale è più corto.
+
+## Correzione: scritta troncata nella versione finale (2026-11-08)
+
+- **Problema:** a 412 px, con la stampante scollegata, «Stampante non collegata» era troncata in «Stampante non…». Il logo è più largo del pallino.
+  - L'utente toglierà il 🔧 nella versione finale (`TEST_PHASE`), ma togliendolo si liberavano 56 px e ne servivano 57.
+- **Correzione** in `PrinterBar.vue`:
+  - spazio tra gli elementi della barra da 8 a 6 px;
+  - spazio fra logo e scritta da 10 a 8 px.
+  - Senza il 🔧 la scritta sta intera con circa 4 px di margine. In fase di collaudo, con il 🔧, resta troncata.
+- **Test:** e2e «versione finale (senza 🔧)». Nasconde il 🔧 e misura al decimo di pixel, chiedendo almeno 2 px di margine. Senza la correzione fallisce.

@@ -89,7 +89,8 @@ const themeLabel = computed(
 .bar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  /* 6 px: senza il 🔧 (versione finale) «Stampante non collegata» ci sta intera a 412 px. */
+  gap: 6px;
   padding: calc(8px + var(--safe-top)) 12px 8px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -107,7 +108,7 @@ const themeLabel = computed(
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .texts {
