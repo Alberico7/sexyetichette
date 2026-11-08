@@ -356,3 +356,26 @@ test('stile: pulsanti G, C, S con il nome completo per gli screen reader', async
   await noHorizontalScroll(page);
   await page.locator('[data-testid=more-options]').screenshot({ path: 'test-results/27-stile-gcs.png' });
 });
+
+test('cuore nascosto: «#<3» diventa ♥ mentre si scrive, e si stampa', async ({ page }) => {
+  // Vedi docs/2026-11-08-cuore-nascosto.md.
+  await connectSimulated(page);
+  await page.getByTestId('add-text').tap();
+  const input = page.getByTestId('text-input');
+  await page.keyboard.type('Ti #<3');
+  await expect(input).toHaveValue('Ti ♥');
+  // Il cursore resta dopo il cuore: si continua a scrivere in fondo.
+  await page.keyboard.type(' A');
+  await expect(input).toHaveValue('Ti ♥ A');
+  // «<3» senza # resta com'è.
+  await page.keyboard.type(' <3');
+  await expect(input).toHaveValue('Ti ♥ A <3');
+  await page.getByTestId('text-done').tap();
+
+  await page.getByTestId('open-preview').tap();
+  await expect(page.getByTestId('preview-canvas')).toBeVisible();
+  await page.screenshot({ path: 'test-results/28-cuore.png' });
+  await page.getByTestId('print-button').tap();
+  await expect(page.getByTestId('toast')).toContainText('Stampata');
+  await expect(page.getByTestId('dev-panel')).toContainText('lavori ricevuti: 1');
+});
