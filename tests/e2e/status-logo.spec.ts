@@ -61,3 +61,20 @@ test('tema scuro: screenshot della barra', async ({ page }) => {
   await expect(logo(page)).toHaveAttribute('data-tone', 'ok');
   await page.locator('header').screenshot({ path: 'test-results/31-logo-scuro.png' });
 });
+
+test('versione finale (senza 🔧): «Stampante non collegata» intera a 412 px', async ({ page }) => {
+  // Il 🔧 c'è solo in fase di collaudo (TEST_PHASE); qui lo nascondo come nella versione finale.
+  await page.goto('/?sim');
+  await page.getByTestId('bar-diagnostics').evaluate((el) => (el.style.display = 'none'));
+  const text = page.locator('.texts strong');
+  await expect(text).toHaveText('Stampante non collegata');
+  // Larghezze precise (al decimo di pixel): il testo deve stare nello spazio con almeno 2 px di margine.
+  const { textWidth, room } = await text.evaluate((el) => {
+    const r = document.createRange();
+    r.selectNodeContents(el);
+    // Spazio disponibile: dall'inizio della scritta alla fine della zona di stato (il contenitore si stringe sul testo).
+    const status = el.closest('.status')!.getBoundingClientRect();
+    return { textWidth: r.getBoundingClientRect().width, room: status.right - el.getBoundingClientRect().left };
+  });
+  expect(room - textWidth).toBeGreaterThanOrEqual(2);
+});
