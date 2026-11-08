@@ -60,4 +60,27 @@ const emit = defineEmits<{ remove: []; done: []; print: []; copies: [] }>();
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Orizzontale su telefono: colonna a destra, etichetta visibile a sinistra (docs/2026-11-08-orizzontale.md). */
+@media (orientation: landscape) and (max-height: 500px) {
+  .dock {
+    flex: none;
+    width: min(460px, 52vw);
+    max-height: none;
+    border-top: 0;
+    border-left: 1px solid var(--border);
+    border-radius: 16px 0 0 0;
+    box-shadow: -4px 0 16px rgb(0 0 0 / 0.1);
+  }
+
+  .dock-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 8px 8px 4px;
+    gap: 8px;
+  }
+
+  .dock-actions :deep(button) {
+    min-height: 48px;
+  }
+}
 </style>

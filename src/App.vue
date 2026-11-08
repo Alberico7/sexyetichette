@@ -144,38 +144,41 @@ function reprintRecent(doc: LabelDocument): void {
     />
     <component :is="DevPanel" v-if="DevPanel" />
 
-    <main class="workspace">
-      <button v-if="!textOpen" type="button" class="media-chip" data-testid="media-chip" @click="sheet = 'media'">
-        {{ store.doc.media.name }} ▾
-      </button>
-      <LabelEditor @edit="openEdit" />
-      <p v-if="store.doc.elements.length === 0" class="hint">Tocca «+ Testo» per scrivere sull'etichetta.</p>
-    </main>
+    <!-- In verticale «stage» non esiste per il layout (display: contents); in orizzontale affianca etichetta e testo. -->
+    <div class="stage" :class="{ 'text-open': textOpen && selectedText }">
+      <main class="workspace">
+        <button v-if="!textOpen" type="button" class="media-chip" data-testid="media-chip" @click="sheet = 'media'">
+          {{ store.doc.media.name }} ▾
+        </button>
+        <LabelEditor @edit="openEdit" />
+        <p v-if="store.doc.elements.length === 0" class="hint">Tocca «+ Testo» per scrivere sull'etichetta.</p>
+      </main>
 
-    <TextDock
-      v-if="textOpen && selectedText"
-      :element="selectedText"
-      :autofocus="focusText"
-      :printing="quick.printing.value"
-      @remove="removeSelected"
-      @done="closeText"
-      @print="quickPrint()"
-      @copies="sheet = 'copies'"
-    />
+      <TextDock
+        v-if="textOpen && selectedText"
+        :element="selectedText"
+        :autofocus="focusText"
+        :printing="quick.printing.value"
+        @remove="removeSelected"
+        @done="closeText"
+        @print="quickPrint()"
+        @copies="sheet = 'copies'"
+      />
 
-    <ActionBar
-      v-else
-      :selected="!!store.selectedId"
-      :can-edit="!!selectedText"
-      :printing="quick.printing.value"
-      @add-text="addText"
-      @recent="sheet = 'recent'"
-      @edit="store.selectedId && openEdit(store.selectedId)"
-      @remove="removeSelected"
-      @preview="openPrint"
-      @print="quickPrint()"
-      @copies="sheet = 'copies'"
-    />
+      <ActionBar
+        v-else
+        :selected="!!store.selectedId"
+        :can-edit="!!selectedText"
+        :printing="quick.printing.value"
+        @add-text="addText"
+        @recent="sheet = 'recent'"
+        @edit="store.selectedId && openEdit(store.selectedId)"
+        @remove="removeSelected"
+        @preview="openPrint"
+        @print="quickPrint()"
+        @copies="sheet = 'copies'"
+      />
+    </div>
 
     <div v-if="toast.text.value" class="toast" role="status" data-testid="toast">{{ toast.text.value }}</div>
 
@@ -265,5 +268,51 @@ function reprintRecent(doc: LabelDocument): void {
   background: var(--text);
   color: var(--bg);
   max-width: calc(100% - 32px);
+}
+.stage {
+  display: contents;
+}
+
+/* Orizzontale su telefono (docs/2026-11-08-orizzontale.md). Il verticale non cambia. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .stage {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .stage.text-open {
+    flex-direction: row;
+  }
+
+  /* Formato sopra, etichetta in mezzo, aiuto sotto: niente sovrapposizioni. */
+  .workspace {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    min-height: 0;
+    padding: 6px 0 4px;
+  }
+
+  .media-chip {
+    position: static;
+    transform: none;
+    flex: none;
+    min-height: 36px;
+  }
+
+  .workspace > .editor {
+    flex: 1 1 0;
+    min-height: 0;
+    height: auto;
+  }
+
+  .hint {
+    position: static;
+    flex: none;
+  }
 }
 </style>
