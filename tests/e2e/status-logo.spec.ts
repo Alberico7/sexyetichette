@@ -2,9 +2,10 @@
  * Logo del pettirosso come indicatore di stato nella barra in alto.
  * Vedi docs/2026-11-08-logo-stato.md.
  */
+import type { Page } from '@playwright/test';
 import { test, expect, noHorizontalScroll, connectSimulated, writeText } from './helpers';
 
-const logo = (page: import('@playwright/test').Page) => page.getByTestId('status-logo');
+const logo = (page: Page) => page.getByTestId('status-logo');
 
 test('non collegata: pettirosso grigio, senza anello né segno', async ({ page }) => {
   await page.goto('/?sim');
