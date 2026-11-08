@@ -9,7 +9,7 @@ import Konva, { type Group } from './konva';
 import type { LabelElement, TextElement } from '@/model/types';
 import { mmToDotsExact, ptToMm } from '@/model/units';
 import { TEXT_LINE_HEIGHT, fitFontSize, type FitResult } from './fit';
-import { DIAMETER_SIGN } from '@/model/text';
+import { usesSymbolFont } from '@/model/text';
 import { ensureDiameterFont, fontStack, onDiameterFontReady } from './diameter-font';
 import { onWebFontReady, requestFont } from './web-fonts';
 
@@ -108,8 +108,8 @@ export function verticalShiftEm(el: Pick<TextElement, 'fontFamily' | 'bold' | 'i
 export const UNDERLINE_OFFSET_EM = 0.12;
 
 function buildText(group: Group, el: TextElement, w: number, h: number): void {
-  // Primo uso di ⌀ con questo carattere: prepara il mini-font (l'editor si ridisegna quando è pronto).
-  if (el.text.includes(DIAMETER_SIGN)) void ensureDiameterFont(el.fontFamily);
+  // Primo uso di ⌀ o ♥ con questo carattere: prepara il mini-font (l'editor si ridisegna quando è pronto).
+  if (usesSymbolFont(el.text)) void ensureDiameterFont(el.fontFamily);
   // Font scaricabile non ancora pronto: lo chiedo (l'editor si ridisegna quando arriva).
   requestFont(el.fontFamily, fontStyle(el));
   const { sizePt } = resolveFontSize(el);
@@ -193,7 +193,7 @@ export async function waitForFonts(elements: readonly LabelElement[]): Promise<v
   await Promise.all([...loads].map((f) => document.fonts.load(f).catch(() => [])));
   // Mini-font del diametro ISO per i testi che contengono ⌀.
   const families = new Set<string>();
-  for (const el of elements) if (el.type === 'text' && el.text.includes(DIAMETER_SIGN)) families.add(el.fontFamily);
+  for (const el of elements) if (el.type === 'text' && usesSymbolFont(el.text)) families.add(el.fontFamily);
   await Promise.all([...families].map((f) => ensureDiameterFont(f)));
   await document.fonts.ready;
 }
