@@ -83,3 +83,7 @@ Anteprima nei due temi: `docs/2026-11-08-logo-stato/anteprima-stati.png`. L'anel
   - spazio fra logo e scritta da 10 a 8 px.
   - Senza il 🔧 la scritta sta intera con circa 4 px di margine. In fase di collaudo, con il 🔧, resta troncata.
 - **Test:** e2e «versione finale (senza 🔧)». Nasconde il 🔧 e misura al decimo di pixel, chiedendo almeno 2 px di margine. Senza la correzione fallisce.
+- **CI (2026-11-08):** il test falliva sul CI Linux. Il font di sistema lì è DejaVu Sans, e «Stampante non collegata» in grassetto è larga 226,7 px, contro 179,4 in Roboto (Android) e 187,5 in Segoe UI (Windows).
+  - Su Linux il test viene saltato, perché non dice niente sul telefono.
+  - Con Roboto il margine è di circa 12 px.
+  - Con il font del CI tutti gli altri e2e passano, compresi quelli dell'orizzontale: verificato forzando DejaVu Sans in locale.
