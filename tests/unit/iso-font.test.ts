@@ -25,6 +25,10 @@ describe('carattere «Tecnico ISO 3098» (osifont)', () => {
     expect(missing).toEqual([]);
   });
 
+  it('i nuovi testi nascono in grassetto (docs/2026-11-08-grassetto-predefinito.md)', () => {
+    expect(createTextElement({ x: 0, y: 0, width: 50, height: 20 }).bold).toBe(true);
+  });
+
   it('è il carattere dei nuovi testi ed è il primo dell’elenco', () => {
     expect(DEFAULT_FONT).toBe(ISO_FONT);
     expect(createTextElement({ x: 0, y: 0, width: 50, height: 20 }).fontFamily).toBe(ISO_FONT);

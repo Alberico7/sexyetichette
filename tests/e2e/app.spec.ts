@@ -342,11 +342,16 @@ test('stile: pulsanti G, C, S con il nome completo per gli screen reader', async
   await page.getByTestId('more-options').locator('summary').tap();
   const style = page.getByRole('group', { name: 'Stile' });
   await expect(style.getByRole('button')).toHaveText(['G', 'C', 'S']);
-  for (const name of ['Grassetto', 'Corsivo', 'Sottolineato']) {
+  // Il grassetto è attivo di default (docs/2026-11-08-grassetto-predefinito.md); ogni tocco lo inverte.
+  for (const [name, initial] of [
+    ['Grassetto', true],
+    ['Corsivo', false],
+    ['Sottolineato', false],
+  ] as const) {
     const b = style.getByRole('button', { name });
-    await expect(b).toHaveAttribute('aria-pressed', 'false');
+    await expect(b).toHaveAttribute('aria-pressed', String(initial));
     await b.tap();
-    await expect(b).toHaveAttribute('aria-pressed', 'true');
+    await expect(b).toHaveAttribute('aria-pressed', String(!initial));
   }
   await noHorizontalScroll(page);
   await page.locator('[data-testid=more-options]').screenshot({ path: 'test-results/27-stile-gcs.png' });
