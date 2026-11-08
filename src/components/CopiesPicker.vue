@@ -119,7 +119,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 }
 
 /* Orizzontale su telefono (docs/2026-11-08-orizzontale.md). */
-@media (max-height: 500px) {
+@media (max-height: 600px) {
   :root[data-screen='landscape'] .copies-picker {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);

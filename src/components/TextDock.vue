@@ -61,7 +61,7 @@ const emit = defineEmits<{ remove: []; done: []; print: []; copies: [] }>();
   text-overflow: ellipsis;
 }
 /* Orizzontale su telefono: colonna a destra, etichetta visibile a sinistra (docs/2026-11-08-orizzontale.md). */
-@media (max-height: 500px) {
+@media (max-height: 600px) {
   :root[data-screen='landscape'] .dock {
     flex: none;
     width: min(460px, 52vw);

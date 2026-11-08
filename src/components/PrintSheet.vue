@@ -249,7 +249,7 @@ async function doPrint(): Promise<void> {
 }
 
 /* Orizzontale su telefono: anteprima a sinistra, impostazioni e Stampa a destra (docs/2026-11-08-orizzontale.md). */
-@media (max-height: 500px) {
+@media (max-height: 600px) {
   :root[data-screen='landscape'] .print-sheet {
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);

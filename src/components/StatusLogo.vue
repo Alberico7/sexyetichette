@@ -112,7 +112,7 @@ const logoUrl = `url("${import.meta.env.BASE_URL}icona-ritagliabile.svg")`;
   box-shadow: 0 0 0 2px var(--surface);
 }
 /* Orizzontale su telefono: logo da 32 px nella barra più bassa (docs/2026-11-08-orizzontale.md). */
-@media (max-height: 500px) {
+@media (max-height: 600px) {
   :root[data-screen='landscape'] .logo {
     width: 32px;
     height: 32px;
