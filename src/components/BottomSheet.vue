@@ -100,4 +100,34 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
   display: flex;
   gap: 8px;
 }
+/* Orizzontale su telefono: tutta l'altezza, intestazione bassa, più largo (docs/2026-11-08-orizzontale.md). */
+@media (orientation: landscape) and (max-height: 500px) {
+  .sheet {
+    max-width: 720px;
+    max-height: calc(100dvh - 6px);
+    border-radius: 14px 14px 0 0;
+  }
+
+  .sheet-header {
+    padding: 2px 4px 2px 16px;
+  }
+
+  .sheet-header h2 {
+    font-size: 1rem;
+  }
+
+  .close {
+    min-height: 44px;
+    width: 44px;
+  }
+
+  .sheet-body {
+    padding: 10px 16px;
+    gap: 10px;
+  }
+
+  .sheet-footer {
+    padding: 8px 16px;
+  }
+}
 </style>
