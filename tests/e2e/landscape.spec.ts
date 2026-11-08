@@ -158,15 +158,18 @@ test.describe('orizzontale, tema scuro', () => {
 
 /** Orizzontale con la tastiera aperta: lo spazio visibile si abbassa, lo schermo resta largo. */
 const KEYBOARD = [
-  { name: 'pixel', viewport: { width: 915, height: 130 }, screen: { width: 915, height: 412 } },
-  { name: 'realme', viewport: { width: 873, height: 150 }, screen: { width: 873, height: 393 } },
+  { name: 'pixel', viewport: { width: 915, height: 130 }, screen: { width: 915, height: 412 }, open: 340 },
+  { name: 'pixel-stretto', viewport: { width: 915, height: 100 }, screen: { width: 915, height: 412 }, open: 340 },
+  { name: 'realme', viewport: { width: 873, height: 150 }, screen: { width: 873, height: 393 }, open: 393 },
 ] as const;
 
 for (const k of KEYBOARD) {
   test.describe(`orizzontale con tastiera ${k.name} ${k.viewport.width}×${k.viewport.height}`, () => {
     test.use({ viewport: k.viewport, screen: k.screen });
 
-    test('si vedono etichetta, casella del testo, Fine e Stampa; niente barra in alto', async ({ page }) => {
+    test('si vedono solo etichetta e casella del testo; chiudendo la tastiera tornano Fine e Stampa', async ({
+      page,
+    }) => {
       await connectSimulated(page, { waitForRoll: true });
       await hideDevPanel(page);
       await page.getByTestId('add-text').tap();
@@ -174,16 +177,22 @@ for (const k of KEYBOARD) {
       const input = page.getByTestId('text-input');
       await fullyVisible(page, input);
       expect((await input.boundingBox())!.height, 'casella alta almeno 40').toBeGreaterThanOrEqual(40);
-      await fullyVisible(page, page.getByTestId('text-done'));
-      await fullyVisible(page, page.getByTestId('text-print'));
+      // Fine, Stampa ed Elimina nascosti: altrimenti coprono quello che si scrive.
+      await expect(page.getByTestId('text-done')).toBeHidden();
+      await expect(page.getByTestId('text-print')).toBeHidden();
       await expect(page.locator('header.bar')).toBeHidden();
       await expect(page.getByRole('button', { name: 'Inserisci il simbolo del diametro' })).toBeHidden();
       await expect(page.getByRole('button', { name: 'Elimina il testo' })).toBeHidden();
       const editor = (await page.getByTestId('editor').boundingBox())!;
-      expect(editor.height, 'etichetta visibile').toBeGreaterThanOrEqual(80);
+      expect(editor.height, 'etichetta visibile').toBeGreaterThanOrEqual(k.viewport.height - 10);
       expect(editor.y + editor.height).toBeLessThanOrEqual(k.viewport.height + 0.5);
       await noHorizontalScroll(page);
       await page.screenshot({ path: `test-results/land-tastiera-${k.name}.png` });
+      // Tastiera chiusa: lo spazio torna e ricompaiono Fine e Stampa, con il testo ancora aperto.
+      await page.setViewportSize({ width: k.viewport.width, height: k.open });
+      await fullyVisible(page, page.getByTestId('text-done'));
+      await fullyVisible(page, page.getByTestId('text-print'));
+      await expect(page.getByTestId('text-input')).toHaveValue('Tastiera');
       await page.getByTestId('text-done').tap();
       await expect(page.getByTestId('text-panel')).toHaveCount(0);
       await expect(page.locator('header.bar')).toBeVisible();
