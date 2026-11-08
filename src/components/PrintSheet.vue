@@ -87,86 +87,102 @@ async function doPrint(): Promise<void> {
 </script>
 
 <template>
-  <div class="preview-wrap" :class="{ actual: actualSize }">
-    <canvas ref="canvas" class="preview" data-testid="preview-canvas" aria-label="Anteprima in bianco e nero" />
-    <p v-if="rendering" class="muted">Aggiornamento anteprima…</p>
-    <p v-if="preview.error" class="error">Errore nell'anteprima: {{ preview.error }}</p>
-  </div>
-  <div class="row meta">
-    <small class="grow">{{ sizeText }}</small>
-    <button type="button" @click="actualSize = !actualSize">{{ actualSize ? 'Adatta' : '1:1' }}</button>
-  </div>
-  <p class="muted note">
-    Anteprima alla risoluzione reale (300 dpi), in bianco e nero come verrà stampata. La zona rossa non è raggiungibile
-    dalla testina.
-  </p>
-
-  <p v-if="isEmpty" class="warn" data-testid="empty-warning">L'etichetta è vuota.</p>
-  <p v-if="overflow" class="warn" data-testid="overflow-warning">
-    Un testo non entra nel suo riquadro ed è stampato alla dimensione minima.
-  </p>
-  <p v-if="mismatch" class="warn" data-testid="mismatch-warning">
-    Il formato scelto ({{ store.doc.media.name }}) non corrisponde al rotolo inserito ({{
-      printer.detected?.media.name
-    }}).
-  </p>
-  <p v-if="printer.state === 'disconnected'" class="warn">Collega la stampante per stampare.</p>
-  <p v-for="p in printer.blockingProblems" :key="p.code" class="error">{{ p.title }}: {{ p.hint }}</p>
-
-  <div class="field">
-    Copie
-    <div class="row">
-      <button type="button" aria-label="Una copia in meno" :disabled="printer.copies <= 1" @click="step(-1)">−</button>
-      <input
-        v-model.number="printer.copies"
-        class="copies"
-        type="number"
-        inputmode="numeric"
-        min="1"
-        :max="MAX_COPIES"
-        aria-label="Numero di copie"
-        @change="printer.copies = clampCopies(printer.copies)"
-      />
-      <button type="button" aria-label="Una copia in più" :disabled="printer.copies >= MAX_COPIES" @click="step(1)">
-        +
-      </button>
+  <!-- In verticale i due gruppi non contano (display: contents); in orizzontale sono due colonne. -->
+  <div class="print-sheet">
+    <div class="ps-preview">
+      <div class="preview-wrap" :class="{ actual: actualSize }">
+        <canvas ref="canvas" class="preview" data-testid="preview-canvas" aria-label="Anteprima in bianco e nero" />
+        <p v-if="rendering" class="muted">Aggiornamento anteprima…</p>
+        <p v-if="preview.error" class="error">Errore nell'anteprima: {{ preview.error }}</p>
+      </div>
+      <div class="row meta">
+        <small class="grow">{{ sizeText }}</small>
+        <button type="button" @click="actualSize = !actualSize">{{ actualSize ? 'Adatta' : '1:1' }}</button>
+      </div>
+      <p class="muted note">
+        Anteprima alla risoluzione reale (300 dpi), in bianco e nero come verrà stampata. La zona rossa non è
+        raggiungibile dalla testina.
+      </p>
     </div>
-  </div>
 
-  <div class="field">
-    Densità di stampa
-    <div class="segmented" role="group" aria-label="Densità di stampa">
+    <div class="ps-controls">
+      <p v-if="isEmpty" class="warn" data-testid="empty-warning">L'etichetta è vuota.</p>
+      <p v-if="overflow" class="warn" data-testid="overflow-warning">
+        Un testo non entra nel suo riquadro ed è stampato alla dimensione minima.
+      </p>
+      <p v-if="mismatch" class="warn" data-testid="mismatch-warning">
+        Il formato scelto ({{ store.doc.media.name }}) non corrisponde al rotolo inserito ({{
+          printer.detected?.media.name
+        }}).
+      </p>
+      <p v-if="printer.state === 'disconnected'" class="warn">Collega la stampante per stampare.</p>
+      <p v-for="p in printer.blockingProblems" :key="p.code" class="error">{{ p.title }}: {{ p.hint }}</p>
+
+      <div class="field">
+        Copie
+        <div class="row">
+          <button type="button" aria-label="Una copia in meno" :disabled="printer.copies <= 1" @click="step(-1)">
+            −
+          </button>
+          <input
+            v-model.number="printer.copies"
+            class="copies"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            :max="MAX_COPIES"
+            aria-label="Numero di copie"
+            @change="printer.copies = clampCopies(printer.copies)"
+          />
+          <button type="button" aria-label="Una copia in più" :disabled="printer.copies >= MAX_COPIES" @click="step(1)">
+            +
+          </button>
+        </div>
+      </div>
+
+      <div class="field">
+        Densità di stampa
+        <div class="segmented" role="group" aria-label="Densità di stampa">
+          <button
+            v-for="d in densities"
+            :key="d.value"
+            type="button"
+            :aria-pressed="printer.density === d.value"
+            @click="printer.density = d.value"
+          >
+            {{ d.label }}
+          </button>
+        </div>
+      </div>
+
       <button
-        v-for="d in densities"
-        :key="d.value"
+        v-if="multiProgress"
         type="button"
-        :aria-pressed="printer.density === d.value"
-        @click="printer.density = d.value"
+        class="danger print"
+        data-testid="print-stop"
+        :disabled="printer.stopRequested"
+        @click="printer.requestStop()"
       >
-        {{ d.label }}
+        {{ printer.stopRequested ? 'Fermo…' : `Ferma · ${multiProgress.sent} di ${multiProgress.total}` }}
+      </button>
+      <button
+        v-else
+        type="button"
+        class="primary print"
+        data-testid="print-button"
+        :disabled="!canPrint"
+        @click="doPrint"
+      >
+        {{
+          printer.state === 'printing'
+            ? 'Stampa in corso…'
+            : printer.copies > 1
+              ? `Stampa ${printer.copies} copie`
+              : 'Stampa'
+        }}
       </button>
     </div>
   </div>
-
-  <button
-    v-if="multiProgress"
-    type="button"
-    class="danger print"
-    data-testid="print-stop"
-    :disabled="printer.stopRequested"
-    @click="printer.requestStop()"
-  >
-    {{ printer.stopRequested ? 'Fermo…' : `Ferma · ${multiProgress.sent} di ${multiProgress.total}` }}
-  </button>
-  <button v-else type="button" class="primary print" data-testid="print-button" :disabled="!canPrint" @click="doPrint">
-    {{
-      printer.state === 'printing'
-        ? 'Stampa in corso…'
-        : printer.copies > 1
-          ? `Stampa ${printer.copies} copie`
-          : 'Stampa'
-    }}
-  </button>
 </template>
 
 <style scoped>
@@ -225,5 +241,34 @@ async function doPrint(): Promise<void> {
   width: 100%;
   min-height: 56px;
   font-size: 1.1rem;
+}
+.print-sheet,
+.ps-preview,
+.ps-controls {
+  display: contents;
+}
+
+/* Orizzontale su telefono: anteprima a sinistra, impostazioni e Stampa a destra (docs/2026-11-08-orizzontale.md). */
+@media (orientation: landscape) and (max-height: 500px) {
+  .print-sheet {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+
+  .ps-preview,
+  .ps-controls {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  /* «Stampa» sempre in vista anche se gli avvisi allungano la colonna. */
+  .print {
+    position: sticky;
+    bottom: 0;
+    min-height: 52px;
+  }
 }
 </style>
