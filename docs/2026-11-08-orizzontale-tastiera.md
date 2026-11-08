@@ -153,3 +153,6 @@ Solo CSS, senza logica nuova: le funzioni restano le stesse.
   - a tastiera chiusa, lo stesso tocco chiude il pannello;
   - le righe compaiono nel registro.
   - Senza la correzione il test falliva.
+- **Verifica dell'utente (2026-11-08):** con la versione `6b105b6` il pannello resta aperto sia con il tocco sia con il tasto indietro.
+  - Spiegazione probabile, non dimostrata: con la navigazione a gesti l'«indietro» parte dal bordo dello schermo, sopra l'editor, e arrivava alla pagina anche come tocco sullo sfondo.
+  - Le righe nel registro della diagnostica restano, nel caso ricapiti.
