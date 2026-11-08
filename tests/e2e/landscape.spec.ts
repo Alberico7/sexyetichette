@@ -292,3 +292,33 @@ test.describe('verticale Pixel con tastiera 412×560', () => {
     await expect(page.locator('header.bar')).toBeVisible();
   });
 });
+
+test.describe('tablet 8" orizzontale 962×545', () => {
+  // Spazio sopra 500 ma sotto 600 punti: usa la disposizione orizzontale (soglia alzata a 600).
+  test.use({ viewport: { width: 962, height: 545 }, screen: { width: 962, height: 601 } });
+  test('anteprima con «Stampa» in vista e testo a destra', async ({ page }) => {
+    await connectSimulated(page, { waitForRoll: true });
+    await writeText(page, 'Tablet');
+    await page.getByTestId('open-preview').tap();
+    await expect(page.getByTestId('preview-canvas')).toBeVisible();
+    await fullyVisible(page, page.getByTestId('print-button'));
+    await page.getByRole('button', { name: 'Chiudi' }).tap();
+    await page.getByTestId('add-text').tap();
+    const panel = (await page.getByTestId('text-panel').boundingBox())!;
+    expect(panel.x, 'pannello a destra').toBeGreaterThan(962 / 3);
+    await noHorizontalScroll(page);
+  });
+});
+
+test.describe('tablet 10" orizzontale 1280×744', () => {
+  // Sopra 600 punti: disposizione di prima (pannello del testo sotto l'etichetta).
+  test.use({ viewport: { width: 1280, height: 744 }, screen: { width: 1280, height: 800 } });
+  test('pannello del testo sotto, a tutta larghezza', async ({ page }) => {
+    await connectSimulated(page, { waitForRoll: true });
+    await page.getByTestId('add-text').tap();
+    const panel = (await page.getByTestId('text-panel').boundingBox())!;
+    expect(panel.x).toBeLessThanOrEqual(1);
+    expect(panel.width).toBeGreaterThan(1200);
+    await fullyVisible(page, page.getByTestId('text-done'));
+  });
+});

@@ -101,7 +101,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
   gap: 8px;
 }
 /* Orizzontale su telefono: tutta l'altezza, intestazione bassa, più largo (docs/2026-11-08-orizzontale.md). */
-@media (max-height: 500px) {
+@media (max-height: 600px) {
   :root[data-screen='landscape'] .sheet {
     max-width: 720px;
     max-height: calc(100dvh - 6px);

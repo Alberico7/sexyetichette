@@ -283,7 +283,7 @@ function reprintRecent(doc: LabelDocument): void {
 }
 
 /* Orizzontale su telefono (docs/2026-11-08-orizzontale.md). Il verticale non cambia. */
-@media (max-height: 500px) {
+@media (max-height: 600px) {
   :root[data-screen='landscape'] .stage {
     display: flex;
     flex-direction: column;
