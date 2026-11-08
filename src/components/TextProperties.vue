@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref } from 'vue';
 import type { HorizontalAlign, TextElement, VerticalAlign } from '@/model/types';
 import { useDocumentStore } from '@/stores/document';
-import { DIAMETER_SIGN, REJECT_WORD, UNREPAIRABLE_TEXT, insertAtSelection } from '@/model/text';
+import { DIAMETER_SIGN, REJECT_WORD, UNREPAIRABLE_TEXT, insertAtSelection, replaceHeartCode } from '@/model/text';
 import { resolveFontSize } from '@/render/scene';
 import { FONT_OPTIONS } from '@/model/fonts';
 
@@ -74,6 +74,20 @@ async function insertSymbol(symbol: string): Promise<void> {
   }
 }
 
+/** Testo scritto nella casella; il codice nascosto «#<3» diventa ♥ (docs/2026-11-08-cuore-nascosto.md). */
+async function onTextInput(event: Event): Promise<void> {
+  const el = event.target as HTMLTextAreaElement;
+  const edit = replaceHeartCode(el.value, el.selectionStart);
+  if (!edit) {
+    update({ text: el.value });
+    return;
+  }
+  update({ text: edit.text });
+  el.value = edit.text;
+  await nextTick();
+  el.setSelectionRange(edit.cursor, edit.cursor);
+}
+
 // Testo nuovo: la tastiera compare subito, senza un tocco in più sulla casella.
 onMounted(() => {
   if (props.autofocus && textarea.value) {
@@ -98,7 +112,7 @@ function rotate90(): void {
       placeholder="Scrivi il testo"
       enterkeyhint="enter"
       data-testid="text-input"
-      @input="update({ text: ($event.target as HTMLTextAreaElement).value })"
+      @input="onTextInput"
     />
   </label>
 

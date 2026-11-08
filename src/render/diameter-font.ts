@@ -12,7 +12,8 @@ import fontUrl from '@/assets/fonts/diametro.otf?url';
 /** Altezza delle maiuscole per cui è disegnato il glifo (vedi scripts/make-diameter-font.mjs). */
 export const DESIGN_CAP_HEIGHT_EM = 0.716;
 const FACE_PREFIX = 'Etichettatrice Diametro';
-const UNICODE_RANGE = 'U+2300';
+/** ⌀ e il cuore ♥ (docs/2026-11-08-cuore-nascosto.md). */
+const UNICODE_RANGE = 'U+2300, U+2665';
 
 let fontData: Promise<ArrayBuffer> | null = null;
 /** Carattere → nome della variante registrata (solo quando è pronta). */

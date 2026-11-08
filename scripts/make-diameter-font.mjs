@@ -1,6 +1,7 @@
-// Genera src/assets/fonts/diametro.otf: un mini-font con il solo simbolo del
-// diametro ⌀ (U+2300), disegnato da zero con le proporzioni della ISO 3098.
+// Genera src/assets/fonts/diametro.otf: un mini-font con il simbolo del diametro
+// ⌀ (U+2300), disegnato da zero con le proporzioni della ISO 3098, e il cuore ♥ (U+2665).
 // Vedi docs/2026-11-02-simbolo-diametro-iso-proporzionato.md.
+// Il cuore: docs/2026-11-08-cuore-nascosto.md.
 //
 // Uso: node scripts/make-diameter-font.mjs
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -105,10 +106,58 @@ export function buildDiameterGlyphPath() {
   return { path, advanceWidth: Math.round(g.advance * h) };
 }
 
+/** Proporzioni del cuore ♥ in unità dell'altezza delle maiuscole (h). Vedi docs/2026-11-08-cuore-nascosto.md. */
+export const HEART = {
+  /** Larghezza del cuore. */
+  width: 0.95,
+  /** Margine a sinistra e a destra. */
+  sideBearing: 0.08,
+};
+
+/**
+ * Cuore pieno ♥: dalla punta in basso (sulla linea di base) ai due lobi,
+ * alto esattamente quanto le maiuscole. Contorno antiorario.
+ */
+export function buildHeartGlyphPath() {
+  const h = DESIGN_CAP_HEIGHT_EM * UNITS_PER_EM;
+  // Forma disegnata in un quadrato 1×1 (y verso l'alto), poi scalata e appoggiata sulla riga.
+  const W = 1;
+  const cx = 0.5;
+  const segs = [
+    // punta → lobo destro
+    [cx + 0.18 * W, 0.22, cx + 0.5 * W, 0.42, cx + 0.5 * W, 0.7],
+    // lobo destro → incavo centrale
+    [cx + 0.5 * W, 0.98, cx + 0.06 * W, 1.08, cx, 0.8],
+    // incavo centrale → lobo sinistro
+    [cx - 0.06 * W, 1.08, cx - 0.5 * W, 0.98, cx - 0.5 * W, 0.7],
+    // lobo sinistro → punta
+    [cx - 0.5 * W, 0.42, cx - 0.18 * W, 0.22, cx, 0],
+  ];
+  const raw = new opentype.Path();
+  raw.moveTo(cx, 0);
+  for (const s of segs) raw.curveTo(...s);
+  raw.close();
+  const bb = raw.getBoundingBox();
+  const sy = h / (bb.y2 - bb.y1);
+  const sx = (HEART.width * h) / (bb.x2 - bb.x1);
+  const left = HEART.sideBearing * h;
+  const X = (x) => Math.round(left + (x - bb.x1) * sx);
+  const Y = (y) => Math.round((y - bb.y1) * sy);
+  const path = new opentype.Path();
+  for (const c of raw.commands) {
+    if (c.type === 'M') path.moveTo(X(c.x), Y(c.y));
+    else if (c.type === 'C') path.curveTo(X(c.x1), Y(c.y1), X(c.x2), Y(c.y2), X(c.x), Y(c.y));
+    else if (c.type === 'Z') path.close();
+  }
+  return { path, advanceWidth: Math.round((HEART.width + 2 * HEART.sideBearing) * h) };
+}
+
 export function buildDiameterFont() {
   const { path, advanceWidth } = buildDiameterGlyphPath();
   const notdef = new opentype.Glyph({ name: '.notdef', unicode: 0, advanceWidth: 500, path: new opentype.Path() });
   const diameter = new opentype.Glyph({ name: 'uni2300', unicode: 0x2300, advanceWidth, path });
+  const h = buildHeartGlyphPath();
+  const heart = new opentype.Glyph({ name: 'uni2665', unicode: 0x2665, advanceWidth: h.advanceWidth, path: h.path });
   return new opentype.Font({
     familyName: 'Etichettatrice Diametro',
     styleName: 'Regular',
@@ -118,7 +167,7 @@ export function buildDiameterFont() {
     designer: 'Gli autori di Etichettatrice',
     license: 'MIT',
     version: '1.000',
-    glyphs: [notdef, diameter],
+    glyphs: [notdef, diameter, heart],
   });
 }
 

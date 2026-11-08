@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { DIAMETER_SYMBOL, REJECT_WORD, UNREPAIRABLE_TEXT, insertAtSelection } from '@/model/text';
+import {
+  DIAMETER_SYMBOL,
+  HEART,
+  HEART_CODE,
+  REJECT_WORD,
+  UNREPAIRABLE_TEXT,
+  insertAtSelection,
+  replaceHeartCode,
+} from '@/model/text';
 import { isThemePreference, nextPreference, resolveTheme } from '@/theme';
 
 describe('simbolo del diametro', () => {
@@ -63,5 +71,32 @@ describe('NON RIPARABILE', () => {
     expect(insertAtSelection('', UNREPAIRABLE_TEXT, null, null)).toEqual({ text: 'NON\nRIPARABILE', cursor: 14 });
     expect(insertAtSelection('Pompa\n', UNREPAIRABLE_TEXT)).toEqual({ text: 'Pompa\nNON\nRIPARABILE', cursor: 20 });
     expect(insertAtSelection('OK', UNREPAIRABLE_TEXT, 0, 2)).toEqual({ text: 'NON\nRIPARABILE', cursor: 14 });
+  });
+});
+
+describe('cuore nascosto «#<3» → ♥ (docs/2026-11-08-cuore-nascosto.md)', () => {
+  it('sostituisce il codice e mette il cursore dopo il cuore', () => {
+    expect(replaceHeartCode('Ti #<3', 6)).toEqual({ text: 'Ti ♥', cursor: 4 });
+    expect(replaceHeartCode('#<3 casa', 3)).toEqual({ text: '♥ casa', cursor: 1 });
+  });
+
+  it('più codici, anche incollati, con il cursore in fondo o in mezzo', () => {
+    expect(replaceHeartCode('#<3 e #<3')).toEqual({ text: '♥ e ♥', cursor: 5 });
+    expect(replaceHeartCode('#<3 x #<3', 4)).toEqual({ text: '♥ x ♥', cursor: 2 });
+  });
+
+  it('cursore in mezzo al codice: il codice diventa comunque ♥', () => {
+    expect(replaceHeartCode('a#<3b', 2)?.text).toBe('a♥b');
+  });
+
+  it('«<3» senza # e testo senza codice restano invariati', () => {
+    expect(replaceHeartCode('<3 mm', 5)).toBeNull();
+    expect(replaceHeartCode('Tubo 20', 7)).toBeNull();
+    expect(replaceHeartCode('#<', 2)).toBeNull();
+  });
+
+  it('il cuore è il simbolo pieno, non l’emoji colorata', () => {
+    expect(HEART.codePointAt(0)).toBe(0x2665);
+    expect(HEART_CODE).toBe('#<3');
   });
 });
