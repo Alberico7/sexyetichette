@@ -16,6 +16,8 @@ export function newId(): string {
 }
 
 export const DEFAULT_CONTINUOUS_LENGTH_MM = 50;
+/** Il testo nuovo nasce in grassetto: il carattere ISO ha un tratto sottile. Vedi docs/2026-11-08-grassetto-predefinito.md. */
+export const DEFAULT_BOLD = true;
 
 export function createDocument(media: MediaFormat, name = 'Nuova etichetta'): LabelDocument {
   const now = new Date().toISOString();
@@ -63,7 +65,7 @@ export function createTextElement(area: AreaMm, text = 'Testo'): TextElement {
     text,
     fontFamily: DEFAULT_FONT,
     fontSizePt: 14,
-    bold: false,
+    bold: DEFAULT_BOLD,
     italic: false,
     underline: false,
     align: 'center',
