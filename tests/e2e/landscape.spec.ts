@@ -7,7 +7,7 @@
  */
 import type { Locator, Page } from '@playwright/test';
 import type { Stage } from 'konva/lib/Stage';
-import { test, expect, noHorizontalScroll, connectSimulated, writeText } from './helpers';
+import { test, expect, noHorizontalScroll, connectSimulated, writeText, fakeClipboard, copied } from './helpers';
 
 /** Pixel 7a in orizzontale con le barre del browser e di Android; Realme a schermo intero. */
 const SIZES = [
@@ -219,6 +219,36 @@ for (const k of KEYBOARD) {
       await page.getByTestId('text-done').tap();
       await expect(page.getByTestId('text-panel')).toHaveCount(0);
       await expect(page.locator('header.bar')).toBeVisible();
+    });
+
+    test('tocco fuori dal testo con la tastiera aperta: si chiude solo la tastiera, il pannello resta', async ({
+      page,
+    }) => {
+      await fakeClipboard(page);
+      await connectSimulated(page, { waitForRoll: true });
+      await hideDevPanel(page);
+      await page.getByTestId('add-text').tap();
+      await page.keyboard.type('Resta');
+      const input = page.getByTestId('text-input');
+      const editor = (await page.getByTestId('editor').boundingBox())!;
+      // Spazio vuoto a sinistra dell'etichetta (l'etichetta è centrata e più stretta della colonna).
+      const empty = { x: editor.x + 4, y: editor.y + editor.height / 2 };
+      await page.touchscreen.tap(empty.x, empty.y);
+      await expect(page.getByTestId('text-panel')).toBeVisible();
+      expect(await input.evaluate((el) => document.activeElement === el), 'tastiera chiusa').toBe(false);
+      await expect(input).toHaveValue('Resta');
+      // Tastiera chiusa: lo stesso tocco toglie la selezione e chiude il pannello, come prima.
+      await page.setViewportSize({ width: k.viewport.width, height: k.open });
+      const e2 = (await page.getByTestId('editor').boundingBox())!;
+      await page.touchscreen.tap(e2.x + 4, e2.y + e2.height / 2);
+      await expect(page.getByTestId('text-panel')).toHaveCount(0);
+      // Il registro della diagnostica racconta cosa è successo.
+      await page.getByTestId('bar-diagnostics').tap();
+      await page.getByTestId('diag-all-copy').tap();
+      await expect.poll(() => copied(page)).toContain('chiusa solo la tastiera');
+      const log = await copied(page);
+      expect(log).toContain('Pannello del testo chiuso: nessun testo selezionato');
+      expect(log).toContain('Tocco fuori dal testo: selezione tolta');
     });
 
     test('formato: la ricerca è visibile', async ({ page }) => {
