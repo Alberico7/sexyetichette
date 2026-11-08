@@ -4,6 +4,7 @@ import type { HorizontalAlign, TextElement, VerticalAlign } from '@/model/types'
 import { useDocumentStore } from '@/stores/document';
 import { DIAMETER_SIGN, REJECT_WORD, UNREPAIRABLE_TEXT, insertAtSelection, replaceHeartCode } from '@/model/text';
 import { resolveFontSize } from '@/render/scene';
+import { screenShape } from '@/screen-shape';
 import { FONT_OPTIONS } from '@/model/fonts';
 
 const props = defineProps<{ element: TextElement; autofocus?: boolean }>();
@@ -62,16 +63,21 @@ function onSizeBlur(event: Event): void {
 
 const textarea = ref<HTMLTextAreaElement | null>(null);
 
-/** Inserisce un simbolo dove si trova il cursore (o al posto del testo selezionato). */
+/** Inserisce un simbolo dove si trova il cursore (o al posto del testo selezionato); in verticale rimette il cursore nella casella. */
 async function insertSymbol(symbol: string): Promise<void> {
   const el = textarea.value;
   const edit = insertAtSelection(props.element.text, symbol, el?.selectionStart ?? null, el?.selectionEnd ?? null);
+  // In orizzontale la tastiera coprirebbe quasi tutto: si inserisce senza riaprirla.
+  // Su Android, chiusa la tastiera con «giù», la casella resta attiva e cambiarne il testo
+  // può riaprirla: prima la si disattiva. Vedi docs/2026-11-08-orizzontale-tastiera.md.
+  const landscape = screenShape() === 'landscape';
+  if (landscape) el?.blur();
   update({ text: edit.text });
   await nextTick();
-  if (el) {
-    el.focus();
-    el.setSelectionRange(edit.cursor, edit.cursor);
-  }
+  if (!el) return;
+  if (!landscape) el.focus();
+  // Il cursore va comunque dopo il simbolo (resta anche con la casella non attiva).
+  el.setSelectionRange(edit.cursor, edit.cursor);
 }
 
 /** Testo scritto nella casella; il codice nascosto «#<3» diventa ♥ (docs/2026-11-08-cuore-nascosto.md). */

@@ -121,3 +121,16 @@ Solo CSS, senza logica nuova: le funzioni restano le stesse.
   - aggiunta l'altezza 915×100;
   - con la tastiera aperta Fine e Stampa sono nascosti;
   - riportando l'altezza a quella senza tastiera ricompaiono, e il testo scritto resta.
+
+## ⌀, AFKEUR e N. R. senza riaprire la tastiera (2026-11-08)
+
+- **Richiesta dell'utente:** in orizzontale, toccare ⌀ Diametro, AFKEUR o N. R. non deve aprire la tastiera.
+- **Prima:** dopo l'inserimento l'app rimetteva il cursore nella casella (`focus`), e la tastiera si apriva.
+- **Ora (`insertSymbol` in `TextProperties.vue`), con lo schermo orizzontale:**
+  - la casella viene prima disattivata (`blur`), poi si inserisce il testo, e il cursore viene messo dopo il simbolo senza riattivarla;
+  - così funziona anche quando su Android si chiude la tastiera con «giù» e la casella resta attiva.
+- **In verticale:** come prima, il cursore torna nella casella.
+- **Test e2e** a 915×340 e 873×393:
+  - si parte con la casella attiva, si toccano ⌀, AFKEUR e N. R.: il testo viene inserito e la casella non è più attiva;
+  - un altro ⌀ va in fondo, quindi la posizione del cursore è conservata.
+  - Senza la correzione il test fallisce.
