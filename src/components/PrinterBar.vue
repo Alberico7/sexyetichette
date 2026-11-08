@@ -2,12 +2,14 @@
 import { computed } from 'vue';
 import { TEST_PHASE } from '@/config';
 import { usePrinterStore } from '@/stores/printer';
+import StatusLogo from './StatusLogo.vue';
+import type { StatusTone } from './status-logo';
 import { THEME_LABELS, cycleTheme, nextPreference, themePreference } from '@/theme';
 
 const emit = defineEmits<{ diagnostics: [] }>();
 const printer = usePrinterStore();
 
-const indicator = computed(() => {
+const indicator = computed((): { tone: StatusTone; text: string } => {
   switch (printer.state) {
     case 'connecting':
       return { tone: 'busy', text: 'Collegamento…' };
@@ -38,7 +40,7 @@ const themeLabel = computed(
 <template>
   <header class="bar">
     <div class="status" role="status" aria-live="polite">
-      <span class="dot" :class="indicator.tone" aria-hidden="true" />
+      <StatusLogo :tone="indicator.tone" />
       <div class="texts">
         <strong>{{ indicator.text }}</strong>
         <small v-if="model"
@@ -122,36 +124,5 @@ const themeLabel = computed(
 
 .texts small {
   color: var(--muted);
-}
-
-.dot {
-  flex: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--muted);
-}
-
-.dot.ok {
-  background: var(--ok);
-}
-
-.dot.warn {
-  background: var(--warn);
-}
-
-.dot.error {
-  background: var(--danger);
-}
-
-.dot.busy {
-  background: var(--accent);
-  animation: pulse 1s ease-in-out infinite alternate;
-}
-
-@keyframes pulse {
-  from {
-    opacity: 0.3;
-  }
 }
 </style>

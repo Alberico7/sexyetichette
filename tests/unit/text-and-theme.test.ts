@@ -9,6 +9,7 @@ import {
   replaceHeartCode,
   usesSymbolFont,
 } from '@/model/text';
+import { statusMark } from '@/components/status-logo';
 import { isThemePreference, nextPreference, resolveTheme } from '@/theme';
 
 describe('simbolo del diametro', () => {
@@ -107,5 +108,15 @@ describe('mini-font dei simboli', () => {
     expect(usesSymbolFont('Tubo ⌀20')).toBe(true);
     expect(usesSymbolFont('Ti ♥')).toBe(true);
     expect(usesSymbolFont('Tubo Ø20 <3')).toBe(false);
+  });
+});
+
+describe('logo di stato (docs/2026-11-08-logo-stato.md)', () => {
+  it('segno ✓ / ! / ✕ per pronta, avviso, errore; niente per non collegata e in corso', () => {
+    expect(statusMark('ok')).toBe('✓');
+    expect(statusMark('warn')).toBe('!');
+    expect(statusMark('error')).toBe('✕');
+    expect(statusMark('off')).toBe('');
+    expect(statusMark('busy')).toBe('');
   });
 });
