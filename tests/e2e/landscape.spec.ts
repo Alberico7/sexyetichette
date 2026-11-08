@@ -94,6 +94,29 @@ for (const size of SIZES) {
       await expect(panel).toHaveCount(0);
     });
 
+    test('⌀, AFKEUR e N. R. inseriscono il testo senza riaprire la tastiera', async ({ page }) => {
+      await connectSimulated(page, { waitForRoll: true });
+      await hideDevPanel(page);
+      await page.getByTestId('add-text').tap();
+      await page.keyboard.type('Tubo 20');
+      const input = page.getByTestId('text-input');
+      // Come su Android dopo «giù»: tastiera chiusa ma casella ancora attiva.
+      expect(await input.evaluate((el) => document.activeElement === el)).toBe(true);
+      const focused = () => input.evaluate((el) => document.activeElement === el);
+      await page.getByTestId('insert-diameter').tap();
+      await expect(input).toHaveValue('Tubo 20⌀');
+      expect(await focused(), 'tastiera chiusa dopo ⌀').toBe(false);
+      await page.getByTestId('insert-reject').tap();
+      await expect(input).toHaveValue('Tubo 20⌀AFKEUR');
+      expect(await focused(), 'tastiera chiusa dopo AFKEUR').toBe(false);
+      await page.getByTestId('insert-unrepairable').tap();
+      await expect(input).toHaveValue('Tubo 20⌀AFKEURNON\nRIPARABILE');
+      expect(await focused(), 'tastiera chiusa dopo N. R.').toBe(false);
+      // Il cursore resta in fondo: un altro ⌀ va dopo «RIPARABILE».
+      await page.getByTestId('insert-diameter').tap();
+      await expect(input).toHaveValue('Tubo 20⌀AFKEURNON\nRIPARABILE⌀');
+    });
+
     test('anteprima: «Stampa» visibile senza scorrere, poi si stampa', async ({ page }) => {
       await connectSimulated(page, { waitForRoll: true });
       await writeText(page, 'Anteprima');
