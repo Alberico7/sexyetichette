@@ -7,6 +7,7 @@ import {
   UNREPAIRABLE_TEXT,
   insertAtSelection,
   replaceHeartCode,
+  usesSymbolFont,
 } from '@/model/text';
 import { isThemePreference, nextPreference, resolveTheme } from '@/theme';
 
@@ -98,5 +99,13 @@ describe('cuore nascosto «#<3» → ♥ (docs/2026-11-08-cuore-nascosto.md)', (
   it('il cuore è il simbolo pieno, non l’emoji colorata', () => {
     expect(HEART.codePointAt(0)).toBe(0x2665);
     expect(HEART_CODE).toBe('#<3');
+  });
+});
+
+describe('mini-font dei simboli', () => {
+  it('serve per ⌀ e per ♥, non per il testo normale', () => {
+    expect(usesSymbolFont('Tubo ⌀20')).toBe(true);
+    expect(usesSymbolFont('Ti ♥')).toBe(true);
+    expect(usesSymbolFont('Tubo Ø20 <3')).toBe(false);
   });
 });

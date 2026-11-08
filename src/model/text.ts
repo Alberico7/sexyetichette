@@ -60,3 +60,8 @@ export function replaceHeartCode(text: string, cursor: number | null = text.leng
   const joined = (before + after).split(HEART_CODE).join(HEART);
   return { text: joined, cursor: Math.min(joined.length, before.length) };
 }
+
+/** Il testo usa un simbolo del mini-font dell'app (⌀ o ♥), che va caricato prima di disegnare. */
+export function usesSymbolFont(text: string): boolean {
+  return text.includes(DIAMETER_SIGN) || text.includes(HEART);
+}
