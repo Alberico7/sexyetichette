@@ -1,8 +1,8 @@
 // Genera src/assets/fonts/diametro.otf: un mini-font con il simbolo del diametro
 // ⌀ (U+2300), disegnato da zero con le proporzioni della ISO 3098, la sua variante
-// con la barra a 45° su ∅ (U+2205) e il cuore ♥ (U+2665).
+// con la barra a 45° su ∅ (U+2205), il cuore ♥ (U+2665) e il cuore vuoto ♡ (U+2661).
 // Vedi docs/2026-11-02-simbolo-diametro-iso-proporzionato.md e docs/2026-11-09-diametro-45.md.
-// Il cuore: docs/2026-11-08-cuore-nascosto.md.
+// I cuori: docs/2026-11-08-cuore-nascosto.md e docs/2026-11-09-cuore-vuoto.md.
 //
 // Uso: node scripts/make-diameter-font.mjs
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -126,10 +126,10 @@ export const HEART = {
 };
 
 /**
- * Cuore pieno ♥: dalla punta in basso (sulla linea di base) ai due lobi,
- * alto esattamente quanto le maiuscole. Contorno antiorario.
+ * Contorno del cuore ♥ già scalato e appoggiato sulla riga (unità del font, non arrotondate):
+ * punto di partenza (la punta) e quattro curve cubiche in senso antiorario.
  */
-export function buildHeartGlyphPath() {
+function heartOutline() {
   const h = DESIGN_CAP_HEIGHT_EM * UNITS_PER_EM;
   // Forma disegnata in un quadrato 1×1 (y verso l'alto), poi scalata e appoggiata sulla riga.
   const W = 1;
@@ -152,15 +152,121 @@ export function buildHeartGlyphPath() {
   const sy = h / (bb.y2 - bb.y1);
   const sx = (HEART.width * h) / (bb.x2 - bb.x1);
   const left = HEART.sideBearing * h;
-  const X = (x) => Math.round(left + (x - bb.x1) * sx);
-  const Y = (y) => Math.round((y - bb.y1) * sy);
-  const path = new opentype.Path();
-  for (const c of raw.commands) {
-    if (c.type === 'M') path.moveTo(X(c.x), Y(c.y));
-    else if (c.type === 'C') path.curveTo(X(c.x1), Y(c.y1), X(c.x2), Y(c.y2), X(c.x), Y(c.y));
-    else if (c.type === 'Z') path.close();
+  const P = (x, y) => ({ x: left + (x - bb.x1) * sx, y: (y - bb.y1) * sy });
+  const start = P(cx, 0);
+  const curves = [];
+  let p0 = start;
+  for (const s of segs) {
+    const c = [p0, P(s[0], s[1]), P(s[2], s[3]), P(s[4], s[5])];
+    curves.push(c);
+    p0 = c[3];
   }
-  return { path, advanceWidth: Math.round((HEART.width + 2 * HEART.sideBearing) * h) };
+  return { h, start, curves, advanceWidth: Math.round((HEART.width + 2 * HEART.sideBearing) * h) };
+}
+
+/**
+ * Cuore pieno ♥: dalla punta in basso (sulla linea di base) ai due lobi,
+ * alto esattamente quanto le maiuscole. Contorno antiorario.
+ */
+export function buildHeartGlyphPath() {
+  const { start, curves, advanceWidth } = heartOutline();
+  const r = Math.round;
+  const path = new opentype.Path();
+  path.moveTo(r(start.x), r(start.y));
+  for (const [, c1, c2, e] of curves) path.curveTo(r(c1.x), r(c1.y), r(c2.x), r(c2.y), r(e.x), r(e.y));
+  path.close();
+  return { path, advanceWidth };
+}
+
+function bezierPoint([p0, p1, p2, p3], t) {
+  const u = 1 - t;
+  const a = u * u * u;
+  const b = 3 * u * u * t;
+  const c = 3 * u * t * t;
+  const d = t * t * t;
+  return { x: a * p0.x + b * p1.x + c * p2.x + d * p3.x, y: a * p0.y + b * p1.y + c * p2.y + d * p3.y };
+}
+
+function bezierTangent([p0, p1, p2, p3], t) {
+  const u = 1 - t;
+  const x = 3 * u * u * (p1.x - p0.x) + 6 * u * t * (p2.x - p1.x) + 3 * t * t * (p3.x - p2.x);
+  const y = 3 * u * u * (p1.y - p0.y) + 6 * u * t * (p2.y - p1.y) + 3 * t * t * (p3.y - p2.y);
+  const len = Math.hypot(x, y);
+  return { x: x / len, y: y / len };
+}
+
+/** Distanza di `q` dalla spezzata chiusa `poly`. */
+function distanceToPolyline(q, poly) {
+  let best = Infinity;
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % poly.length];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const l2 = dx * dx + dy * dy;
+    const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((q.x - a.x) * dx + (q.y - a.y) * dy) / l2));
+    best = Math.min(best, Math.hypot(q.x - (a.x + t * dx), q.y - (a.y + t * dy)));
+  }
+  return best;
+}
+
+/** Spessore del bordo del cuore vuoto, in unità dell'altezza delle maiuscole: come il tratto del ⌀. */
+export const EMPTY_HEART_STROKE = ISO_DIAMETER.stroke;
+
+/**
+ * Cuore vuoto ♡: lo stesso contorno esterno del ♥ e, dentro, un contorno a distanza
+ * costante (il bordo), ottenuto spostando il contorno esterno verso l'interno lungo
+ * la perpendicolare. Nell'incavo in alto il bordo interno gira con un arco; alla punta
+ * si tolgono i punti che finirebbero oltre il lato opposto.
+ * Vedi docs/2026-11-09-cuore-vuoto.md.
+ */
+export function buildEmptyHeartGlyphPath() {
+  const { h, curves, advanceWidth } = heartOutline();
+  const { path } = buildHeartGlyphPath();
+  const s = EMPTY_HEART_STROKE * h;
+  const STEPS = 64;
+  // Contorno esterno fitto, per misurare le distanze.
+  const outer = [];
+  for (const c of curves) for (let i = 0; i < 256; i++) outer.push(bezierPoint(c, i / 256));
+  // Candidati del contorno interno, nello stesso verso (antiorario): l'interno è a sinistra.
+  const inward = (t) => ({ x: -t.y, y: t.x });
+  const candidates = [];
+  curves.forEach((c, k) => {
+    for (let i = 0; i <= STEPS; i++) {
+      const p = bezierPoint(c, i / STEPS);
+      const n = inward(bezierTangent(c, i / STEPS));
+      candidates.push({ x: p.x + n.x * s, y: p.y + n.y * s });
+    }
+    // Dopo la seconda curva c'è l'incavo (angolo rientrante): arco di raggio s attorno al vertice.
+    if (k === 1) {
+      const v = c[3];
+      const n1 = inward(bezierTangent(c, 1));
+      const n2 = inward(bezierTangent(curves[2], 0));
+      const a1 = Math.atan2(n1.y, n1.x);
+      const a2 = Math.atan2(n2.y, n2.x);
+      for (let i = 1; i < 16; i++) {
+        const a = a1 + ((a2 - a1) * i) / 16;
+        candidates.push({ x: v.x + Math.cos(a) * s, y: v.y + Math.sin(a) * s });
+      }
+    }
+  });
+  // Restano solo i punti a distanza ≥ s da tutto il contorno esterno (alla punta i due lati si incrociano).
+  const inner = [];
+  for (const q of candidates) {
+    if (distanceToPolyline(q, outer) < s - 0.5) continue;
+    const r = { x: Math.round(q.x), y: Math.round(q.y) };
+    const last = inner[inner.length - 1];
+    if (!last || last.x !== r.x || last.y !== r.y) inner.push(r);
+  }
+  const first = inner[0];
+  const end = inner[inner.length - 1];
+  if (inner.length > 1 && first.x === end.x && first.y === end.y) inner.pop();
+  // Contorno interno in senso orario (buco): si percorre al contrario.
+  inner.reverse();
+  path.moveTo(inner[0].x, inner[0].y);
+  for (const q of inner.slice(1)) path.lineTo(q.x, q.y);
+  path.close();
+  return { path, advanceWidth };
 }
 
 export function buildDiameterFont() {
@@ -176,6 +282,13 @@ export function buildDiameterFont() {
   });
   const h = buildHeartGlyphPath();
   const heart = new opentype.Glyph({ name: 'uni2665', unicode: 0x2665, advanceWidth: h.advanceWidth, path: h.path });
+  const e = buildEmptyHeartGlyphPath();
+  const emptyHeart = new opentype.Glyph({
+    name: 'uni2661',
+    unicode: 0x2661,
+    advanceWidth: e.advanceWidth,
+    path: e.path,
+  });
   return new opentype.Font({
     familyName: 'Etichettatrice Diametro',
     styleName: 'Regular',
@@ -185,7 +298,7 @@ export function buildDiameterFont() {
     designer: 'Gli autori di Etichettatrice',
     license: 'MIT',
     version: '1.000',
-    glyphs: [notdef, diameter, diameter45, heart],
+    glyphs: [notdef, diameter, diameter45, heart, emptyHeart],
   });
 }
 

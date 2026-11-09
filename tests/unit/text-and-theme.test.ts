@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   DIAMETER_SYMBOL,
+  EMPTY_HEART,
+  EMPTY_HEART_CODE,
   HEART,
   HEART_CODE,
   REJECT_WORD,
@@ -106,11 +108,36 @@ describe('cuore nascosto «#<3*» → ♥ (docs/2026-11-08-cuore-nascosto.md)', 
   });
 });
 
+describe('cuore vuoto «#<3-» → ♡ (docs/2026-11-09-cuore-vuoto.md)', () => {
+  it('sostituisce il codice e mette il cursore dopo il cuore', () => {
+    expect(replaceHeartCode('Ti #<3-', 7)).toEqual({ text: 'Ti ♡', cursor: 4 });
+    expect(replaceHeartCode('#<3- casa', 4)).toEqual({ text: '♡ casa', cursor: 1 });
+  });
+
+  it('tutti e due i codici nello stesso testo, anche incollati', () => {
+    expect(replaceHeartCode('#<3* e #<3-')).toEqual({ text: '♥ e ♡', cursor: 5 });
+    expect(replaceHeartCode('#<3- x #<3*', 5)).toEqual({ text: '♡ x ♥', cursor: 2 });
+    expect(replaceHeartCode('a#<3-b', 2)?.text).toBe('a♡b');
+  });
+
+  it('«#<3» da solo e un trattino normale restano invariati', () => {
+    expect(replaceHeartCode('#<3', 3)).toBeNull();
+    expect(replaceHeartCode('<3-', 3)).toBeNull();
+    expect(replaceHeartCode('20-30', 5)).toBeNull();
+  });
+
+  it('è il cuore bianco U+2661', () => {
+    expect(EMPTY_HEART.codePointAt(0)).toBe(0x2661);
+    expect(EMPTY_HEART_CODE).toBe('#<3-');
+  });
+});
+
 describe('mini-font dei simboli', () => {
-  it('serve per ⌀ e per ♥, non per il testo normale', () => {
+  it('serve per ⌀, ∅, ♥ e ♡, non per il testo normale', () => {
     expect(usesSymbolFont('Tubo ⌀20')).toBe(true);
     expect(usesSymbolFont('Ti ♥')).toBe(true);
     expect(usesSymbolFont('Tubo ∅20')).toBe(true);
+    expect(usesSymbolFont('Ti ♡')).toBe(true);
     expect(usesSymbolFont('Tubo Ø20 <3')).toBe(false);
   });
 });
