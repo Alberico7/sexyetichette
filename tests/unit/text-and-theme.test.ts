@@ -77,30 +77,32 @@ describe('NON RIPARABILE', () => {
   });
 });
 
-describe('cuore nascosto «#<3» → ♥ (docs/2026-11-08-cuore-nascosto.md)', () => {
+describe('cuore nascosto «#<3*» → ♥ (docs/2026-11-08-cuore-nascosto.md)', () => {
   it('sostituisce il codice e mette il cursore dopo il cuore', () => {
-    expect(replaceHeartCode('Ti #<3', 6)).toEqual({ text: 'Ti ♥', cursor: 4 });
-    expect(replaceHeartCode('#<3 casa', 3)).toEqual({ text: '♥ casa', cursor: 1 });
+    expect(replaceHeartCode('Ti #<3*', 7)).toEqual({ text: 'Ti ♥', cursor: 4 });
+    expect(replaceHeartCode('#<3* casa', 4)).toEqual({ text: '♥ casa', cursor: 1 });
   });
 
   it('più codici, anche incollati, con il cursore in fondo o in mezzo', () => {
-    expect(replaceHeartCode('#<3 e #<3')).toEqual({ text: '♥ e ♥', cursor: 5 });
-    expect(replaceHeartCode('#<3 x #<3', 4)).toEqual({ text: '♥ x ♥', cursor: 2 });
+    expect(replaceHeartCode('#<3* e #<3*')).toEqual({ text: '♥ e ♥', cursor: 5 });
+    expect(replaceHeartCode('#<3* x #<3*', 5)).toEqual({ text: '♥ x ♥', cursor: 2 });
   });
 
   it('cursore in mezzo al codice: il codice diventa comunque ♥', () => {
-    expect(replaceHeartCode('a#<3b', 2)?.text).toBe('a♥b');
+    expect(replaceHeartCode('a#<3*b', 2)?.text).toBe('a♥b');
   });
 
-  it('«<3» senza # e testo senza codice restano invariati', () => {
+  it('«<3», «#<3» senza asterisco e testo senza codice restano invariati', () => {
     expect(replaceHeartCode('<3 mm', 5)).toBeNull();
+    expect(replaceHeartCode('#<3', 3)).toBeNull();
+    expect(replaceHeartCode('#<3 mm', 6)).toBeNull();
+    expect(replaceHeartCode('<3*', 3)).toBeNull();
     expect(replaceHeartCode('Tubo 20', 7)).toBeNull();
-    expect(replaceHeartCode('#<', 2)).toBeNull();
   });
 
   it('il cuore è il simbolo pieno, non l’emoji colorata', () => {
     expect(HEART.codePointAt(0)).toBe(0x2665);
-    expect(HEART_CODE).toBe('#<3');
+    expect(HEART_CODE).toBe('#<3*');
   });
 });
 
@@ -108,6 +110,7 @@ describe('mini-font dei simboli', () => {
   it('serve per ⌀ e per ♥, non per il testo normale', () => {
     expect(usesSymbolFont('Tubo ⌀20')).toBe(true);
     expect(usesSymbolFont('Ti ♥')).toBe(true);
+    expect(usesSymbolFont('Tubo ∅20')).toBe(true);
     expect(usesSymbolFont('Tubo Ø20 <3')).toBe(false);
   });
 });

@@ -2,7 +2,14 @@
 import { computed, nextTick, onMounted, ref } from 'vue';
 import type { HorizontalAlign, TextElement, VerticalAlign } from '@/model/types';
 import { useDocumentStore } from '@/stores/document';
-import { DIAMETER_SIGN, REJECT_WORD, UNREPAIRABLE_TEXT, insertAtSelection, replaceHeartCode } from '@/model/text';
+import {
+  DIAMETER_45_SIGN,
+  DIAMETER_SIGN,
+  REJECT_WORD,
+  UNREPAIRABLE_TEXT,
+  insertAtSelection,
+  replaceHeartCode,
+} from '@/model/text';
 import { resolveFontSize } from '@/render/scene';
 import { screenShape } from '@/screen-shape';
 import { FONT_OPTIONS } from '@/model/fonts';
@@ -80,7 +87,7 @@ async function insertSymbol(symbol: string): Promise<void> {
   el.setSelectionRange(edit.cursor, edit.cursor);
 }
 
-/** Testo scritto nella casella; il codice nascosto «#<3» diventa ♥ (docs/2026-11-08-cuore-nascosto.md). */
+/** Testo scritto nella casella; il codice nascosto «#<3*» diventa ♥ (docs/2026-11-08-cuore-nascosto.md). */
 async function onTextInput(event: Event): Promise<void> {
   const el = event.target as HTMLTextAreaElement;
   const edit = replaceHeartCode(el.value, el.selectionStart);
@@ -130,7 +137,16 @@ function rotate90(): void {
       @pointerdown.prevent
       @click="insertSymbol(DIAMETER_SIGN)"
     >
-      <span class="symbol iso" aria-hidden="true">{{ DIAMETER_SIGN }}</span> Diametro
+      <span class="symbol iso" aria-hidden="true">{{ DIAMETER_SIGN }}</span> ISO
+    </button>
+    <button
+      type="button"
+      data-testid="insert-diameter-45"
+      aria-label="Inserisci il simbolo del diametro con la barra a 45°"
+      @pointerdown.prevent
+      @click="insertSymbol(DIAMETER_45_SIGN)"
+    >
+      <span class="symbol iso" aria-hidden="true">{{ DIAMETER_45_SIGN }}</span> 45°
     </button>
     <button
       type="button"
@@ -329,10 +345,7 @@ function rotate90(): void {
   font-weight: 600;
 }
 
-/* Lo stesso simbolo ISO usato in stampa. */
-.symbol.iso {
-  font-family: 'Etichettatrice Diametro UI', inherit;
-}
+/* Lo stesso simbolo usato in stampa: il mini-font è il primo carattere dell'interfaccia (base.css). */
 
 .size {
   width: 130px;
@@ -383,7 +396,7 @@ function rotate90(): void {
   min-width: 0;
 }
 
-/* «N. R.» è corto: lascia più spazio agli altri due. */
+/* «N. R.» è corto: lascia più spazio agli altri. */
 .symbols button.short {
   flex: 0.6 1 0;
 }

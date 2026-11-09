@@ -1,6 +1,7 @@
 // Genera src/assets/fonts/diametro.otf: un mini-font con il simbolo del diametro
-// ⌀ (U+2300), disegnato da zero con le proporzioni della ISO 3098, e il cuore ♥ (U+2665).
-// Vedi docs/2026-11-02-simbolo-diametro-iso-proporzionato.md.
+// ⌀ (U+2300), disegnato da zero con le proporzioni della ISO 3098, la sua variante
+// con la barra a 45° su ∅ (U+2205) e il cuore ♥ (U+2665).
+// Vedi docs/2026-11-02-simbolo-diametro-iso-proporzionato.md e docs/2026-11-09-diametro-45.md.
 // Il cuore: docs/2026-11-08-cuore-nascosto.md.
 //
 // Uso: node scripts/make-diameter-font.mjs
@@ -85,7 +86,15 @@ function roundedBar(path, A, B, w) {
   path.close();
 }
 
-export function buildDiameterGlyphPath() {
+/** Inclinazione della barra della variante su ∅ (U+2205). Vedi docs/2026-11-09-diametro-45.md. */
+export const DIAMETER_45_ANGLE_DEG = 45;
+
+/**
+ * ⌀ con la barra inclinata di `angleDeg`. La barra sporge dal cerchio della stessa
+ * lunghezza (misurata lungo la barra) qualunque sia l'inclinazione: a 75° è il ⌀ ISO,
+ * a 45° la barra resta dentro la larghezza del cerchio.
+ */
+export function buildDiameterGlyphPath(angleDeg = ISO_DIAMETER.slashAngleDeg) {
   const h = DESIGN_CAP_HEIGHT_EM * UNITS_PER_EM;
   const g = ISO_DIAMETER;
   const s = g.stroke * h;
@@ -96,12 +105,14 @@ export function buildDiameterGlyphPath() {
   // Anello: contorno esterno antiorario, interno orario.
   circle(path, cx, cy, outerR, true);
   circle(path, cx, cy, outerR - s, false);
-  // Barra a 75° passante per il centro.
-  const a = (g.slashAngleDeg * Math.PI) / 180;
-  const u = { x: Math.cos(a), y: Math.sin(a) };
+  // Lunghezze della barra dal centro, ricavate dalla barra ISO a 75°.
   const w = s / 2;
-  const tTop = (g.slashTop * h - w - cy) / u.y;
-  const tBottom = (cy - (g.slashBottom * h + w)) / u.y;
+  const iso = Math.sin((g.slashAngleDeg * Math.PI) / 180);
+  const tTop = (g.slashTop * h - w - cy) / iso;
+  const tBottom = (cy - (g.slashBottom * h + w)) / iso;
+  // Barra passante per il centro, inclinata di angleDeg.
+  const a = (angleDeg * Math.PI) / 180;
+  const u = { x: Math.cos(a), y: Math.sin(a) };
   roundedBar(path, { x: cx - u.x * tBottom, y: cy - u.y * tBottom }, { x: cx + u.x * tTop, y: cy + u.y * tTop }, w);
   return { path, advanceWidth: Math.round(g.advance * h) };
 }
@@ -156,6 +167,13 @@ export function buildDiameterFont() {
   const { path, advanceWidth } = buildDiameterGlyphPath();
   const notdef = new opentype.Glyph({ name: '.notdef', unicode: 0, advanceWidth: 500, path: new opentype.Path() });
   const diameter = new opentype.Glyph({ name: 'uni2300', unicode: 0x2300, advanceWidth, path });
+  const d45 = buildDiameterGlyphPath(DIAMETER_45_ANGLE_DEG);
+  const diameter45 = new opentype.Glyph({
+    name: 'uni2205',
+    unicode: 0x2205,
+    advanceWidth: d45.advanceWidth,
+    path: d45.path,
+  });
   const h = buildHeartGlyphPath();
   const heart = new opentype.Glyph({ name: 'uni2665', unicode: 0x2665, advanceWidth: h.advanceWidth, path: h.path });
   return new opentype.Font({
@@ -167,7 +185,7 @@ export function buildDiameterFont() {
     designer: 'Gli autori di Etichettatrice',
     license: 'MIT',
     version: '1.000',
-    glyphs: [notdef, diameter, heart],
+    glyphs: [notdef, diameter, diameter45, heart],
   });
 }
 

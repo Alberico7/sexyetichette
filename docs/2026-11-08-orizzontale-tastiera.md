@@ -43,7 +43,7 @@ Mentre si scrive un testo:
   - **Fine** chiude il testo, e con lui la tastiera;
   - **Stampa** stampa subito.
 - **Nascosti finché la tastiera è aperta:** ⌀ / AFKEUR / N. R., «Adatta automaticamente», «Altre opzioni», Elimina e ×N copie. Ricompaiono appena si chiude la tastiera, per esempio con il tasto «giù» di Android: si torna alla disposizione orizzontale normale, con il testo ancora aperto.
-  - Il cuore si scrive comunque, con `#<3`.
+  - Il cuore si scrive comunque, con `#<3*`.
 
 ### Telefoni piccoli in verticale (aggiunta dell'utente, 2026-11-08)
 

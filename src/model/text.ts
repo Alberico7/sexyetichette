@@ -10,6 +10,13 @@ export const DIAMETER_SYMBOL = 'Ø';
  */
 export const DIAMETER_SIGN = '⌀';
 
+/**
+ * Simbolo del diametro con la barra a 45°. Non esiste un carattere apposta: si usa
+ * ∅ (U+2205, insieme vuoto), che il mini-font dell'app disegna come ⌀ con la barra
+ * a 45°. Vedi docs/2026-11-09-diametro-45.md.
+ */
+export const DIAMETER_45_SIGN = '∅';
+
 /** Parola inserita dal pulsante «AFKEUR» (scarto), così com'è, senza spazi. */
 export const REJECT_WORD = 'AFKEUR';
 
@@ -43,12 +50,12 @@ export const HEART = '♥';
 
 /**
  * Codice nascosto che diventa ♥ mentre si scrive (nessun pulsante).
- * Il `#` evita di trasformare un `<3` scritto apposta. Vedi docs/2026-11-08-cuore-nascosto.md.
+ * Il `#` davanti e l'`*` dopo evitano di trasformare un `<3` scritto apposta. Vedi docs/2026-11-08-cuore-nascosto.md.
  */
-export const HEART_CODE = '#<3';
+export const HEART_CODE = '#<3*';
 
 /**
- * Sostituisce ogni `#<3` con ♥ e sposta il cursore di conseguenza.
+ * Sostituisce ogni `#<3*` con ♥ e sposta il cursore di conseguenza.
  * Restituisce `null` se il testo non contiene il codice.
  */
 export function replaceHeartCode(text: string, cursor: number | null = text.length): TextEdit | null {
@@ -61,7 +68,7 @@ export function replaceHeartCode(text: string, cursor: number | null = text.leng
   return { text: joined, cursor: Math.min(joined.length, before.length) };
 }
 
-/** Il testo usa un simbolo del mini-font dell'app (⌀ o ♥), che va caricato prima di disegnare. */
+/** Il testo usa un simbolo del mini-font dell'app (⌀, ∅ o ♥), che va caricato prima di disegnare. */
 export function usesSymbolFont(text: string): boolean {
-  return text.includes(DIAMETER_SIGN) || text.includes(HEART);
+  return text.includes(DIAMETER_SIGN) || text.includes(DIAMETER_45_SIGN) || text.includes(HEART);
 }
