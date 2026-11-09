@@ -80,7 +80,8 @@ for (const size of SIZES) {
         page.getByTestId('text-print'),
         page.getByTestId('text-copies'),
         page.getByTestId('text-input'),
-        page.getByRole('button', { name: 'Inserisci il simbolo del diametro' }),
+        page.getByTestId('insert-diameter'),
+        page.getByTestId('insert-diameter-45'),
       ])
         await fullyVisible(page, b);
       const p = (await panel.boundingBox())!;
@@ -112,9 +113,13 @@ for (const size of SIZES) {
       await page.getByTestId('insert-unrepairable').tap();
       await expect(input).toHaveValue('Tubo 20⌀AFKEURNON\nRIPARABILE');
       expect(await focused(), 'tastiera chiusa dopo N. R.').toBe(false);
-      // Il cursore resta in fondo: un altro ⌀ va dopo «RIPARABILE».
+      await input.focus();
+      await page.getByTestId('insert-diameter-45').tap();
+      await expect(input).toHaveValue('Tubo 20⌀AFKEURNON\nRIPARABILE∅');
+      expect(await focused(), 'tastiera chiusa dopo ∅ 45°').toBe(false);
+      // Il cursore resta in fondo: un altro ⌀ va dopo «∅».
       await page.getByTestId('insert-diameter').tap();
-      await expect(input).toHaveValue('Tubo 20⌀AFKEURNON\nRIPARABILE⌀');
+      await expect(input).toHaveValue('Tubo 20⌀AFKEURNON\nRIPARABILE∅⌀');
     });
 
     test('anteprima: «Stampa» visibile senza scorrere, poi si stampa', async ({ page }) => {

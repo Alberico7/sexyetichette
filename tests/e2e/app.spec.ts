@@ -141,8 +141,9 @@ test('pulsante diametro: inserisce ⌀ nella posizione del cursore', async ({ pa
   await input.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(5, 5));
   await page.getByTestId('insert-diameter').tap();
   await expect(input).toHaveValue('Tubo ⌀20 mm');
-  // Un solo pulsante per il diametro: quello del simbolo ISO.
-  await expect(page.getByRole('button', { name: /diametro/i })).toHaveCount(1);
+  // Due pulsanti per il diametro: «⌀ ISO» (75°) e «∅ 45°» (docs/2026-11-09-diametro-45.md).
+  await expect(page.getByRole('button', { name: /diametro/i })).toHaveCount(2);
+  await expect(page.getByTestId('insert-diameter')).toHaveText('⌀ ISO');
   expect(await input.evaluate((el: HTMLTextAreaElement) => el.selectionStart)).toBe(6);
   await noHorizontalScroll(page);
   await page.screenshot({ path: 'test-results/08-diametro.png' });
@@ -153,6 +154,38 @@ test('pulsante diametro: inserisce ⌀ nella posizione del cursore', async ({ pa
   await expect
     .poll(async () => page.getByTestId('preview-canvas').evaluate((c: HTMLCanvasElement) => c.width))
     .toBe(638);
+});
+
+test('pulsante ∅ 45°: inserisce il diametro a 45° al cursore, disegnato dal mini-font', async ({ page }) => {
+  // Vedi docs/2026-11-09-diametro-45.md.
+  await connectSimulated(page);
+  await page.getByTestId('add-text').tap();
+  const input = page.getByTestId('text-input');
+  await input.fill('Tubo 20 mm');
+  await input.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(5, 5));
+  const button = page.getByTestId('insert-diameter-45');
+  await expect(button).toHaveText('∅ 45°');
+  await expect(button).toHaveAccessibleName('Inserisci il simbolo del diametro con la barra a 45°');
+  await button.tap();
+  await expect(input).toHaveValue('Tubo ∅20 mm');
+  expect(await input.evaluate((el: HTMLTextAreaElement) => el.selectionStart)).toBe(6);
+  // Sul pulsante il simbolo viene dal mini-font dell'app, come in stampa.
+  const symbolFont = await button.locator('.symbol').evaluate((el) => getComputedStyle(el).fontFamily);
+  expect(symbolFont).toContain('Etichettatrice Diametro UI');
+  // Il browser l'ha davvero scaricato per disegnare la pagina (senza caricarlo a mano).
+  await expect
+    .poll(() =>
+      page.evaluate(() => [...document.fonts].find((f) => f.family.includes('Diametro UI'))?.status ?? 'assente'),
+    )
+    .toBe('loaded');
+  await noHorizontalScroll(page);
+  await page.locator('.symbols').screenshot({ path: 'test-results/29-diametro-45.png' });
+
+  await page.getByTestId('text-done').tap();
+  await page.getByTestId('open-preview').tap();
+  await expect(page.getByTestId('preview-canvas')).toBeVisible();
+  await page.getByTestId('print-button').tap();
+  await expect(page.getByTestId('toast')).toContainText('Stampata');
 });
 
 test('pulsante AFKEUR: inserisce la parola nella posizione del cursore', async ({ page }) => {
@@ -190,9 +223,11 @@ test('pulsante N. R.: inserisce NON RIPARABILE su due righe', async ({ page }) =
   await expect(input).toHaveValue('NON\nRIPARABILE');
   expect(await input.evaluate((el: HTMLTextAreaElement) => el.selectionStart)).toBe(14);
 
-  // Tre pulsanti sulla stessa riga; la scritta non è tagliata.
+  // Quattro pulsanti sulla stessa riga; la scritta non è tagliata.
   const boxes = await Promise.all(
-    ['insert-diameter', 'insert-reject', 'insert-unrepairable'].map((id) => page.getByTestId(id).boundingBox()),
+    ['insert-diameter', 'insert-diameter-45', 'insert-reject', 'insert-unrepairable'].map((id) =>
+      page.getByTestId(id).boundingBox(),
+    ),
   );
   for (const b of boxes) expect(Math.abs((b?.y ?? 0) - (boxes[0]?.y ?? 1))).toBeLessThan(2);
   expect(await button.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
@@ -357,12 +392,15 @@ test('stile: pulsanti G, C, S con il nome completo per gli screen reader', async
   await page.locator('[data-testid=more-options]').screenshot({ path: 'test-results/27-stile-gcs.png' });
 });
 
-test('cuore nascosto: «#<3» diventa ♥ mentre si scrive, e si stampa', async ({ page }) => {
+test('cuore nascosto: «#<3*» diventa ♥ mentre si scrive, e si stampa', async ({ page }) => {
   // Vedi docs/2026-11-08-cuore-nascosto.md.
   await connectSimulated(page);
   await page.getByTestId('add-text').tap();
   const input = page.getByTestId('text-input');
+  // Senza l'asterisco il codice resta testo.
   await page.keyboard.type('Ti #<3');
+  await expect(input).toHaveValue('Ti #<3');
+  await page.keyboard.type('*');
   await expect(input).toHaveValue('Ti ♥');
   // Il cursore resta dopo il cuore: si continua a scrivere in fondo.
   await page.keyboard.type(' A');

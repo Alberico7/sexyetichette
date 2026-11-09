@@ -1,7 +1,7 @@
 # Cuore nascosto: «#<3» diventa ♥
 
 - Data: 2026-11-08
-- Stato: **confermato e realizzato (2026-11-08)**, codice `#<3`
+- Stato: **confermato e realizzato (2026-11-08)**, codice `#<3`, cambiato in `#<3*` il 2026-11-09
 
 ## Perché
 
@@ -74,3 +74,14 @@ L'utente vuole poter stampare un cuore sulle etichette, senza un pulsante visibi
 - **Test:**
   - i test di rendering del cuore stanno ora in `tests/browser/heart.test.ts`, da soli: senza correzione 3 su 4 fallivano;
   - più un test unitario per `usesSymbolFont`.
+
+## Codice cambiato in `#<3*` (2026-11-09)
+
+- **Richiesta dell'utente:** aggiungere un asterisco anche dopo il 3.
+- **Ora:** il codice è **`#<3*`**. Il cuore compare quando si digita l'asterisco.
+  - `#<3` senza asterisco, `<3` e `<3*` restano testo normale.
+  - Un `#<3` già scritto prima di questo cambio resta com'è.
+- **Dove:** `HEART_CODE` in `src/model/text.ts`. La funzione `replaceHeartCode` non cambia.
+- **Test:**
+  - unitari aggiornati al nuovo codice, più i casi `#<3`, `#<3 mm` e `<3*`, che restano invariati;
+  - nell'e2e si scrive «Ti #<3»: la casella resta «Ti #<3»; con l'asterisco diventa «Ti ♥».
