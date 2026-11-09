@@ -87,7 +87,7 @@ async function insertSymbol(symbol: string): Promise<void> {
   el.setSelectionRange(edit.cursor, edit.cursor);
 }
 
-/** Testo scritto nella casella; il codice nascosto «#<3*» diventa ♥ (docs/2026-11-08-cuore-nascosto.md). */
+/** Testo scritto nella casella; i codici nascosti «#<3*» e «#<3-» diventano ♥ e ♡ (docs/2026-11-08-cuore-nascosto.md, docs/2026-11-09-cuore-vuoto.md). */
 async function onTextInput(event: Event): Promise<void> {
   const el = event.target as HTMLTextAreaElement;
   const edit = replaceHeartCode(el.value, el.selectionStart);
