@@ -171,3 +171,5 @@ Annota per ogni punto ✅ / ❌ e, se qualcosa non va, una foto dell'etichetta.
 © 2026 Andrea Carletti. **MIT con [Commons Clause](https://commonsclause.com/)**: la vendita non è consentita. Vedi [LICENSE](LICENSE).
 
 Il carattere «Tecnico ISO 3098» è [osifont](https://github.com/hikikomori82/osifont), distribuito sotto GNU LGPL 3 con *font exception*. È incluso senza modifiche, con la licenza in [public/licenses/osifont](public/licenses/osifont). Le etichette stampate con questo carattere non hanno vincoli di licenza.
+
+Il carattere «Noto Sans (simile a Segoe UI)» è [Noto Sans](https://github.com/notofonts/latin-greek-cyrillic), distribuito sotto SIL Open Font License 1.1. È incluso senza modifiche (sottoinsieme latino di [Fontsource](https://fontsource.org/fonts/noto-sans)), con la licenza in [public/licenses/noto-sans](public/licenses/noto-sans).

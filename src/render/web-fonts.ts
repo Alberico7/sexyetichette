@@ -5,7 +5,11 @@
  * La stampa invece aspetta sempre i font con waitForFonts (scene.ts).
  */
 import isoFontUrl from '@/assets/fonts/osifont-lgpl3fe.woff?url';
-import { ISO_FONT_FACE } from '@/model/fonts';
+import notoRegular from '@/assets/fonts/noto-sans-latin-400-normal.woff2?url';
+import notoItalic from '@/assets/fonts/noto-sans-latin-400-italic.woff2?url';
+import notoBold from '@/assets/fonts/noto-sans-latin-700-normal.woff2?url';
+import notoBoldItalic from '@/assets/fonts/noto-sans-latin-700-italic.woff2?url';
+import { ISO_FONT_FACE, NOTO_SANS_FACE } from '@/model/fonts';
 
 /**
  * Registra «Tecnico ISO 3098» (osifont, LGPL 3 con font exception, vedi
@@ -18,6 +22,25 @@ function registerIsoFont(): void {
   );
 }
 registerIsoFont();
+
+/**
+ * Registra «Noto Sans (simile a Segoe UI)» (SIL OFL 1.1, vedi public/licenses/noto-sans):
+ * quattro varianti, scaricate solo quella che serve. Vedi docs/2026-11-09-carattere-noto-sans.md.
+ */
+function registerNotoSans(): void {
+  if (typeof document === 'undefined' || typeof FontFace === 'undefined' || !('fonts' in document)) return;
+  const variants: [string, string, string][] = [
+    [notoRegular, '400', 'normal'],
+    [notoItalic, '400', 'italic'],
+    [notoBold, '700', 'normal'],
+    [notoBoldItalic, '700', 'italic'],
+  ];
+  for (const [url, weight, style] of variants)
+    document.fonts.add(
+      new FontFace(NOTO_SANS_FACE, `url(${JSON.stringify(url)}) format('woff2')`, { weight, style, display: 'swap' }),
+    );
+}
+registerNotoSans();
 
 const requested = new Set<string>();
 const listeners = new Set<() => void>();
