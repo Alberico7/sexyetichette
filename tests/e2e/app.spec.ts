@@ -297,6 +297,42 @@ test('ricerca del codice europeo S0722520 nell’elenco dei formati', async ({ p
   await noHorizontalScroll(page);
 });
 
+test('carattere «Noto Sans (simile a Segoe UI)»: scaricato solo quando si sceglie, usato in stampa', async ({
+  page,
+}) => {
+  // Vedi docs/2026-11-09-carattere-noto-sans.md.
+  const notoRequests: string[] = [];
+  page.on('request', (r) => {
+    // Solo i file del font (in sviluppo Vite chiede anche i moduli «?import&url», che non lo scaricano).
+    if (r.url().includes('noto-sans') && !r.url().includes('?import')) notoRequests.push(r.url());
+  });
+  await connectSimulated(page);
+  await page.getByTestId('add-text').tap();
+  await page.keyboard.type('Tubo ⌀20 1234');
+  expect(notoRequests, 'non scaricato all’avvio').toEqual([]);
+  await page.getByTestId('more-options').locator('summary').tap();
+  await page.getByLabel('Carattere').selectOption({ label: 'Noto Sans (simile a Segoe UI)' });
+  // Il testo è in grassetto (default): si scarica il grassetto.
+  await expect.poll(() => notoRequests.some((u) => u.includes('700-normal'))).toBe(true);
+  await expect.poll(() => page.evaluate(() => document.fonts.check('bold 20px "Etichettatrice Noto Sans"'))).toBe(true);
+  await noHorizontalScroll(page);
+  await page.screenshot({ path: 'test-results/42-carattere-noto.png' });
+
+  await page.getByTestId('text-done').tap();
+  await page.getByTestId('open-preview').tap();
+  await expect(page.getByText('Aggiornamento anteprima')).toHaveCount(0);
+  await page.screenshot({ path: 'test-results/43-anteprima-noto.png' });
+  await page.getByTestId('print-button').tap();
+  await expect(page.getByTestId('toast')).toContainText('Stampata');
+
+  // La scelta resta sul testo.
+  const box = (await page.getByTestId('editor').boundingBox())!;
+  await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+  await page.getByTestId('edit-selected').tap();
+  await page.getByTestId('more-options').locator('summary').tap();
+  await expect(page.getByLabel('Carattere').locator('option:checked')).toHaveText('Noto Sans (simile a Segoe UI)');
+});
+
 test('carattere «Tecnico ISO 3098»: predefinito, scaricato all’avvio e usato in stampa', async ({ page }) => {
   const fontRequests: string[] = [];
   page.on('request', (r) => {
