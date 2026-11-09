@@ -87,3 +87,16 @@ Anteprima nei due temi: `docs/2026-11-08-logo-stato/anteprima-stati.png`. L'anel
   - Su Linux il test viene saltato, perché non dice niente sul telefono.
   - Con Roboto il margine è di circa 12 px.
   - Con il font del CI tutti gli altri e2e passano, compresi quelli dell'orizzontale: verificato forzando DejaVu Sans in locale.
+
+## Logo grande come i pulsanti (2026-11-09)
+
+- **Richiesta dell'utente:** il logo della barra in alto grande come i pulsanti accanto.
+- **Ora:**
+  - in verticale da 40 a **48 punti** (`var(--tap)`), come ◐, 🔧 e Collega/Scollega;
+  - in orizzontale da 32 a **44 punti**, come i pulsanti della barra più bassa. La barra non diventa più alta, perché i pulsanti erano già di 44 punti;
+  - anello e segno nel tondo (✓ ! ✕) un po' più grandi, in proporzione.
+- **Spazio per la scritta:** il logo più grande toglie 8 punti a «Stampante non collegata». Per recuperarli:
+  - margine laterale della barra da 12 a 10 punti;
+  - distanza tra logo e scritta da 8 a 6 punti.
+  - Il test «versione finale (senza 🔧)» continua a passare con il carattere di Windows, più largo di Roboto, il carattere di Android.
+- **Test:** passano gli e2e del logo, dell'orizzontale e dei temi.
