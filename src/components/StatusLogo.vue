@@ -25,8 +25,9 @@ const logoUrl = `url("${import.meta.env.BASE_URL}icona-ritagliabile.svg")`;
   --c: var(--muted);
   position: relative;
   flex: none;
-  width: 40px;
-  height: 40px;
+  /* Grande quanto i pulsanti della barra (docs/2026-11-08-logo-stato.md). */
+  width: var(--tap);
+  height: var(--tap);
 }
 
 .logo.busy {
@@ -48,7 +49,7 @@ const logoUrl = `url("${import.meta.env.BASE_URL}icona-ritagliabile.svg")`;
 /* Il pettirosso intero dentro il cerchio (icona ritagliabile al 150 %). */
 .img {
   position: absolute;
-  inset: 4px;
+  inset: 5px;
   border-radius: 50%;
   background-position: center;
   background-size: 150%;
@@ -100,33 +101,29 @@ const logoUrl = `url("${import.meta.env.BASE_URL}icona-ritagliabile.svg")`;
   position: absolute;
   right: -4px;
   bottom: -4px;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--c);
   color: var(--surface);
   font:
-    700 11px/16px system-ui,
+    700 12px/18px system-ui,
     sans-serif;
   text-align: center;
   box-shadow: 0 0 0 2px var(--surface);
 }
-/* Orizzontale su telefono: logo da 32 px nella barra più bassa (docs/2026-11-08-orizzontale.md). */
+/* Orizzontale su telefono: 44 px come i pulsanti della barra più bassa (docs/2026-11-08-orizzontale.md). */
 @media (max-height: 600px) {
   :root[data-screen='landscape'] .logo {
-    width: 32px;
-    height: 32px;
-  }
-
-  :root[data-screen='landscape'] .img {
-    inset: 3px;
+    width: 44px;
+    height: 44px;
   }
 
   :root[data-screen='landscape'] .badge {
-    width: 14px;
-    height: 14px;
-    font-size: 10px;
-    line-height: 14px;
+    width: 16px;
+    height: 16px;
+    font-size: 11px;
+    line-height: 16px;
   }
 }
 </style>
