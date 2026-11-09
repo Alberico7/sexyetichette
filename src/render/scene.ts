@@ -108,7 +108,7 @@ export function verticalShiftEm(el: Pick<TextElement, 'fontFamily' | 'bold' | 'i
 export const UNDERLINE_OFFSET_EM = 0.12;
 
 function buildText(group: Group, el: TextElement, w: number, h: number): void {
-  // Primo uso di ⌀ o ♥ con questo carattere: prepara il mini-font (l'editor si ridisegna quando è pronto).
+  // Primo uso di un simbolo del mini-font (⌀, ∅, ♥, ♡) con questo carattere: prepara il mini-font (l'editor si ridisegna quando è pronto).
   if (usesSymbolFont(el.text)) void ensureDiameterFont(el.fontFamily);
   // Font scaricabile non ancora pronto: lo chiedo (l'editor si ridisegna quando arriva).
   requestFont(el.fontFamily, fontStyle(el));

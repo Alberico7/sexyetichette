@@ -54,21 +54,36 @@ export const HEART = '♥';
  */
 export const HEART_CODE = '#<3*';
 
+/** Cuore vuoto (U+2661), disegnato nel mini-font `diametro.otf`. Vedi docs/2026-11-09-cuore-vuoto.md. */
+export const EMPTY_HEART = '♡';
+
+/** Codice nascosto che diventa ♡ mentre si scrive: come quello del ♥, con il trattino al posto dell'asterisco. */
+export const EMPTY_HEART_CODE = '#<3-';
+
+const HEART_CODES: readonly (readonly [string, string])[] = [
+  [HEART_CODE, HEART],
+  [EMPTY_HEART_CODE, EMPTY_HEART],
+];
+
+function replaceCodes(text: string): string {
+  return HEART_CODES.reduce((t, [code, symbol]) => t.split(code).join(symbol), text);
+}
+
 /**
- * Sostituisce ogni `#<3*` con ♥ e sposta il cursore di conseguenza.
- * Restituisce `null` se il testo non contiene il codice.
+ * Sostituisce ogni `#<3*` con ♥ e ogni `#<3-` con ♡, e sposta il cursore di conseguenza.
+ * Restituisce `null` se il testo non contiene nessun codice.
  */
 export function replaceHeartCode(text: string, cursor: number | null = text.length): TextEdit | null {
-  if (!text.includes(HEART_CODE)) return null;
+  if (!HEART_CODES.some(([code]) => text.includes(code))) return null;
   const pos = Math.min(text.length, Math.max(0, cursor ?? text.length));
-  const before = text.slice(0, pos).split(HEART_CODE).join(HEART);
-  const after = text.slice(pos).split(HEART_CODE).join(HEART);
+  const before = replaceCodes(text.slice(0, pos));
+  const after = replaceCodes(text.slice(pos));
   // Un codice a cavallo del cursore (raro: cursore in mezzo al codice incollato) si sistema sul testo intero.
-  const joined = (before + after).split(HEART_CODE).join(HEART);
+  const joined = replaceCodes(before + after);
   return { text: joined, cursor: Math.min(joined.length, before.length) };
 }
 
-/** Il testo usa un simbolo del mini-font dell'app (⌀, ∅ o ♥), che va caricato prima di disegnare. */
+/** Il testo usa un simbolo del mini-font dell'app (⌀, ∅, ♥ o ♡), che va caricato prima di disegnare. */
 export function usesSymbolFont(text: string): boolean {
-  return text.includes(DIAMETER_SIGN) || text.includes(DIAMETER_45_SIGN) || text.includes(HEART);
+  return [DIAMETER_SIGN, DIAMETER_45_SIGN, HEART, EMPTY_HEART].some((c) => text.includes(c));
 }

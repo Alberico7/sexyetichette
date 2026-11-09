@@ -453,3 +453,28 @@ test('cuore nascosto: «#<3*» diventa ♥ mentre si scrive, e si stampa', async
   await expect(page.getByTestId('toast')).toContainText('Stampata');
   await expect(page.getByTestId('dev-panel')).toContainText('lavori ricevuti: 1');
 });
+
+test('cuore vuoto: «#<3-» diventa ♡ mentre si scrive, e si stampa', async ({ page }) => {
+  // Vedi docs/2026-11-09-cuore-vuoto.md.
+  await connectSimulated(page);
+  await page.getByTestId('add-text').tap();
+  const input = page.getByTestId('text-input');
+  await page.keyboard.type('Ti #<3');
+  await expect(input).toHaveValue('Ti #<3');
+  await page.keyboard.type('-');
+  await expect(input).toHaveValue('Ti ♡');
+  // Il cursore resta dopo il cuore; il cuore pieno funziona ancora nello stesso testo.
+  await page.keyboard.type(' e #<3*');
+  await expect(input).toHaveValue('Ti ♡ e ♥');
+  // Un trattino normale resta un trattino.
+  await page.keyboard.type(' 20-30');
+  await expect(input).toHaveValue('Ti ♡ e ♥ 20-30');
+  await page.getByTestId('text-done').tap();
+
+  await page.getByTestId('open-preview').tap();
+  await expect(page.getByTestId('preview-canvas')).toBeVisible();
+  await page.screenshot({ path: 'test-results/28b-cuore-vuoto.png' });
+  await page.getByTestId('print-button').tap();
+  await expect(page.getByTestId('toast')).toContainText('Stampata');
+  await expect(page.getByTestId('dev-panel')).toContainText('lavori ricevuti: 1');
+});
