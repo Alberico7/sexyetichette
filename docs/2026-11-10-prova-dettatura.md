@@ -108,3 +108,7 @@ Con i numeri veri scelgo motore e misura del modello. Poi scrivo il documento de
   - 4 unitari sul tar (cartelle, blocchi e somma di controllo, lettura ed estrazione con il programma `tar` del sistema, SHA-256);
   - 2 e2e: la pagina si apre senza scaricare modelli e «Copia risultati» funziona; l'app non carica le librerie della prova.
   - Totali: 331 unitari + browser, 95 e2e.
+- **Correzione (2026-11-10): la pagina non scorreva su Vanadium con un dito**, solo con due.
+  - Causa: la pagina metteva `overflow: auto` anche su `body`, che diventava un riquadro scorrevole senza niente da scorrere. In più l'app gli dà `overscroll-behavior: none`, quindi lo scorrimento non passava alla pagina. Con due dita si muove la vista del browser, per questo funzionava.
+  - Ora `html` e `body` hanno `overflow: visible` e `overscroll-behavior: auto`.
+  - Nuovo e2e: la rotellina fa scorrere la pagina (con la regola vecchia la pagina resta ferma e il test fallisce). Il gesto col dito simulato da Playwright non funziona nemmeno su una pagina vuota, quindi si usa la rotellina, che segue le stesse regole.
