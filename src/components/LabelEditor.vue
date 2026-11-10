@@ -16,6 +16,7 @@ import { onDiameterFontReady } from '@/render/diameter-font';
 import { onWebFontReady } from '@/render/web-fonts';
 import { keyboardCompact, viewportInfo } from '@/screen-shape';
 import { diagLog } from '@/diagnostics/log';
+import { simHooks } from '@/sim';
 
 const emit = defineEmits<{ edit: [id: string] }>();
 
@@ -229,7 +230,7 @@ onMounted(async () => {
   uiLayer.add(transformer);
   applyTransformerColors();
   // Solo in sviluppo e nei test e2e: accesso alla scena (non entra nella build pubblicata).
-  if (import.meta.env.DEV) (window as unknown as { __labelStage?: Stage }).__labelStage = stage;
+  if (import.meta.env.DEV) simHooks().labelStage = stage;
 
   // Prima che il browser sposti il cursore: c'era la tastiera aperta (casella attiva, disposizione compatta)?
   host.value.addEventListener(

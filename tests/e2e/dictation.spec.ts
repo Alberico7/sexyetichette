@@ -3,11 +3,15 @@
  * Vedi docs/2026-11-10-dettatura.md.
  */
 import type { Page } from '@playwright/test';
-import { test, expect, connectSimulated } from './helpers';
+import { test, expect, connectSimulated, type SimWindow } from './helpers';
 
 /** Frasi che il riconoscitore simulato «sentirà», una per pressione. */
 async function willHear(page: Page, ...phrases: string[]) {
-  await page.evaluate((p) => ((window as unknown as { __simVoice: string[] }).__simVoice = p), phrases);
+  await page.evaluate((p) => {
+    const w = window as unknown as SimWindow;
+    w.__sim ??= {};
+    (w.__sim.voice ??= {}).phrases = p;
+  }, phrases);
 }
 
 /** Tiene premuto il microfono, aspetta il testo provvisorio e lascia. */
@@ -48,9 +52,7 @@ test('la prima volta chiede di scaricare il modello; poi detta al cursore, in ma
 });
 
 test('con il modello già scaricato non chiede niente; aggiunge uno spazio dopo il testo scritto', async ({ page }) => {
-  await page.addInitScript(
-    () => ((window as unknown as { __simVoiceDownloaded: boolean }).__simVoiceDownloaded = true),
-  );
+  await page.addInitScript(() => ((window as unknown as SimWindow).__sim = { voice: { downloaded: true } }));
   await connectSimulated(page);
   await page.getByTestId('add-text').tap();
   await page.keyboard.type('Flangia');
@@ -67,9 +69,7 @@ test('con il modello già scaricato non chiede niente; aggiunge uno spazio dopo 
 
 test('riconoscimento lento: avviso del JIT di Vanadium', async ({ page }) => {
   await page.addInitScript(() => {
-    const w = window as unknown as { __simVoiceDownloaded: boolean; __simVoiceDelayMs: number };
-    w.__simVoiceDownloaded = true;
-    w.__simVoiceDelayMs = 2000;
+    (window as unknown as SimWindow).__sim = { voice: { downloaded: true, delayMs: 2000 } };
   });
   await connectSimulated(page);
   await page.getByTestId('add-text').tap();
