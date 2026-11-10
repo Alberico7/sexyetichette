@@ -1,11 +1,11 @@
+import { simRequested } from '@/sim';
 import type { PrinterPort } from './types';
 
 /** `true` se la build consente la stampante simulata (mai in produzione). */
 export const SIMULATION_AVAILABLE = import.meta.env.DEV || import.meta.env.MODE === 'test';
 
 export function simulationRequested(): boolean {
-  if (!SIMULATION_AVAILABLE || typeof location === 'undefined') return false;
-  return new URLSearchParams(location.search).has('sim');
+  return SIMULATION_AVAILABLE && simRequested();
 }
 
 /**

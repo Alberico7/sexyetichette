@@ -7,7 +7,16 @@
  */
 import type { Locator, Page } from '@playwright/test';
 import type { Stage } from 'konva/lib/Stage';
-import { test, expect, noHorizontalScroll, connectSimulated, writeText, fakeClipboard, copied } from './helpers';
+import {
+  test,
+  expect,
+  noHorizontalScroll,
+  connectSimulated,
+  writeText,
+  fakeClipboard,
+  copied,
+  type SimWindow,
+} from './helpers';
 
 /** Pixel 7a in orizzontale con le barre del browser e di Android; Realme a schermo intero. */
 const SIZES = [
@@ -39,7 +48,7 @@ function overlaps(a: Box, b: Box): boolean {
 /** Riquadro dell'etichetta disegnata (la carta) dentro l'editor, in coordinate della pagina. */
 async function paperBox(page: Page): Promise<Box> {
   return page.evaluate(() => {
-    const stage = (window as unknown as { __labelStage?: Stage }).__labelStage!;
+    const stage = (window as unknown as SimWindow).__sim.labelStage as Stage;
     const paper = stage.findOne((n: { getClassName(): string }) => n.getClassName() === 'Rect')!;
     const r = paper.getClientRect();
     const c = stage.container().getBoundingClientRect();
