@@ -32,7 +32,20 @@ export default defineConfig({
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   server: { host: true },
-  build: { target: 'es2022', sourcemap: true },
+  build: {
+    target: 'es2022',
+    sourcemap: true,
+    rollupOptions: {
+      // Seconda pagina: la prova della dettatura (docs/2026-11-10-prova-dettatura.md).
+      // Le sue librerie finiscono solo nei suoi file, non nell'app.
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        'prova-voce': fileURLToPath(new URL('./prova-voce.html', import.meta.url)),
+      },
+    },
+  },
+  // Il worker di Whisper carica parti della libreria su richiesta: serve il formato a moduli.
+  worker: { format: 'es' },
   test: {
     projects: [
       {

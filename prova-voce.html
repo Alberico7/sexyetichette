@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/svg+xml" href="icona.svg" />
+    <title>Prova dettatura – Etichettatrice</title>
+    <script>
+      try {
+        var t = localStorage.getItem('etichettatrice.tema');
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <main class="prova">
+      <h1>Prova dettatura</h1>
+      <p class="note">
+        Pagina di prova, separata dall'app: misura la velocità del riconoscimento vocale sul telefono. L'audio non esce
+        dal telefono; da Internet si scaricano solo i modelli, una volta.
+      </p>
+
+      <section>
+        <h2>Il browser</h2>
+        <dl id="info" data-testid="info"><dt>Controllo in corso…</dt></dl>
+        <p class="note">
+          «Controlla» chiede al browser se il suo riconoscimento vocale funziona senza Internet. Su alcuni browser
+          questa domanda chiude la pagina: premilo per ultimo, dopo aver copiato i risultati.
+        </p>
+        <button id="check-sr" data-testid="check-sr" hidden>Controlla</button>
+      </section>
+
+      <section>
+        <h2>Motore</h2>
+        <label
+          >Motore
+          <select id="engine" data-testid="engine">
+            <option value="whisper-tiny">Whisper tiny</option>
+            <option value="whisper-base" selected>Whisper base</option>
+            <option value="whisper-small">Whisper small</option>
+            <option value="vosk">Vosk italiano (modello 0.22)</option>
+          </select>
+        </label>
+        <div id="whisper-options" class="row">
+          <label
+            >Calcolo
+            <select id="device" data-testid="device">
+              <option value="webgpu">Scheda grafica (WebGPU)</option>
+              <option value="wasm">Processore (WASM)</option>
+            </select>
+          </label>
+          <label
+            >Compressione
+            <select id="dtype" data-testid="dtype">
+              <option value="q8">q8 (più leggero)</option>
+              <option value="fp16">fp16 (più preciso)</option>
+            </select>
+          </label>
+        </div>
+        <p id="size" class="note" data-testid="size"></p>
+        <button id="load" class="primary" data-testid="load">Carica</button>
+        <progress id="progress" max="1" value="0" hidden></progress>
+        <p id="status" class="note" data-testid="status" role="status">Nessun modello caricato.</p>
+      </section>
+
+      <section>
+        <button id="talk" class="talk" data-testid="talk" disabled>Tieni premuto e parla</button>
+        <p id="text" class="text" data-testid="text" aria-live="polite"></p>
+      </section>
+
+      <section>
+        <h2>Frasi da leggere</h2>
+        <ol class="phrases">
+          <li>tubo diametro ISO venti virgola cinquanta <small>(atteso ⌀20,50)</small></li>
+          <li>flangia diametro dodici punto settantacinque <small>(atteso ∅12.75)</small></li>
+          <li>albero diametro otto virgola zero cinque <small>(atteso ∅8,05)</small></li>
+          <li>pompa non riparabile</li>
+          <li>valvola tre quarti di pollice</li>
+          <li>afkeur</li>
+          <li>codice centoventicinque barra quattro</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Prove</h2>
+        <ol id="trials" class="trials" data-testid="trials"></ol>
+        <div class="row">
+          <button id="copy" class="primary" data-testid="copy">Copia risultati</button>
+          <button id="clear" data-testid="clear">Azzera</button>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/src/prova-voce/main.ts"></script>
+  </body>
+</html>
