@@ -2,7 +2,7 @@
 
 *Prima si chiamava Etichettatrice. Il nome viene da* Erithacus rubecula*, il pettirosso, e da* label*.*
 
-Web app open source per progettare e stampare etichette su una **LabelWriter 550** collegata via USB, direttamente dal browser (WebUSB). È pensata soprattutto per il telefono. Funziona solo nel browser, senza server e senza account.
+Web app a codice aperto, ma non in vendita (vedi [Licenza](#licenza)), per progettare e stampare etichette su una **LabelWriter 550** collegata via USB, direttamente dal browser (WebUSB). È pensata soprattutto per il telefono. Funziona solo nel browser, senza server e senza account.
 
 > Progetto indipendente, non affiliato al produttore della stampante. La stampa si basa sulla libreria MIT [`@thermal-label/labelwriter-web`](https://github.com/thermal-label/labelwriter).
 
@@ -194,7 +194,13 @@ Annota per ogni punto ✅ / ❌ e, se qualcosa non va, una foto dell'etichetta.
 
 ## Licenza
 
-© 2026 Andrea Carletti. **MIT con [Commons Clause](https://commonsclause.com/)**: la vendita non è consentita. Vedi [LICENSE](LICENSE).
+© 2026 Andrea Carletti. **MIT con [Commons Clause](https://commonsclause.com/)**: vedi [LICENSE](LICENSE).
+
+- **Si può:** usare l'app, anche al lavoro e in un'azienda, studiarne il codice, modificarla e condividerla gratuitamente.
+- **Non si può:** **venderla**, né offrire a pagamento un prodotto o un servizio (anche hosting o assistenza) il cui valore venga, del tutto o in buona parte, dall'app.
+- Chi la ridistribuisce deve mantenere questo avviso.
+- Non è «open source» nel senso stretto della Open Source Initiative, che non ammette il divieto di vendita: il codice è consultabile, ma con questo limite.
+- Le versioni pubblicate **fino al 2026-11-10** (fino al commit `ef47e53` compreso) erano sotto la sola licenza MIT, e per quelle copie resta valida.
 
 Il carattere «Tecnico ISO 3098» è [osifont](https://github.com/hikikomori82/osifont), distribuito sotto GNU LGPL 3 con *font exception*. È incluso senza modifiche, con la licenza in [public/licenses/osifont](public/licenses/osifont). Le etichette stampate con questo carattere non hanno vincoli di licenza.
 

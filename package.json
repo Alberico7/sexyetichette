@@ -2,8 +2,9 @@
   "name": "etichettatrice",
   "version": "0.1.0",
   "private": true,
-  "description": "Web app open source per progettare e stampare etichette su LabelWriter 550 via WebUSB",
+  "description": "Web app per progettare e stampare etichette su LabelWriter 550 via WebUSB",
   "license": "SEE LICENSE IN LICENSE",
+  "author": "Andrea Carletti",
   "type": "module",
   "scripts": {
     "dev": "vite",

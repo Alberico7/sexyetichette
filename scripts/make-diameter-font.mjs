@@ -295,8 +295,8 @@ export function buildDiameterFont() {
     unitsPerEm: UNITS_PER_EM,
     ascender: 800,
     descender: -200,
-    designer: 'Gli autori di Etichettatrice',
-    license: 'MIT',
+    designer: 'Andrea Carletti',
+    license: 'MIT + Commons Clause (vedi LICENSE)',
     version: '1.000',
     glyphs: [notdef, diameter, diameter45, heart, emptyHeart],
   });
