@@ -1,7 +1,7 @@
 # Manutenibilità (secondo controllo): pagina di prova, testo, simulazione, test, README, microfono
 
 - Data: 2026-11-10
-- Stato: **confermato (2026-11-10)**
+- Stato: **confermato e realizzato (2026-11-10)**
 
 Dal controllo del 2026-11-10 l'utente ha scelto di fare **tutti i punti**. Nessuno cambia il comportamento dell'app, tranne il punto 1, che toglie una pagina di prova separata. Il primo controllo è in `docs/2026-11-06-manutenibilita.md`.
 
@@ -102,3 +102,28 @@ Nel progetto «browser» (Chromium vero, con `fetch`, cache e `crypto` simulati 
 - La build non contiene niente di simulato, e lo controlla lo script aggiornato.
 - Prova sul PC con il vero Vosk dopo i punti 2 e 6.
 - La precache del service worker non deve crescere.
+
+## Note di implementazione (2026-11-10)
+
+Un commit per punto. Dopo ognuno sono passati lint, tipi, tutti i test e la build.
+
+1. **Pagina di prova tolta** (`7738227`):
+   - la precache scende da 37 a 32 file;
+   - il test della PWA ora controlla che sia in cache lo script principale che la pagina carica davvero. Prima cercava il nome `main-…js`, che con una sola pagina è diventato `index-…js`.
+2. **`TextProperties.vue` diviso** (`a8a30aa`):
+   - da 571 a 392 righe, più `SymbolButtons.vue` (84) e `DictationControl.vue` (135);
+   - la riga della casella è una griglia: casella e microfono, con la dettatura sotto a tutta larghezza. Così `DictationControl` può avere più elementi alla radice;
+   - gli screenshot in verticale e in orizzontale con la tastiera aperta sono uguali a prima.
+3. **Simulazione** (`260bb41`):
+   - `src/sim.ts` e `window.__sim`;
+   - **verificato** che `check-no-simulator` blocca la build se un uso esce dal ramo protetto: con una perdita voluta in `update.ts` lo script ha segnalato `index-….js: __sim` ed è uscito con errore;
+   - mentre lavoravo è emerso un caso concreto: il marcatore `__simUpdate` non era mai entrato nella lista dello script. Prettier aveva già spezzato l'elenco su più righe, quindi la mia sostituzione non l'aveva trovato. La build era comunque pulita.
+4. **Test** (`deb56dd`): 17 nuovi test nel progetto «browser».
+   - Il test del tasto indietro usa una cronologia finta. Quella vera, nel browser dei test, faceva navigare anche la pagina che li controlla e la connessione cadeva.
+   - Il test «chiuso e subito riaperto» fallisce senza la correzione degli «indietro» chiesti dall'app: verificato.
+5. **README** (`4559cd6`). Aggiunte anche le licenze di `vosk-browser` e del modello italiano, entrambi Apache 2.0 secondo la pagina ufficiale dei modelli Vosk. Il modello non è incluso nel sito.
+6. **`AudioWorklet`:**
+   - pezzi da 1024 campioni; quando si lascia il pulsante, un «flush» consegna l'ultimo pezzo;
+   - prova sul PC con il vero Vosk e la voce sintetica: «TUBO ⌀20,50», senza più l'avviso di funzione deprecata in console.
+
+**Totali:** 415 unitari + browser, 106 Playwright (e2e, prestazioni, PWA).
