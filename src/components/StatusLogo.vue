@@ -46,10 +46,10 @@ const logoUrl = `url("${import.meta.env.BASE_URL}icona-ritagliabile.svg")`;
   --c: var(--danger);
 }
 
-/* Il pettirosso intero dentro il cerchio (icona ritagliabile al 150 %). */
+/* Il pettirosso intero dentro il cerchio (icona ritagliabile al 150 %), a 4 punti dal bordo. */
 .img {
   position: absolute;
-  inset: 5px;
+  inset: 4px;
   border-radius: 50%;
   background-position: center;
   background-size: 150%;

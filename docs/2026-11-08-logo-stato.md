@@ -100,3 +100,8 @@ Anteprima nei due temi: `docs/2026-11-08-logo-stato/anteprima-stati.png`. L'anel
   - distanza tra logo e scritta da 8 a 6 punti.
   - Il test «versione finale (senza 🔧)» continua a passare con il carattere di Windows, più largo di Roboto, il carattere di Android.
 - **Test:** passano gli e2e del logo, dell'orizzontale e dei temi.
+
+## Pettirosso più grande dentro il logo (2026-11-10)
+
+- **Segnalazione dell'utente:** dopo l'ingrandimento a 48 punti il logo sembrava uguale. Il riquadro era cresciuto, ma il pettirosso stava a 5 punti dal bordo, cioè 38 punti su 48. Senza stampante collegata (niente anello) risultava più basso dei pulsanti.
+- **Scelta dell'utente:** il margine resta fisso in tutti gli stati, ma passa da 5 a **4 punti**. Il pettirosso diventa 40 punti in verticale (36 in orizzontale) e l'anello resta sul bordo, a 48. Fra anello (3 punti) e pettirosso rimane 1 punto di stacco.
