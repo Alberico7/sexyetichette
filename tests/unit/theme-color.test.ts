@@ -23,6 +23,18 @@ describe('colore delle barre di Android (docs/2026-11-10-pwa.md)', () => {
     expect(m.background_color.toLowerCase()).toBe('#274e76');
   });
 
+  it('con Android in modalità scura il manifest indica il colore scuro dei pannelli', () => {
+    type Colors = { theme_color: string; background_color: string };
+    const m = JSON.parse(readFileSync('public/manifest.webmanifest', 'utf8')) as {
+      user_preferences: { color_scheme: { dark: Colors }; color_scheme_dark: Colors };
+    };
+    // Due forme della stessa proposta: il browser usa quella che conosce.
+    for (const dark of [m.user_preferences.color_scheme.dark, m.user_preferences.color_scheme_dark]) {
+      expect(dark.theme_color.toLowerCase()).toBe(surface().dark);
+      expect(dark.background_color.toLowerCase()).toBe('#274e76');
+    }
+  });
+
   it('index.html parte con gli stessi colori, prima che parta il codice', () => {
     const html = readFileSync('index.html', 'utf8');
     expect(html).toContain(`<meta name="theme-color" content="${surface().light}" />`);
