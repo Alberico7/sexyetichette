@@ -186,8 +186,9 @@ export function dictationToText(spoken: string): string {
           decimals += String(d);
         }
         // Dopo un diametro «virgola» o «punto» sceglie il separatore anche senza decimali (∅20,00).
-        if (decimals || prev?.diameter) i = j;
-        else sep = null;
+        // Anche senza decimali dopo, «virgola» e «punto» restano il loro segno, attaccato
+        // al numero (20, e 20.); dopo un diametro i decimali diventano 00 (∅20,00).
+        i = j;
       }
       // Dopo «diametro» sempre almeno due decimali, col punto se non è detto altro: ∅8.00, ∅12.50.
       if (prev?.diameter) {
