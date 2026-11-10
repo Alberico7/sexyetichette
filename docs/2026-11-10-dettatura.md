@@ -122,3 +122,4 @@ Vosk scrive tutto in lettere minuscole («tubo diametro iso venti virgola cinqua
   - 3 e2e: conferma e scaricamento la prima volta, dettatura al cursore e a capo, modello già scaricato e stampa simulata, avviso di lentezza;
   - 1 e2e: le librerie non si caricano all'apertura della casella.
   - Totali: 396 unitari + browser, 99 e2e.
+- **Prova sul telefono (2026-11-10):** sul Pixel 7a con Vanadium la dettatura nell'app funziona (prova dell'utente).

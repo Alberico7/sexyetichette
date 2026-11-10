@@ -17,16 +17,17 @@ test('il service worker si registra e conserva solo i file dell’app', async ({
     return urls;
   });
   expect(cached).toContain('/index.html');
-  expect(
-    cached.some((u) => /\/assets\/main-.*\.js$/.test(u)),
-    'codice dell’app',
-  ).toBe(true);
+  // Lo script principale che la pagina carica davvero (il nome cambia con la build).
+  const entry = await page.evaluate(
+    () => new URL(document.querySelector<HTMLScriptElement>('script[type=module]')!.src).pathname,
+  );
+  expect(cached, 'codice dell’app').toContain(entry);
   expect(
     cached.some((u) => /noto-sans|osifont/.test(u)),
     'caratteri',
   ).toBe(true);
-  // Né la pagina di prova né Whisper e Vosk.
-  expect(cached.filter((u) => /prova-voce|whisper|ort-wasm|vosk/.test(u))).toEqual([]);
+  // Non Vosk: si conserva al primo uso del microfono.
+  expect(cached.filter((u) => /vosk/.test(u))).toEqual([]);
 });
 
 test('senza rete l’app si riapre, si scrive un testo e l’anteprima funziona', async ({ page, context }) => {

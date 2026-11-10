@@ -38,10 +38,9 @@ export default defineConfig({
       manifest: false, // si usa public/manifest.webmanifest
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff,woff2,otf,txt,webmanifest}'],
-        // Fuori dalla precache: la pagina di prova, Whisper e Vosk (Vosk si conserva al primo uso).
-        globIgnores: ['**/prova-voce*', '**/whisper-worker*', '**/ort-wasm*', '**/vosk*'],
+        // Fuori dalla precache: Vosk, che si conserva al primo uso.
+        globIgnores: ['**/vosk*'],
         navigateFallback: 'index.html',
-        navigateFallbackDenylist: [/prova-voce/],
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
@@ -57,20 +56,7 @@ export default defineConfig({
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   server: { host: true },
-  build: {
-    target: 'es2022',
-    sourcemap: true,
-    rollupOptions: {
-      // Seconda pagina: la prova della dettatura (docs/2026-11-10-prova-dettatura.md).
-      // Le sue librerie finiscono solo nei suoi file, non nell'app.
-      input: {
-        main: fileURLToPath(new URL('./index.html', import.meta.url)),
-        'prova-voce': fileURLToPath(new URL('./prova-voce.html', import.meta.url)),
-      },
-    },
-  },
-  // Il worker di Whisper carica parti della libreria su richiesta: serve il formato a moduli.
-  worker: { format: 'es' },
+  build: { target: 'es2022', sourcemap: true },
   test: {
     projects: [
       {
