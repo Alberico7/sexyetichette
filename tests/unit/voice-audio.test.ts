@@ -1,14 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  TARGET_RATE,
-  concat,
-  durationMs,
-  megabytes,
-  realTimeFactor,
-  resample,
-  seconds,
-  toMono,
-} from '@/prova-voce/audio';
+import { TARGET_RATE, concat, durationMs, megabytes, realTimeFactor, resample, seconds, toMono } from '@/voice/audio';
 
 /** Sinusoide di `freq` Hz, `ms` millisecondi a `rate` Hz. */
 function sine(freq: number, rate: number, ms: number): Float32Array {
