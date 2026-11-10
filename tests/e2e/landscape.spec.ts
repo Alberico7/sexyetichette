@@ -72,6 +72,7 @@ for (const size of SIZES) {
       await connectSimulated(page, { waitForRoll: true });
       await hideDevPanel(page);
       await page.getByTestId('add-text').tap();
+      await page.getByTestId('text-input').tap();
       await page.keyboard.type('Barattolo zucchero');
       const panel = page.getByTestId('text-panel');
       for (const b of [
@@ -95,10 +96,24 @@ for (const size of SIZES) {
       await expect(panel).toHaveCount(0);
     });
 
-    test('⌀, AFKEUR e N. R. inseriscono il testo senza riaprire la tastiera', async ({ page }) => {
+    test('«+ Testo» non apre subito la tastiera; si apre toccando la casella', async ({ page }) => {
+      await connectSimulated(page, { waitForRoll: true });
+      await page.getByTestId('add-text').tap();
+      const input = page.getByTestId('text-input');
+      await expect(input).toBeVisible();
+      const focused = () => input.evaluate((el) => document.activeElement === el);
+      expect(await focused(), 'casella non attiva: tastiera chiusa').toBe(false);
+      await input.tap();
+      expect(await focused(), 'casella attiva dopo il tocco').toBe(true);
+      await page.keyboard.type('Ciao');
+      await expect(input).toHaveValue('Ciao');
+    });
+
+    test('⌀, AFKEUR e N.R. inseriscono il testo senza riaprire la tastiera', async ({ page }) => {
       await connectSimulated(page, { waitForRoll: true });
       await hideDevPanel(page);
       await page.getByTestId('add-text').tap();
+      await page.getByTestId('text-input').tap();
       await page.keyboard.type('Tubo 20');
       const input = page.getByTestId('text-input');
       // Come su Android dopo «giù»: tastiera chiusa ma casella ancora attiva.
@@ -112,7 +127,7 @@ for (const size of SIZES) {
       expect(await focused(), 'tastiera chiusa dopo AFKEUR').toBe(false);
       await page.getByTestId('insert-unrepairable').tap();
       await expect(input).toHaveValue('Tubo 20⌀AFKEURNON\nRIPARABILE');
-      expect(await focused(), 'tastiera chiusa dopo N. R.').toBe(false);
+      expect(await focused(), 'tastiera chiusa dopo N.R.').toBe(false);
       await input.focus();
       await page.getByTestId('insert-diameter-45').tap();
       await expect(input).toHaveValue('Tubo 20⌀AFKEURNON\nRIPARABILE∅');
@@ -179,6 +194,7 @@ test.describe('orizzontale, tema scuro', () => {
     await connectSimulated(page, { waitForRoll: true });
     await hideDevPanel(page);
     await page.getByTestId('add-text').tap();
+    await page.getByTestId('text-input').tap();
     await page.keyboard.type('Scuro');
     await page.screenshot({ path: 'test-results/land-scuro-testo.png' });
   });
@@ -201,6 +217,7 @@ for (const k of KEYBOARD) {
       await connectSimulated(page, { waitForRoll: true });
       await hideDevPanel(page);
       await page.getByTestId('add-text').tap();
+      await page.getByTestId('text-input').tap();
       await page.keyboard.type('Tastiera');
       const input = page.getByTestId('text-input');
       await fullyVisible(page, input);
@@ -233,6 +250,7 @@ for (const k of KEYBOARD) {
       await connectSimulated(page, { waitForRoll: true });
       await hideDevPanel(page);
       await page.getByTestId('add-text').tap();
+      await page.getByTestId('text-input').tap();
       await page.keyboard.type('Resta');
       const input = page.getByTestId('text-input');
       const editor = (await page.getByTestId('editor').boundingBox())!;
@@ -276,6 +294,7 @@ test.describe('verticale piccolo con tastiera 360×300', () => {
     await connectSimulated(page, { waitForRoll: true });
     await hideDevPanel(page);
     await page.getByTestId('add-text').tap();
+    await page.getByTestId('text-input').tap();
     await page.keyboard.type('Piccolo');
     await expect(page.locator('header.bar')).toBeHidden();
     await fullyVisible(page, page.getByTestId('text-input'));
@@ -293,6 +312,7 @@ test.describe('verticale Pixel con tastiera 412×560', () => {
   test('la barra in alto resta', async ({ page }) => {
     await connectSimulated(page, { waitForRoll: true });
     await page.getByTestId('add-text').tap();
+    await page.getByTestId('text-input').tap();
     await page.keyboard.type('Pixel');
     await expect(page.locator('header.bar')).toBeVisible();
   });
