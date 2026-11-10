@@ -6,7 +6,8 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
     />
-    <meta name="theme-color" content="#1f2937" />
+    <!-- Colore delle barre di Android: quello dei pannelli dell'app (src/theme.ts lo aggiorna con il tema). -->
+    <meta name="theme-color" content="#f8f6f1" />
     <meta
       name="description"
       content="Progetta e stampa etichette su LabelWriter 550 via USB, direttamente dal browser."
@@ -21,6 +22,8 @@
       try {
         var t = localStorage.getItem('etichettatrice.tema');
         if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+        var dark = t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.querySelector('meta[name="theme-color"]').setAttribute('content', '#24272c');
       } catch (e) {}
     </script>
   </head>
