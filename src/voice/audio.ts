@@ -1,6 +1,6 @@
 /**
- * Audio per la prova della dettatura: entrambi i motori (Whisper e Vosk) vogliono
- * campioni mono a 16 kHz. Vedi docs/2026-11-10-prova-dettatura.md.
+ * Audio per la dettatura: Vosk vuole
+ * campioni mono a 16 kHz. Vedi docs/2026-11-10-dettatura.md.
  */
 export const TARGET_RATE = 16000;
 

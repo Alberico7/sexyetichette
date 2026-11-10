@@ -78,3 +78,19 @@ test('riconoscimento lento: avviso del JIT di Vanadium', async ({ page }) => {
   await expect(page.getByTestId('text-input')).toHaveValue('AFKEUR');
   await expect(page.getByTestId('dictation-status')).toContainText('JavaScript JIT');
 });
+
+/** Librerie della dettatura (e il modello): non devono arrivare finché non si usa il microfono. */
+const HEAVY = /vosk|fflate|huggingface\.co/i;
+
+test("l'app non carica le librerie della dettatura finché non si usa il microfono", async ({ page }) => {
+  const requests: string[] = [];
+  page.on('request', (r) => requests.push(r.url()));
+  // App vera, senza «?sim»: con la simulazione il motore vero non si caricherebbe comunque.
+  await page.goto('/');
+  await expect(page.getByTestId('status-logo')).toBeVisible();
+  // Neanche aprendo la casella del testo, finché la dettatura non è mai stata usata.
+  await page.getByTestId('add-text').tap();
+  await expect(page.getByTestId('dictate')).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  expect(requests.filter((u) => HEAVY.test(u))).toEqual([]);
+});

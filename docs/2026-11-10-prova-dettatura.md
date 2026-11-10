@@ -128,3 +128,7 @@ Pixel 7a, Vanadium (Chrome 157, 8 core, 8 GB). Stesse sette frasi, lette dall'ut
 - **Precisione:** 6 frasi su 7 identiche al testo letto. Diametro ISO, virgola e punto, «otto virgola zero cinque», «tre quarti di pollice», «centoventicinque barra quattro» sono tutti giusti. «afkeur» → «a eur»: la parola non è nel vocabolario italiano di Vosk, quindi non verrà mai riconosciuta.
 - **Realme GT Master, Brave:** Whisper con la scheda grafica si carica, ma non riconosce niente. Non ho indagato oltre, visto che è stato scelto Vosk. Una causa probabile è il modello q8 sulla scheda grafica, che con alcuni driver dà risultati vuoti.
 - **Scelta dell'utente (2026-11-10): Vosk.** La dettatura nell'app è descritta in `docs/2026-11-10-dettatura.md`.
+
+## Pagina tolta (2026-11-10)
+
+La dettatura nell'app funziona sul Pixel (prova dell'utente). La pagina di prova, Whisper e `@huggingface/transformers` sono stati tolti con il controllo di manutenibilità (`docs/2026-11-10-manutenibilita.md`, punto 1). Il codice comune (audio, tar, modello) era già in `src/voice/`. Se servisse di nuovo, la pagina si recupera dalla storia di git.
