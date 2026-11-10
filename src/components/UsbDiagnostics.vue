@@ -129,7 +129,7 @@ const steps = () => report.value?.steps ?? preSteps.value;
     </button>
     <template v-if="report">
       <ShareActions
-        title="Etichettatrice – diagnostica USB"
+        title="Rubeculabel – diagnostica USB"
         :text="reportText"
         copy-label="Copia risultati"
         testid="diag"

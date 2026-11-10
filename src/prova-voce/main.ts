@@ -408,7 +408,7 @@ function resultsText(): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
   const lines = [
-    `Etichettatrice – prova dettatura ${stamp}`,
+    `Rubeculabel – prova dettatura ${stamp}`,
     `App ${APP_BUILD.version} (${APP_BUILD.commit}${APP_BUILD.builtAt ? `, build ${APP_BUILD.builtAt}` : ''})`,
     '',
     ...info.map(([k, v]) => `${k}: ${v}`),

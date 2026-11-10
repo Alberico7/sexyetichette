@@ -24,14 +24,21 @@ test('icone della pagina: i file dichiarati esistono con il tipo giusto', async 
   }
 });
 
-test('manifest: nome, apertura nel browser, icone normali e ritagliabili', async ({ page }) => {
+test('manifest: nome, schermo intero, icone normali e ritagliabili', async ({ page }) => {
   await page.goto('/');
   const href = await page.locator('link[rel="manifest"]').evaluate((l) => (l as HTMLLinkElement).href);
   const res = await page.request.get(href);
   expect(res.status()).toBe(200);
-  const manifest = (await res.json()) as { name: string; display: string; icons: ManifestIcon[] };
-  expect(manifest.name).toBe('Etichettatrice');
-  expect(manifest.display).toBe('browser');
+  const manifest = (await res.json()) as {
+    name: string;
+    short_name: string;
+    display: string;
+    icons: ManifestIcon[];
+  };
+  expect(manifest.name).toBe('Rubeculabel – etichette');
+  // Nome sotto l'icona: entra intero (docs/2026-11-10-pwa.md).
+  expect(manifest.short_name).toBe('Rubeculabel');
+  expect(manifest.display).toBe('standalone');
   expect(manifest.icons.some((i) => i.purpose === 'any')).toBe(true);
   expect(manifest.icons.some((i) => i.purpose === 'maskable')).toBe(true);
 

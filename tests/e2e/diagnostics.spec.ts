@@ -123,7 +123,7 @@ test('rotolo che non risponde: causa, dettagli e condivisione', async ({ page })
 
   await page.getByTestId('media-read-share').tap();
   const s = await shared(page);
-  expect(s[0]?.title).toBe('Etichettatrice – lettura del rotolo');
+  expect(s[0]?.title).toBe('Rubeculabel – lettura del rotolo');
   expect(s[0]?.text).toContain('Causa: timeout');
   expect(s[0]?.text).toContain('Tentativi: 2');
 });
@@ -145,7 +145,7 @@ test('prova LabelWriter 550 completa e «Condividi tutto»', async ({ page }) =>
 
   await page.getByTestId('diag-all-share').tap();
   const s = await shared(page);
-  expect(s[0]?.title).toMatch(/^Etichettatrice – diagnostica \d{4}-\d\d-\d\d \d\d:\d\d$/);
+  expect(s[0]?.title).toMatch(/^Rubeculabel – diagnostica \d{4}-\d\d-\d\d \d\d:\d\d$/);
   const text = s[0]?.text ?? '';
   expect(text).toContain('RIEPILOGO');
   expect(text).toContain('Prova LabelWriter 550');

@@ -1,4 +1,6 @@
-# Etichettatrice
+# Rubeculabel
+
+*Prima si chiamava Etichettatrice. Il nome viene da* Erithacus rubecula*, il pettirosso, e da* label*.*
 
 Web app open source per progettare e stampare etichette su una **LabelWriter 550** collegata via USB, direttamente dal browser (WebUSB). È pensata soprattutto per il telefono. Funziona solo nel browser, senza server e senza account.
 

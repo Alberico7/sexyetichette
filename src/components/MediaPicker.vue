@@ -88,7 +88,7 @@ async function reread(): Promise<void> {
         </dl>
       </details>
       <ShareActions
-        title="Etichettatrice – lettura del rotolo"
+        title="Rubeculabel – lettura del rotolo"
         :text="failureText"
         copy-label="Copia dettagli"
         testid="media-read"
