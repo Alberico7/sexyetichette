@@ -3,6 +3,10 @@
  * Vedi docs/2026-11-06-manutenibilita.md.
  */
 import { expect, test as base, type Page } from '@playwright/test';
+import type { SimHooks } from '@/sim';
+
+/** `window` con l'oggetto della simulazione (src/sim.ts). */
+export type SimWindow = Window & { __sim: SimHooks };
 
 /**
  * `test` di Playwright con un controllo automatico: qualunque errore JavaScript

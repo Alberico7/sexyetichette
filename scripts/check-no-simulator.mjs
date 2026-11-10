@@ -3,12 +3,13 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const dir = 'dist/assets';
+// `__sim` copre tutto l'oggetto della simulazione (src/sim.ts): stampante, dettatura, aggiornamento.
 const markers = [
+  '__sim',
   'SimulatedPrinterPort',
+  'SimulatedVoice',
   'Simulazione (solo sviluppo)',
   'disconnect-on-print',
-  'SimulatedVoice',
-  '__simVoice',
 ];
 const found = [];
 for (const file of readdirSync(dir)) {

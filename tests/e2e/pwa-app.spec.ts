@@ -4,7 +4,7 @@
  */
 import type { Page } from '@playwright/test';
 import type { Stage } from 'konva/lib/Stage';
-import { test, expect, connectSimulated, writeText } from './helpers';
+import { test, expect, connectSimulated, writeText, type SimWindow } from './helpers';
 
 const marked = (page: Page) =>
   page.evaluate(() => !!(history.state as Record<string, unknown> | null)?.rubeculabelPanel);
@@ -66,7 +66,7 @@ test('stampa rapida dal testo con un avviso: l’anteprima resta aperta', async 
 /** Testi disegnati sull'etichetta. */
 const labelTexts = (page: Page) =>
   page.evaluate(() => {
-    const stage = (window as unknown as { __labelStage?: Stage }).__labelStage;
+    const stage = (window as unknown as SimWindow).__sim.labelStage as Stage;
     return (stage?.find('Text') ?? []).map((n) => (n as unknown as { text(): string }).text());
   });
 
@@ -77,7 +77,7 @@ test('versione nuova: compare «Aggiorna», la pagina si ricarica e il testo res
   await expect(page.getByTestId('update-banner')).toHaveCount(0);
   await page.evaluate(() => {
     (window as unknown as { __prima: boolean }).__prima = true;
-    (window as unknown as { __simUpdate: () => void }).__simUpdate();
+    (window as unknown as SimWindow).__sim.update!();
   });
   await expect(page.getByTestId('update-banner')).toContainText('Nuova versione disponibile');
   await page.screenshot({ path: 'test-results/42-aggiorna.png' });

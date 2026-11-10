@@ -2,6 +2,7 @@
  * Riconoscimento vocale per la dettatura: interfaccia comune al motore vero (Vosk)
  * e a quello simulato dei test. Vedi docs/2026-11-10-dettatura.md.
  */
+import { simHooks, simRequested } from '@/sim';
 import { isVoiceModelDownloaded } from './model-cache';
 
 export type VoiceProgress = (text: string, fraction?: number) => void;
@@ -28,16 +29,13 @@ export interface VoiceEngine {
 
 let enginePromise: Promise<VoiceEngine> | null = null;
 
-/** `?sim` nell'indirizzo (solo in sviluppo: la condizione su DEV, costante, elimina il ramo in produzione). */
-const simRequested = () => new URLSearchParams(location.search).has('sim');
-
 /**
  * Il modello è già nel telefono? Controllo leggero, senza caricare il motore:
  * aprendo la casella del testo non si scarica niente se la dettatura non è mai stata usata.
  */
 export function voiceModelDownloaded(): Promise<boolean> {
   if ((import.meta.env.DEV || import.meta.env.MODE === 'test') && simRequested()) {
-    return Promise.resolve(!!(window as unknown as { __simVoiceDownloaded?: boolean }).__simVoiceDownloaded);
+    return Promise.resolve(!!simHooks().voice?.downloaded);
   }
   return isVoiceModelDownloaded();
 }

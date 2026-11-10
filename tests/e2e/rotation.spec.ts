@@ -1,12 +1,12 @@
 /** Il cerchietto di rotazione si aggancia anche ai multipli di 45°. */
-import { connectSimulated, expect, test, writeText } from './helpers';
+import { connectSimulated, expect, test, writeText, type SimWindow } from './helpers';
 import type { Page } from '@playwright/test';
 import type { Stage } from 'konva/lib/Stage';
 
 /** Centro del riquadro selezionato e posizione del cerchietto, in coordinate della pagina. */
 async function handles(page: Page) {
   return page.evaluate(() => {
-    const stage = (window as unknown as { __labelStage: Stage }).__labelStage;
+    const stage = (window as unknown as SimWindow).__sim.labelStage as Stage;
     const rect = stage.container().getBoundingClientRect();
     const tr = stage.findOne('Transformer')!;
     const rot = stage.findOne('.rotater')!.getAbsolutePosition();
@@ -38,7 +38,7 @@ async function dragTo(page: Page, deg: number): Promise<number> {
   }
   await page.mouse.up();
   return page.evaluate(() => {
-    const stage = (window as unknown as { __labelStage: Stage }).__labelStage;
+    const stage = (window as unknown as SimWindow).__sim.labelStage as Stage;
     const tr = stage.findOne('Transformer') as unknown as { nodes(): { rotation(): number }[] };
     return Math.round(tr.nodes()[0]!.rotation());
   });

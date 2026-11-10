@@ -4,6 +4,7 @@
  */
 import { ref } from 'vue';
 import { diagLog } from '@/diagnostics/log';
+import { simHooks, simRequested } from '@/sim';
 
 /** C'è una versione nuova pronta: si attiva con `applyUpdate()`. */
 export const updateReady = ref(false);
@@ -15,9 +16,7 @@ const HOUR = 60 * 60 * 1000;
 export async function setupPwa(): Promise<void> {
   // In sviluppo, con «?sim», l'aggiornamento si simula (per gli e2e): in produzione Vite elimina il ramo.
   if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
-    if (new URLSearchParams(location.search).has('sim')) {
-      (window as unknown as { __simUpdate?: () => void }).__simUpdate = () => (updateReady.value = true);
-    }
+    if (simRequested()) simHooks().update = () => (updateReady.value = true);
     return;
   }
   if (!('serviceWorker' in navigator)) return;
