@@ -20,7 +20,7 @@ export const DIAMETER_45_SIGN = '∅';
 /** Parola inserita dal pulsante «AFKEUR» (scarto), così com'è, senza spazi. */
 export const REJECT_WORD = 'AFKEUR';
 
-/** Testo inserito dal pulsante «N. R.»: NON RIPARABILE su due righe. */
+/** Testo inserito dal pulsante «N.R.»: NON RIPARABILE su due righe. */
 export const UNREPAIRABLE_TEXT = 'NON\nRIPARABILE';
 
 export interface TextEdit {

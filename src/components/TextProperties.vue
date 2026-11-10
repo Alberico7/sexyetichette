@@ -244,7 +244,7 @@ function rotate90(): void {
       @pointerdown.prevent
       @click="insertSymbol(UNREPAIRABLE_TEXT)"
     >
-      N. R.
+      N.R.
     </button>
   </div>
 
@@ -475,7 +475,7 @@ function rotate90(): void {
   min-width: 0;
 }
 
-/* «N. R.» è corto: lascia più spazio agli altri. */
+/* «N.R.» è corto: lascia più spazio agli altri. */
 .symbols button.short {
   flex: 0.6 1 0;
 }

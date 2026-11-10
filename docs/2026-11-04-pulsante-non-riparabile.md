@@ -57,3 +57,7 @@ L'etichetta esce con le due parole una sopra l'altra, centrate. Con l'adattament
   - 1 e2e: testo inserito, cursore alla fine, tre pulsanti sulla stessa riga, scritta non tagliata, nessuno scorrimento orizzontale, anteprima.
 
   Tutti i test passano, comprese le prestazioni.
+
+## Scritta «N.R.» senza spazio (2026-11-10)
+
+- **Richiesta dell'utente:** sul pulsante «N.R.» invece di «N. R.», per risparmiare spazio. Il testo inserito non cambia (NON↵RIPARABILE).

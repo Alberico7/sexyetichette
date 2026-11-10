@@ -212,12 +212,12 @@ test('pulsante AFKEUR: inserisce la parola nella posizione del cursore', async (
   await expect(page.getByTestId('empty-warning')).toHaveCount(0);
 });
 
-test('pulsante N. R.: inserisce NON RIPARABILE su due righe', async ({ page }) => {
+test('pulsante N.R.: inserisce NON RIPARABILE su due righe', async ({ page }) => {
   await page.goto('/?sim');
   await page.getByTestId('add-text').tap();
   const input = page.getByTestId('text-input');
   const button = page.getByTestId('insert-unrepairable');
-  await expect(button).toHaveText('N. R.');
+  await expect(button).toHaveText('N.R.');
   await expect(button).toHaveAccessibleName('Inserisci NON RIPARABILE su due righe');
   await button.tap();
   await expect(input).toHaveValue('NON\nRIPARABILE');
