@@ -156,3 +156,15 @@ Solo CSS, senza logica nuova: le funzioni restano le stesse.
 - **Verifica dell'utente (2026-11-08):** con la versione `6b105b6` il pannello resta aperto sia con il tocco sia con il tasto indietro.
   - Spiegazione probabile, non dimostrata: con la navigazione a gesti l'«indietro» parte dal bordo dello schermo, sopra l'editor, e arrivava alla pagina anche come tocco sullo sfondo.
   - Le righe nel registro della diagnostica restano, nel caso ricapiti.
+
+## «+ Testo» non apre subito la tastiera (2026-11-10)
+
+- **Richiesta dell'utente:** in orizzontale, sugli schermi piccoli, «+ Testo» non deve aprire subito la tastiera.
+- **Ora:**
+  - con il telefono in orizzontale e lo spazio visibile alto al massimo 600 punti (la stessa soglia dei CSS dell'orizzontale), il testo nuovo non mette il cursore nella casella;
+  - si vede il pannello intero, con i simboli, il microfono, Fine e Stampa. La tastiera si apre toccando la casella;
+  - in verticale e sui tablet non cambia niente.
+- **Dove:** `landscapePhone()` in `src/screen-shape.ts`, usata in `TextProperties.vue` al posto del cursore automatico.
+- **Test:**
+  - nuovo e2e, sul Pixel e sul Realme: dopo «+ Testo» la casella non è attiva; toccandola si attiva e si scrive;
+  - gli e2e dell'orizzontale che scrivevano subito dopo «+ Testo» ora toccano prima la casella, e così fa anche l'aiuto `writeText`.

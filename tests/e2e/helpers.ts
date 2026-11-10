@@ -63,6 +63,8 @@ export async function connectSimulated(page: Page, opts: ConnectOptions = {}): P
 /** «+ Testo», scrive il testo e chiude il pannello con «Fine». */
 export async function writeText(page: Page, text: string): Promise<void> {
   await page.getByTestId('add-text').tap();
+  // In orizzontale sul telefono la casella non si attiva da sola.
+  await page.getByTestId('text-input').tap();
   await page.keyboard.type(text);
   await page.getByTestId('text-done').tap();
 }

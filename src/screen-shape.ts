@@ -29,6 +29,14 @@ export function keyboardCompact(): boolean {
   return screenShape() === 'landscape' && window.matchMedia('(max-height: 260px)').matches;
 }
 
+/**
+ * Telefono in orizzontale (spazio visibile alto al massimo 600 punti, come nei CSS
+ * dell'orizzontale): un testo nuovo non apre subito la tastiera.
+ */
+export function landscapePhone(): boolean {
+  return screenShape() === 'landscape' && window.matchMedia('(max-height: 600px)').matches;
+}
+
 /** Riga per il registro della diagnostica: spazio visibile, schermo ed elemento attivo. */
 export function viewportInfo(): string {
   const a = document.activeElement;

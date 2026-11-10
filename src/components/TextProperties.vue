@@ -14,7 +14,7 @@ import {
 import { insertDictation } from '@/voice/dictation';
 import { useDictation } from '@/voice/useDictation';
 import { resolveFontSize } from '@/render/scene';
-import { screenShape } from '@/screen-shape';
+import { landscapePhone, screenShape } from '@/screen-shape';
 import { FONT_OPTIONS } from '@/model/fonts';
 
 const props = defineProps<{ element: TextElement; autofocus?: boolean }>();
@@ -115,8 +115,10 @@ async function onTextInput(event: Event): Promise<void> {
 const dictation = useDictation((text) => void insertAtCursor((t, start, end) => insertDictation(t, text, start, end)));
 
 // Testo nuovo: la tastiera compare subito, senza un tocco in più sulla casella.
+// Non in orizzontale sul telefono: la tastiera coprirebbe quasi tutto; si apre toccando
+// la casella (docs/2026-11-08-orizzontale-tastiera.md).
 onMounted(() => {
-  if (props.autofocus && textarea.value) {
+  if (props.autofocus && textarea.value && !landscapePhone()) {
     textarea.value.focus();
     const end = textarea.value.value.length;
     textarea.value.setSelectionRange(end, end);
