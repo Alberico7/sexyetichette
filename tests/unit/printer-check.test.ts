@@ -134,7 +134,7 @@ describe('testo completo e condivisione', () => {
       },
       log,
     });
-    expect(text.startsWith('Etichettatrice – diagnostica 2026-11-03 17:05')).toBe(true);
+    expect(text.startsWith('Rubeculabel – diagnostica 2026-11-03 17:05')).toBe(true);
     expect(text.indexOf('RIEPILOGO')).toBeLessThan(text.indexOf('Prova LabelWriter 550'));
     expect(text.indexOf('Stampa di prova')).toBeLessThan(text.indexOf('Prova LabelWriter 550'));
     expect(text.indexOf('Registro degli eventi')).toBeGreaterThan(text.indexOf('Prova LabelWriter 550'));

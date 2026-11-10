@@ -22,6 +22,8 @@ import { useBackgroundStartup } from '@/composables/startup';
 import { useToast } from '@/composables/toast';
 import type { LabelDocument } from '@/model/types';
 import { checkEnvironment } from '@/printer/errors';
+import { useBackClosesPanel } from '@/pwa/back-button';
+import { applyUpdate, updateReady } from '@/pwa/update';
 import { useDocumentStore } from '@/stores/document';
 import { usePreviewStore } from '@/stores/preview';
 import { usePrinterStore } from '@/stores/printer';
@@ -121,6 +123,17 @@ watch(sheet, (s) => {
   if (s !== 'none') toast.show(null);
 });
 
+// Tasto indietro: chiude il pannello aperto (docs/2026-11-10-pwa.md). Il testo conta come
+// aperto solo se c'è un testo selezionato, cioè se il pannello si vede.
+const panelOpen = computed(() => (sheet.value === 'text' ? textOpen.value : sheet.value !== 'none'));
+useBackClosesPanel(panelOpen, () => {
+  if (sheet.value === 'text') closeText();
+  else sheet.value = 'none';
+});
+
+/** «Aggiorna» aspetta la fine di una stampa. */
+const printing = computed(() => quick.printing.value || printer.state === 'printing');
+
 function openRecent(doc: LabelDocument): void {
   store.replaceDocument(doc);
   sheet.value = 'none';
@@ -151,6 +164,12 @@ function reprintRecent(doc: LabelDocument): void {
       @recover="printer.recover()"
       @diagnostics="sheet = 'diagnostics'"
     />
+    <div v-if="updateReady" class="update" role="status" data-testid="update-banner">
+      <span>Nuova versione disponibile</span>
+      <button type="button" class="primary" data-testid="update-apply" :disabled="printing" @click="applyUpdate()">
+        {{ printing ? 'Dopo la stampa' : 'Aggiorna' }}
+      </button>
+    </div>
     <component :is="DevPanel" v-if="DevPanel" />
 
     <!-- In verticale «stage» non esiste per il layout (display: contents); in orizzontale affianca etichetta e testo. -->
@@ -260,6 +279,19 @@ function reprintRecent(doc: LabelDocument): void {
   padding: 12px;
   border-radius: var(--radius);
   border: 1px solid var(--danger);
+}
+
+.update {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 12px 0;
+  padding: 6px 6px 6px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--accent);
+  background: var(--surface);
+  font-weight: 600;
 }
 
 .env-error p {

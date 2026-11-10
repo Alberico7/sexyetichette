@@ -1,11 +1,11 @@
 {
-  "name": "Etichettatrice",
-  "short_name": "Etichettatrice",
+  "name": "Rubeculabel – etichette",
+  "short_name": "Rubeculabel",
   "description": "Progetta e stampa etichette su LabelWriter 550 via USB, direttamente dal browser.",
   "lang": "it",
   "start_url": "./",
   "scope": "./",
-  "display": "browser",
+  "display": "standalone",
   "background_color": "#274e76",
   "theme_color": "#274e76",
   "icons": [
