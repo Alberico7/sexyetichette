@@ -1,13 +1,14 @@
 /**
- * Modello italiano di Vosk 0.22 per la prova della dettatura.
+ * Modello italiano di Vosk 0.22 per la dettatura (app e pagina di prova).
  *
  * Il sito ufficiale non permette di scaricarlo da un'altra pagina (manca CORS). Si usa
  * la copia su Hugging Face, identica all'ufficiale: la pagina ne controlla l'impronta.
  * È uno zip, mentre vosk-browser vuole un .tar.gz: si converte nel telefono e si
  * conserva nel browser, così le volte successive non si riscarica.
- * Vedi docs/2026-11-10-prova-dettatura.md.
+ * Vedi docs/2026-11-10-prova-dettatura.md e docs/2026-11-10-dettatura.md.
  */
 import { gzip, unzip } from 'fflate';
+import { VOICE_MODEL_KEY, openVoiceCache } from './model-cache';
 import { createTar, entriesFromFiles, sha256Hex } from './tar';
 
 /** Revisione fissa: il file non può cambiare sotto i piedi. */
@@ -16,9 +17,6 @@ export const VOSK_ZIP_URL =
 /** Impronta dello zip ufficiale (alphacephei.com), verificata il 2026-11-10. */
 export const VOSK_ZIP_SHA256 = '9ec65e75861d1c6c2e457cccd932705340dcdf233f5b239f00733b4de0bf3267';
 export const VOSK_ZIP_BYTES = 49_665_141;
-
-const CACHE_NAME = 'etichettatrice-prova-voce';
-const CACHE_KEY = './vosk-model-small-it-0.22.tar.gz';
 
 export interface VoskModelFile {
   /** Indirizzo (blob:) da passare a vosk-browser. */
@@ -56,17 +54,9 @@ const unzipAsync = (data: Uint8Array) =>
 const gzipAsync = (data: Uint8Array) =>
   new Promise<Uint8Array>((res, rej) => gzip(data, { level: 1 }, (err, out) => (err ? rej(err) : res(out))));
 
-async function openCache(): Promise<Cache | null> {
-  try {
-    return await caches.open(CACHE_NAME);
-  } catch {
-    return null; // senza Cache Storage si riscarica ogni volta
-  }
-}
-
 export async function loadVoskModelFile(onProgress: Progress): Promise<VoskModelFile> {
-  const cache = await openCache();
-  const cached = await cache?.match(CACHE_KEY);
+  const cache = await openVoiceCache();
+  const cached = await cache?.match(VOICE_MODEL_KEY);
   if (cached) {
     onProgress('Modello già nel browser, caricamento…');
     return { url: URL.createObjectURL(await cached.blob()), downloadedBytes: 0 };
@@ -79,7 +69,7 @@ export async function loadVoskModelFile(onProgress: Progress): Promise<VoskModel
   const tar = createTar(entriesFromFiles(await unzipAsync(zip)));
   const blob = new Blob([(await gzipAsync(tar)) as Uint8Array<ArrayBuffer>], { type: 'application/gzip' });
   try {
-    await cache?.put(CACHE_KEY, new Response(blob));
+    await cache?.put(VOICE_MODEL_KEY, new Response(blob));
   } catch {
     // spazio esaurito o cache non disponibile: si va avanti senza conservarlo
   }
