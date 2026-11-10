@@ -38,6 +38,16 @@ test('la pagina si apre, mostra il browser e non scarica nessun modello', async 
   expect(requests.filter((u) => HEAVY.test(u))).toEqual([]);
 });
 
+test('la pagina scorre (lo scorrimento passa dal corpo della pagina alla finestra)', async ({ page }) => {
+  // Su Vanadium scorreva solo con due dita: body era un riquadro scorrevole con
+  // overscroll-behavior: none (dall'app) e non passava lo scorrimento alla pagina.
+  await page.goto('./prova-voce.html');
+  await expect(page.getByTestId('info')).toContainText('Core del processore');
+  await page.mouse.move(200, 150);
+  await page.mouse.wheel(0, 400);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
+});
+
 test("l'app non carica le librerie della dettatura", async ({ page }) => {
   const requests: string[] = [];
   page.on('request', (r) => requests.push(r.url()));

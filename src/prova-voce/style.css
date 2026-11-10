@@ -1,8 +1,14 @@
-/* Pagina di prova della dettatura: scorre normalmente, a differenza dell'app. */
+/*
+ * Pagina di prova della dettatura: scorre normalmente, a differenza dell'app.
+ * `body` non deve essere un riquadro scorrevole: con overscroll-behavior: none
+ * (dall'app) non passerebbe lo scorrimento alla pagina, e su Vanadium si
+ * scorreva solo con due dita.
+ */
 html,
 body {
   height: auto;
-  overflow: auto;
+  overflow: visible;
+  overscroll-behavior: auto;
 }
 
 body {
