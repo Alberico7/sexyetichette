@@ -16,9 +16,11 @@ export const THEME_LABELS: Record<ThemePreference, string> = {
   dark: 'scuro',
 };
 
-/** Colore della barra del browser per ciascun tema (uguale a `--surface`). */
-/** Colore della barra del browser: quello dei pannelli in base.css. */
-const META_COLORS: Record<EffectiveTheme, string> = { light: '#f8f6f1', dark: '#24272c' };
+/**
+ * Colore delle barre del browser e di Android per ciascun tema: quello dei pannelli
+ * (`--surface` in base.css). Ripetuto in index.html e nel manifest; un test li confronta.
+ */
+export const META_COLORS: Record<EffectiveTheme, string> = { light: '#f8f6f1', dark: '#24272c' };
 
 export function isThemePreference(v: unknown): v is ThemePreference {
   return v === 'auto' || v === 'light' || v === 'dark';
