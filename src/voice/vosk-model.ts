@@ -1,5 +1,5 @@
 /**
- * Modello italiano di Vosk 0.22 per la dettatura (app e pagina di prova).
+ * Modello italiano di Vosk 0.22 per la dettatura.
  *
  * Il sito ufficiale non permette di scaricarlo da un'altra pagina (manca CORS). Si usa
  * la copia su Hugging Face, identica all'ufficiale: la pagina ne controlla l'impronta.

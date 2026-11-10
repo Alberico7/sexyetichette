@@ -4,7 +4,7 @@
  * Vedi docs/2026-11-10-dettatura.md.
  */
 
-/** Nome della pagina di prova, tenuto: il modello scaricato lì vale anche per l'app. */
+/** Nome nato con la pagina di prova (tolta), tenuto: cambiarlo farebbe riscaricare il modello (50 MB). */
 export const VOICE_CACHE_NAME = 'etichettatrice-prova-voce';
 export const VOICE_MODEL_KEY = './vosk-model-small-it-0.22.tar.gz';
 
