@@ -10,11 +10,45 @@ import { loadVoskModelFile } from './vosk-model';
 
 type Recognizer = InstanceType<Model['KaldiRecognizer']>;
 
+/**
+ * Raccolta dell'audio fuori dal filo principale della pagina (AudioWorklet, al posto del
+ * vecchio ScriptProcessorNode). Manda pezzi da 1024 campioni; con «flush» consegna anche
+ * l'ultimo pezzo, quando si lascia il pulsante. Caricato come Blob: niente file in più.
+ * Vedi docs/2026-11-10-manutenibilita.md (punto 6).
+ */
+const CAPTURE = 'rubeculabel-capture';
+const CAPTURE_WORKLET = `
+class Capture extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.buf = new Float32Array(1024);
+    this.n = 0;
+    this.port.onmessage = () => this.send();
+  }
+  send() {
+    if (this.n) this.port.postMessage(this.buf.slice(0, this.n));
+    this.n = 0;
+  }
+  process(inputs) {
+    const ch = inputs[0] && inputs[0][0];
+    if (ch) {
+      for (let i = 0; i < ch.length; i++) {
+        this.buf[this.n++] = ch[i];
+        if (this.n === this.buf.length) this.send();
+      }
+    }
+    return true;
+  }
+}
+registerProcessor('${CAPTURE}', Capture);
+`;
+
 export class VoskVoice implements VoiceEngine {
   private ready: Promise<void> | null = null;
   private rec: Recognizer | null = null;
   private ctx: AudioContext | null = null;
   private stream: MediaStream | null = null;
+  private capture: AudioWorkletNode | null = null;
   private listening = false;
   private samples = 0;
   private segments: string[] = [];
@@ -70,20 +104,28 @@ export class VoskVoice implements VoiceEngine {
       ctx = new AudioContext();
       src = ctx.createMediaStreamSource(stream);
     }
-    const proc = ctx.createScriptProcessor(2048, 1, 1);
+    const url = URL.createObjectURL(new Blob([CAPTURE_WORKLET], { type: 'text/javascript' }));
+    try {
+      await ctx.audioWorklet.addModule(url);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+    const capture = new AudioWorkletNode(ctx, CAPTURE, { numberOfInputs: 1, numberOfOutputs: 1 });
+    // Collegato all'uscita a volume zero, così il browser lo fa lavorare.
     const mute = ctx.createGain();
     mute.gain.value = 0;
-    src.connect(proc);
-    proc.connect(mute);
+    src.connect(capture);
+    capture.connect(mute);
     mute.connect(ctx.destination);
-    proc.onaudioprocess = (ev) => {
+    capture.port.onmessage = (ev: MessageEvent<Float32Array>) => {
       if (!this.listening || !this.rec) return;
-      const chunk = resample(ev.inputBuffer.getChannelData(0), ctx.sampleRate);
+      const chunk = resample(ev.data, ctx.sampleRate);
       this.samples += chunk.length;
       this.rec.acceptWaveformFloat(chunk, TARGET_RATE);
     };
     this.ctx = ctx;
     this.stream = stream;
+    this.capture = capture;
   }
 
   async start(onPartial: (text: string) => void): Promise<void> {
@@ -98,8 +140,10 @@ export class VoskVoice implements VoiceEngine {
 
   async stop(): Promise<VoiceResult> {
     if (!this.listening || !this.rec) return { text: '', audioMs: 0, ms: 0 };
-    // Ancora un attimo di ascolto: l'ultimo pezzo di audio arriva con un piccolo ritardo.
-    await new Promise((r) => setTimeout(r, 200));
+    // Ancora un attimo di ascolto, poi l'ultimo pezzo raccolto: le ultime sillabe non si perdono.
+    await new Promise((r) => setTimeout(r, 150));
+    this.capture?.port.postMessage('flush');
+    await new Promise((r) => setTimeout(r, 50));
     this.listening = false;
     const audioMs = durationMs(this.samples);
     const t0 = performance.now();
@@ -117,5 +161,6 @@ export class VoskVoice implements VoiceEngine {
     void this.ctx?.close();
     this.stream = null;
     this.ctx = null;
+    this.capture = null;
   }
 }
