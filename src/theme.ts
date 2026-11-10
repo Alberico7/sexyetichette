@@ -18,7 +18,7 @@ export const THEME_LABELS: Record<ThemePreference, string> = {
 
 /**
  * Colore delle barre del browser e di Android per ciascun tema: quello dei pannelli
- * (`--surface` in base.css). Ripetuto in index.html e nel manifest; un test li confronta.
+ * (`--surface` in base.css). Ripetuto in index.html; un test li confronta. Il manifest resta blu (docs/2026-11-10-pwa.md).
  */
 export const META_COLORS: Record<EffectiveTheme, string> = { light: '#f8f6f1', dark: '#24272c' };
 
