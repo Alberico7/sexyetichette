@@ -2,7 +2,7 @@
 
 *Prima si chiamava Etichettatrice. Il nome viene da* Erithacus rubecula*, il pettirosso, e da* label*.*
 
-Web app open source per progettare e stampare etichette su una **LabelWriter 550** collegata via USB, direttamente dal browser (WebUSB). È pensata soprattutto per il telefono. Funziona solo nel browser, senza server e senza account.
+Web app per uso non commerciale (vedi [Licenza](#licenza)) per progettare e stampare etichette su una **LabelWriter 550** collegata via USB, direttamente dal browser (WebUSB). È pensata soprattutto per il telefono. Funziona solo nel browser, senza server e senza account.
 
 > Progetto indipendente, non affiliato al produttore della stampante. La stampa si basa sulla libreria MIT [`@thermal-label/labelwriter-web`](https://github.com/thermal-label/labelwriter).
 
@@ -194,7 +194,12 @@ Annota per ogni punto ✅ / ❌ e, se qualcosa non va, una foto dell'etichetta.
 
 ## Licenza
 
-© 2026 Andrea Carletti. **PolyForm Noncommercial 1.0.0**: solo uso non commerciale. Vedi [LICENSE](LICENSE).
+© 2026 Andrea Carletti. **[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)**: vedi [LICENSE](LICENSE).
+
+- **Si può**, gratuitamente e **solo per scopi non commerciali**: usare l'app, studiarne il codice, modificarla e condividerla (uso personale, hobby, studio, scuole, enti no-profit ed enti pubblici).
+- **Non si può**, senza il permesso dell'autore: venderla né usarla in un'attività a scopo di lucro, per esempio in un'officina o in un'azienda per il lavoro. L'autore può concedere il permesso a parte.
+- Chi la ridistribuisce deve includere la licenza e la riga «Required Notice».
+- Non è «open source» nel senso della Open Source Initiative: il codice è consultabile, con questi limiti.
 
 Il carattere «Tecnico ISO 3098» è [osifont](https://github.com/hikikomori82/osifont), distribuito sotto GNU LGPL 3 con *font exception*. È incluso senza modifiche, con la licenza in [public/licenses/osifont](public/licenses/osifont). Le etichette stampate con questo carattere non hanno vincoli di licenza.
 
