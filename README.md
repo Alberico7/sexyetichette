@@ -8,14 +8,17 @@ Web app open source per progettare e stampare etichette su una **LabelWriter 550
 
 ## Stato
 
-**Versione minima (fase 1):**
-- collegamento e stato della stampante;
+**Cosa fa oggi:**
+- collegamento e stato della stampante, con ricollegamento automatico all'avvio e il pettirosso in alto che cambia colore con lo stato;
 - lettura del rotolo via NFC, con scelta manuale del formato se la lettura fallisce;
-- elementi di testo (spostamento, ridimensionamento, rotazione, carattere, allineamento, bianco su nero), con il carattere tecnico **ISO 3098** come predefinito;
-- anteprima a 300 dpi in bianco e nero;
-- stampa con copie e densità;
+- elementi di testo (spostamento, ridimensionamento, rotazione, allineamento, grassetto, corsivo, sottolineato, bianco su nero), con il carattere tecnico **ISO 3098** come predefinito e **Noto Sans** come alternativa;
+- simboli: ⌀ ISO, ∅ a 45°, AFKEUR e NON RIPARABILE (N.R.) con un tocco; cuori nascosti `#<3*` → ♥ e `#<3-` → ♡;
+- **dettatura** sul telefono con Vosk, senza mandare l'audio fuori: numeri in cifre, «diametro» → ∅ e «diametro ISO» → ⌀ con formato 00.00, «scarto» → AFKEUR ([documento](docs/2026-11-10-dettatura.md));
+- anteprima a 300 dpi in bianco e nero, stampa rapida, copie e densità;
 - etichetta salvata da sola sul telefono, elenco delle ultime 20 etichette stampate, da riaprire o ristampare;
-- errori in italiano.
+- uso in orizzontale e tema chiaro/scuro;
+- **app installabile (PWA):** schermo intero dall'icona, funziona senza rete, avviso «Aggiorna» per le versioni nuove, tasto indietro che chiude i pannelli ([documento](docs/2026-11-10-pwa.md));
+- diagnostica USB e della stampante, errori in italiano.
 
 Immagini, codici a barre e QR, modelli salvati e import/export JSON arriveranno nella fase 2 (vedi [docs/2026-11-02-app-etichette-webusb.md](docs/2026-11-02-app-etichette-webusb.md)).
 
@@ -23,9 +26,20 @@ Con la LabelWriter 550 vera sono stati provati il 2026-11-04 collegamento, lettu
 
 ## Requisiti
 
-- Un browser basato su Chromium con WebUSB: Vanadium, Chrome, Edge. Firefox e Safari non sono supportati.
+- Un browser basato su Chromium con WebUSB: Vanadium, Chrome, Brave, Edge. Firefox e Safari non sono supportati.
 - La pagina deve essere servita in **HTTPS**, oppure da `localhost`.
 - Una LabelWriter 550 con un rotolo di etichette originali. La 550 rifiuta i rotoli senza chip NFC valido, e l'app non prova ad aggirare questo blocco.
+
+## Installazione sul telefono
+
+1. Apri l'indirizzo dell'app nel browser (Vanadium, Chrome o Brave).
+2. Dal menu del browser scegli **«Aggiungi a schermata Home»** (o «Installa app»). Sotto l'icona compare «Rubeculabel».
+3. Aperta dall'icona, l'app è a schermo intero e funziona anche senza rete.
+4. Quando c'è una versione nuova, in alto compare **«Nuova versione disponibile — Aggiorna»**.
+
+Se avevi già l'icona di prima (con la barra del browser), toglila e aggiungila di nuovo.
+
+**Dettatura su Vanadium:** per sicurezza Vanadium tiene spento il compilatore JavaScript (JIT), e senza JIT il riconoscimento è lentissimo (sul Pixel 7a: 9–27 s dopo aver lasciato il pulsante invece di 0,1 s). Attivalo solo per questo sito: lucchetto accanto all'indirizzo → *Impostazioni sito* → **JavaScript JIT**. Se il riconoscimento è lento, l'app lo ricorda da sola. La prima volta la dettatura scarica il modello italiano (circa 50 MB), che poi resta nel telefono.
 
 ## Sviluppo
 
@@ -35,13 +49,14 @@ npx playwright install chromium   # solo la prima volta, per i test
 npm run dev                       # http://localhost:5173
 ```
 
-Con **`?sim`** in fondo all'indirizzo (`http://localhost:5173/?sim`) l'app usa una **stampante simulata**. Un pannello permette di provocare guasti: rotolo assente o non originale, coperchio aperto, stampante occupata, timeout, scollegamento, NFC illeggibile. La simulazione esiste solo in sviluppo e nei test: `npm run build` verifica che non finisca nella build pubblicata.
+Con **`?sim`** in fondo all'indirizzo (`http://localhost:5173/?sim`) l'app usa una **stampante simulata**. Un pannello permette di provocare guasti: rotolo assente o non originale, coperchio aperto, stampante occupata, timeout, scollegamento, NFC illeggibile. Con `?sim` sono simulati anche la dettatura e l'avviso di aggiornamento: i test e2e li pilotano dall'oggetto `window.__sim` (vedi [src/sim.ts](src/sim.ts)). La simulazione esiste solo in sviluppo e nei test: `npm run build` verifica che `__sim` e le classi simulate non finiscano nella build pubblicata.
 
 | Comando | Cosa fa |
 |---|---|
 | `npm test` | Test unitari (Node) e test di rendering (Chromium reale) |
 | `npm run test:e2e` | Test dell'interfaccia a 412×915 (Pixel 7a), con la stampante simulata |
 | `npm run test:perf` | Prestazioni sulla build di produzione con CPU rallentata 4×: digitazione e apertura dell'anteprima |
+| `npm run test:pwa` | App installabile sulla build di produzione: service worker, funzionamento senza rete, manifest |
 | `npm run lint` | ESLint su `src` e `tests` |
 | `npm run format` / `format:check` | Prettier: formatta / controlla |
 | `npm run build` | Controllo dei tipi, build in `dist/` e controllo dell'assenza della simulazione |
@@ -50,13 +65,20 @@ Con **`?sim`** in fondo all'indirizzo (`http://localhost:5173/?sim`) l'app usa u
 ### Struttura
 
 ```
-src/model/     modello dell'etichetta e geometria (mm, punti, zona non stampabile)
-src/render/    scena Konva, esportazione a 300 dpi, anteprima
-src/printer/   livello stampante: interfaccia PrinterPort, adapter WebUSB, adapter simulato,
-               formati, conversione a 1 bit, errori in italiano, flusso di stampa
-src/stores/    stato dell'app (Pinia)
-src/components/ interfaccia (Vue 3)
-tests/         unit (Node), browser (Chromium), e2e (Playwright)
+src/model/       modello dell'etichetta e geometria (mm, punti, zona non stampabile), testi e simboli
+src/render/      scena Konva, esportazione a 300 dpi, anteprima, caratteri
+src/printer/     livello stampante: interfaccia PrinterPort, adapter WebUSB, adapter simulato,
+                 formati, conversione a 1 bit, errori in italiano, flusso di stampa, copie
+src/stores/      stato dell'app (Pinia)
+src/composables/ stampa rapida, rotolo letto, avvio in sottofondo, messaggi brevi
+src/components/  interfaccia (Vue 3)
+src/voice/       dettatura: Vosk, microfono, modello (scaricamento e conservazione), parole → testo
+src/pwa/         service worker e aggiornamenti, tasto indietro
+src/diagnostics/ registro degli eventi, prove della stampante, stampa di prova, rapporto
+src/storage/     etichetta corrente e recenti salvate sul telefono
+src/sim.ts       interruttore della simulazione (solo sviluppo e test)
+scripts/         mini-font dei simboli, controllo che la build non contenga la simulazione
+tests/           unit (Node), browser (Chromium), e2e e pwa (Playwright), perf
 ```
 
 Tutto il codice che usa la libreria della stampante è in `src/printer/webusb.ts` e `src/printer/media.ts`.
@@ -65,7 +87,7 @@ Tutto il codice che usa la libreria della stampante è in `src/printer/webusb.ts
 
 1. Crea un repository su GitHub e carica il progetto sul ramo `main`.
 2. Nel repository apri **Settings → Pages** e alla voce **Source** scegli **GitHub Actions**.
-3. A ogni push su `main`, il workflow [.github/workflows/pages.yml](.github/workflows/pages.yml) esegue lint, controllo della formattazione, test vitest e test e2e Playwright: se uno fallisce non pubblica. Poi fa la build e pubblica `dist/`. Il test di prestazioni gira anche lì ma è solo informativo, perché i tempi dei server di GitHub non sono confrontabili con quelli di un telefono; le sue soglie si verificano in locale con `npm run test:perf`.
+3. A ogni push su `main`, il workflow [.github/workflows/pages.yml](.github/workflows/pages.yml) esegue lint, controllo della formattazione, test vitest, test e2e e test della PWA con Playwright: se uno fallisce non pubblica. Poi fa la build e pubblica `dist/`. Il test di prestazioni gira anche lì ma è solo informativo, perché i tempi dei server di GitHub non sono confrontabili con quelli di un telefono; le sue soglie si verificano in locale con `npm run test:perf`.
 4. L'app sarà disponibile su `https://<utente>.github.io/<repository>/`. È in HTTPS, quindi WebUSB funziona. I percorsi sono relativi, quindi non serve configurare il nome del repository.
 
 Va bene anche qualunque altro hosting statico in HTTPS: basta caricare il contenuto di `dist/`.
@@ -141,6 +163,8 @@ Il registro sta solo in memoria. Il testo non contiene dati personali: il numero
 
   Resta da rifare la *Stampa di prova* dopo la correzione, più i punti qui sotto.
 
+- [x] **2026-11-10 – Dettatura nell'app** su Pixel 7a con Vanadium (con il JIT attivo per il sito): funziona. Ricollegamento automatico all'avvio confermato di nuovo.
+
 ### Da provare con la stampante (non confermato)
 
 Annota per ogni punto ✅ / ❌ e, se qualcosa non va, una foto dell'etichetta.
@@ -175,3 +199,5 @@ Annota per ogni punto ✅ / ❌ e, se qualcosa non va, una foto dell'etichetta.
 Il carattere «Tecnico ISO 3098» è [osifont](https://github.com/hikikomori82/osifont), distribuito sotto GNU LGPL 3 con *font exception*. È incluso senza modifiche, con la licenza in [public/licenses/osifont](public/licenses/osifont). Le etichette stampate con questo carattere non hanno vincoli di licenza.
 
 Il carattere «Noto Sans (simile a Segoe UI)» è [Noto Sans](https://github.com/notofonts/latin-greek-cyrillic), distribuito sotto SIL Open Font License 1.1. È incluso senza modifiche (sottoinsieme latino di [Fontsource](https://fontsource.org/fonts/noto-sans)), con la licenza in [public/licenses/noto-sans](public/licenses/noto-sans).
+
+La dettatura usa la libreria [vosk-browser](https://github.com/ccoreilly/vosk-browser) (Apache 2.0), inclusa nel sito, e il modello italiano [vosk-model-small-it-0.22](https://alphacephei.com/vosk/models) (Apache 2.0), che **non** è incluso: il telefono lo scarica al primo uso da una copia su Hugging Face, controllando che sia identico all'originale.
