@@ -14,25 +14,13 @@ describe('colore delle barre di Android (docs/2026-11-10-pwa.md)', () => {
     expect(META_COLORS).toEqual(surface());
   });
 
-  it('il manifest ha il colore dei pannelli; lo sfondo d’avvio resta blu', () => {
-    const m = JSON.parse(readFileSync('public/manifest.webmanifest', 'utf8')) as {
-      theme_color: string;
-      background_color: string;
-    };
-    expect(m.theme_color.toLowerCase()).toBe(surface().light);
-    expect(m.background_color.toLowerCase()).toBe('#274e76');
-  });
-
-  it('con Android in modalità scura il manifest indica il colore scuro dei pannelli', () => {
-    type Colors = { theme_color: string; background_color: string };
-    const m = JSON.parse(readFileSync('public/manifest.webmanifest', 'utf8')) as {
-      user_preferences: { color_scheme: { dark: Colors }; color_scheme_dark: Colors };
-    };
-    // Due forme della stessa proposta: il browser usa quella che conosce.
-    for (const dark of [m.user_preferences.color_scheme.dark, m.user_preferences.color_scheme_dark]) {
-      expect(dark.theme_color.toLowerCase()).toBe(surface().dark);
-      expect(dark.background_color.toLowerCase()).toBe('#274e76');
-    }
+  it('il manifest resta blu: nell’app installata Vanadium usa solo questo colore, fisso', () => {
+    // Prova sul Pixel (2026-11-10): con il colore dei pannelli la barra dei tasti restava
+    // chiara anche col tema scuro, e il colore per la modalità scura di Android è ignorato.
+    const m = JSON.parse(readFileSync('public/manifest.webmanifest', 'utf8')) as Record<string, unknown>;
+    expect(m.theme_color).toBe('#274e76');
+    expect(m.background_color).toBe('#274e76');
+    expect(m.user_preferences).toBeUndefined();
   });
 
   it('index.html parte con gli stessi colori, prima che parta il codice', () => {
