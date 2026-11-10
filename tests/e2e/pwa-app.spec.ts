@@ -90,3 +90,12 @@ test('versione nuova: compare «Aggiorna», la pagina si ricarica e il testo res
   await expect(page.getByTestId('update-banner')).toHaveCount(0);
   await expect.poll(() => labelTexts(page), 'testo ancora sull’etichetta').toContain('Resta qui');
 });
+
+test('le barre di Android hanno il colore dei pannelli, anche col tema scuro', async ({ page }) => {
+  const meta = () => page.locator('meta[name="theme-color"]').getAttribute('content');
+  await page.goto('/?sim');
+  expect(await meta()).toBe('#f8f6f1');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.reload();
+  expect(await meta()).toBe('#24272c');
+});
