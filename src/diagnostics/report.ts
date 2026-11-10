@@ -77,7 +77,7 @@ export function printerCheckToText(r: PrinterCheckReport): string {
 export function fullReportText(input: FullReportInput): string {
   const when = input.when ?? new Date();
   const out: string[] = [
-    `Etichettatrice – diagnostica ${stamp(when)}`,
+    `Rubeculabel – diagnostica ${stamp(when)}`,
     `App ${input.app.version} (${input.app.commit}${input.app.builtAt ? `, build ${input.app.builtAt}` : ''})`,
     '',
   ];

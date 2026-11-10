@@ -29,6 +29,12 @@ export default defineConfig({
       fullyParallel: false,
       use: { ...pixel7a, baseURL: 'http://localhost:4179' },
     },
+    {
+      // App installabile: service worker e funzionamento senza rete, sulla build di produzione.
+      name: 'pwa',
+      testDir: 'tests/pwa',
+      use: { ...pixel7a, baseURL: 'http://localhost:4179' },
+    },
   ],
   webServer: [
     {

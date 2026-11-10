@@ -32,7 +32,7 @@ export const useDiagnosticsStore = defineStore('diagnostics', () => {
   }
 
   function shareTitle(when = new Date()): string {
-    return `Etichettatrice – diagnostica ${stamp(when)}`;
+    return `Rubeculabel – diagnostica ${stamp(when)}`;
   }
 
   return { usbReport, printerReport, testPrint, fullText, shareTitle };

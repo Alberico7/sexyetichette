@@ -35,6 +35,8 @@ jobs:
         continue-on-error: true
         env:
           PERF_CI: '1'
+      # App installabile: service worker e funzionamento senza rete (docs/2026-11-10-pwa.md).
+      - run: npx playwright test --project=pwa
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
