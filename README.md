@@ -200,7 +200,7 @@ Annota per ogni punto ✅ / ❌ e, se qualcosa non va, una foto dell'etichetta.
 - **Non si può:** **venderla**, né offrire a pagamento un prodotto o un servizio (anche hosting o assistenza) il cui valore venga, del tutto o in buona parte, dall'app.
 - Chi la ridistribuisce deve mantenere questo avviso.
 - Non è «open source» nel senso stretto della Open Source Initiative, che non ammette il divieto di vendita: il codice è consultabile, ma con questo limite.
-- Le versioni pubblicate **fino al 2026-11-10** (fino al commit `ef47e53` compreso) erano sotto la sola licenza MIT, e per quelle copie resta valida.
+- Fino al 2026-11-10 il progetto era pubblicato sotto la sola licenza MIT. Il 2026-11-10 la storia del repository è stata riscritta con questa licenza in ogni versione; chi aveva già scaricato una copia prima di quella data la mantiene sotto la MIT.
 
 Il carattere «Tecnico ISO 3098» è [osifont](https://github.com/hikikomori82/osifont), distribuito sotto GNU LGPL 3 con *font exception*. È incluso senza modifiche, con la licenza in [public/licenses/osifont](public/licenses/osifont). Le etichette stampate con questo carattere non hanno vincoli di licenza.
 
