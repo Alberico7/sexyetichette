@@ -2,17 +2,10 @@
 import { computed, nextTick, onMounted, ref } from 'vue';
 import type { HorizontalAlign, TextElement, VerticalAlign } from '@/model/types';
 import { useDocumentStore } from '@/stores/document';
-import {
-  DIAMETER_45_SIGN,
-  DIAMETER_SIGN,
-  REJECT_WORD,
-  UNREPAIRABLE_TEXT,
-  insertAtSelection,
-  replaceHeartCode,
-  type TextEdit,
-} from '@/model/text';
+import { insertAtSelection, replaceHeartCode, type TextEdit } from '@/model/text';
 import { insertDictation } from '@/voice/dictation';
-import { useDictation } from '@/voice/useDictation';
+import DictationControl from '@/components/DictationControl.vue';
+import SymbolButtons from '@/components/SymbolButtons.vue';
 import { resolveFontSize } from '@/render/scene';
 import { landscapePhone, screenShape } from '@/screen-shape';
 import { FONT_OPTIONS } from '@/model/fonts';
@@ -111,8 +104,10 @@ async function onTextInput(event: Event): Promise<void> {
   el.setSelectionRange(edit.cursor, edit.cursor);
 }
 
-// Dettatura: il testo riconosciuto va dove si trova il cursore (docs/2026-11-10-dettatura.md).
-const dictation = useDictation((text) => void insertAtCursor((t, start, end) => insertDictation(t, text, start, end)));
+/** Testo dettato: va dove si trova il cursore, come i simboli (docs/2026-11-10-dettatura.md). */
+function insertDictated(text: string): Promise<void> {
+  return insertAtCursor((t, start, end) => insertDictation(t, text, start, end));
+}
 
 // Testo nuovo: la tastiera compare subito, senza un tocco in più sulla casella.
 // Non in orizzontale sul telefono: la tastiera coprirebbe quasi tutto; si apre toccando
@@ -144,111 +139,10 @@ function rotate90(): void {
         @input="onTextInput"
       />
     </label>
-    <!--
-      Tieni premuto per dettare. «touchstart.prevent» evita il click finale del tocco: il pannello
-      cresce verso l'alto e il click cadrebbe su «Annulla» della conferma comparsa sotto il dito.
-    -->
-    <button
-      type="button"
-      class="mic"
-      :class="dictation.state.value"
-      data-testid="dictate"
-      aria-label="Tieni premuto per dettare"
-      :aria-pressed="dictation.state.value === 'listening'"
-      @pointerdown.prevent="dictation.press()"
-      @pointerup="dictation.release()"
-      @pointercancel="dictation.release()"
-      @contextmenu.prevent
-      @touchstart.prevent
-    >
-      <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-        <rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor" />
-        <path
-          d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-        />
-      </svg>
-    </button>
+    <DictationControl @text="insertDictated" />
   </div>
 
-  <div
-    v-if="dictation.state.value === 'confirm'"
-    class="dictation-confirm"
-    role="dialog"
-    data-testid="dictation-confirm"
-  >
-    <p>Scaricare il riconoscimento vocale? Circa 50 MB, una volta sola. L'audio resta nel telefono.</p>
-    <div class="row">
-      <button type="button" class="primary grow" data-testid="dictation-download" @click="dictation.confirmDownload()">
-        Scarica
-      </button>
-      <button type="button" class="grow" data-testid="dictation-cancel" @click="dictation.cancelDownload()">
-        Annulla
-      </button>
-    </div>
-  </div>
-  <p
-    v-else-if="dictation.partial.value || dictation.message.value || dictation.state.value === 'preparing'"
-    class="dictation-status"
-    :class="{ partial: !!dictation.partial.value }"
-    role="status"
-    data-testid="dictation-status"
-  >
-    {{
-      dictation.partial.value ||
-      dictation.message.value ||
-      (dictation.state.value === 'preparing' ? 'Preparazione del riconoscimento…' : '')
-    }}
-  </p>
-  <progress
-    v-if="dictation.progress.value !== null"
-    class="dictation-progress"
-    max="1"
-    :value="dictation.progress.value"
-  />
-
-  <div class="row symbols">
-    <button
-      type="button"
-      data-testid="insert-diameter"
-      aria-label="Inserisci il simbolo del diametro"
-      @pointerdown.prevent
-      @click="insertSymbol(DIAMETER_SIGN)"
-    >
-      <span class="symbol iso" aria-hidden="true">{{ DIAMETER_SIGN }}</span> ISO
-    </button>
-    <button
-      type="button"
-      data-testid="insert-diameter-45"
-      aria-label="Inserisci il simbolo del diametro con la barra a 45°"
-      @pointerdown.prevent
-      @click="insertSymbol(DIAMETER_45_SIGN)"
-    >
-      <span class="symbol iso" aria-hidden="true">{{ DIAMETER_45_SIGN }}</span> 45°
-    </button>
-    <button
-      type="button"
-      data-testid="insert-reject"
-      :aria-label="`Inserisci la parola ${REJECT_WORD}`"
-      @pointerdown.prevent
-      @click="insertSymbol(REJECT_WORD)"
-    >
-      {{ REJECT_WORD }}
-    </button>
-    <button
-      type="button"
-      class="short"
-      data-testid="insert-unrepairable"
-      aria-label="Inserisci NON RIPARABILE su due righe"
-      @pointerdown.prevent
-      @click="insertSymbol(UNREPAIRABLE_TEXT)"
-    >
-      N.R.
-    </button>
-  </div>
+  <SymbolButtons @insert="insertSymbol" />
 
   <button type="button" class="toggle" data-testid="auto-fit" :aria-pressed="!!element.autoFit" @click="toggleAutoFit">
     <span class="check" aria-hidden="true">{{ element.autoFit ? '✓' : '' }}</span>
@@ -417,17 +311,6 @@ function rotate90(): void {
   padding: 4px 12px 12px;
 }
 
-.symbols {
-  margin-top: -6px;
-}
-
-.symbol {
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-/* Lo stesso simbolo usato in stampa: il mini-font è il primo carattere dell'interfaccia (base.css). */
-
 .size {
   width: 130px;
   flex: none;
@@ -468,94 +351,32 @@ function rotate90(): void {
   color: var(--warn);
 }
 
-.symbols {
-  flex-wrap: wrap;
-}
-
-.symbols button {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-/* «N.R.» è corto: lascia più spazio agli altri. */
-.symbols button.short {
-  flex: 0.6 1 0;
-}
-/* Casella del testo con il microfono a destra (docs/2026-11-10-dettatura.md). */
+/*
+ * Casella del testo con il microfono a destra; sotto, a tutta larghezza, conferma e stato
+ * della dettatura (DictationControl). Vedi docs/2026-11-10-dettatura.md.
+ */
 .text-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: stretch;
 }
 
-.text-row .field {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.mic {
-  flex: none;
-  width: var(--tap);
-  padding: 0;
-  display: grid;
-  place-items: center;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-  touch-action: none;
-}
-
-.mic.listening {
-  background: var(--danger);
-  border-color: var(--danger);
-  color: var(--surface);
-}
-
-.mic.preparing,
-.mic.recognizing,
-.mic.downloading {
-  color: var(--muted);
-}
-
-.dictation-status {
-  margin: -6px 0 0;
-  font-size: 0.95rem;
-  overflow-wrap: anywhere;
-}
-
-.dictation-status.partial {
-  color: var(--muted);
-  font-style: italic;
-}
-
-.dictation-progress {
-  width: 100%;
-}
-
-.dictation-confirm {
-  display: grid;
-  gap: 8px;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-
-.dictation-confirm p {
-  margin: 0;
-}
 /* Orizzontale con la tastiera aperta: resta solo la casella, alta quanto lo spazio (docs/2026-11-08-orizzontale-tastiera.md). */
 @media (max-height: 260px) {
-  :root[data-screen='landscape'] .mic,
-  :root[data-screen='landscape'] .dictation-status,
-  :root[data-screen='landscape'] .dictation-progress,
-  :root[data-screen='landscape'] .symbols,
   :root[data-screen='landscape'] .toggle,
   :root[data-screen='landscape'] .overflow,
   :root[data-screen='landscape'] .more {
     display: none;
   }
 
-  :root[data-screen='landscape'] .text-row,
+  :root[data-screen='landscape'] .text-row {
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+
   :root[data-screen='landscape'] .field {
     flex: 1 1 auto;
     min-height: 0;
