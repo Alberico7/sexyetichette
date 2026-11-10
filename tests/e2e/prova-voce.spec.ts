@@ -48,11 +48,15 @@ test('la pagina scorre (lo scorrimento passa dal corpo della pagina alla finestr
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
 });
 
-test("l'app non carica le librerie della dettatura", async ({ page }) => {
+test("l'app non carica le librerie della dettatura finché non si usa il microfono", async ({ page }) => {
   const requests: string[] = [];
   page.on('request', (r) => requests.push(r.url()));
-  await page.goto('/?sim');
+  // App vera, senza «?sim»: con la simulazione il motore vero non si caricherebbe comunque.
+  await page.goto('/');
   await expect(page.getByTestId('status-logo')).toBeVisible();
+  // Neanche aprendo la casella del testo, finché la dettatura non è mai stata usata.
+  await page.getByTestId('add-text').tap();
+  await expect(page.getByTestId('dictate')).toBeVisible();
   await page.waitForLoadState('networkidle');
   expect(requests.filter((u) => HEAVY.test(u))).toEqual([]);
 });

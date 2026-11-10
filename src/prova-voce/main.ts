@@ -5,7 +5,7 @@
 import '@/styles/base.css';
 import './style.css';
 import { APP_BUILD } from '@/app-info';
-import { TARGET_RATE, concat, durationMs, megabytes, realTimeFactor, resample, seconds } from './audio';
+import { TARGET_RATE, concat, durationMs, megabytes, realTimeFactor, resample, seconds } from '@/voice/audio';
 import type { WhisperReply, WhisperRequest } from './whisper-worker';
 
 /** Dimensione approssimativa da scaricare, in MB (encoder + decoder, da Hugging Face). */
@@ -196,7 +196,10 @@ async function loadVosk(): Promise<Engine> {
   const label = 'Vosk italiano 0.22';
   const t0 = performance.now();
   // Libreria e modello si caricano solo qui: chi prova Whisper non li scarica.
-  const [{ createModel }, { loadVoskModelFile }] = await Promise.all([import('vosk-browser'), import('./vosk-model')]);
+  const [{ createModel }, { loadVoskModelFile }] = await Promise.all([
+    import('vosk-browser'),
+    import('@/voice/vosk-model'),
+  ]);
   const file = await loadVoskModelFile((text, fraction) => {
     setStatus(text);
     progressEl.hidden = fraction === undefined;

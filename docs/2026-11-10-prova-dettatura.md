@@ -112,3 +112,19 @@ Con i numeri veri scelgo motore e misura del modello. Poi scrivo il documento de
   - Causa: la pagina metteva `overflow: auto` anche su `body`, che diventava un riquadro scorrevole senza niente da scorrere. In più l'app gli dà `overscroll-behavior: none`, quindi lo scorrimento non passava alla pagina. Con due dita si muove la vista del browser, per questo funzionava.
   - Ora `html` e `body` hanno `overflow: visible` e `overscroll-behavior: auto`.
   - Nuovo e2e: la rotellina fa scorrere la pagina (con la regola vecchia la pagina resta ferma e il test fallisce). Il gesto col dito simulato da Playwright non funziona nemmeno su una pagina vuota, quindi si usa la rotellina, che segue le stesse regole.
+
+## Risultati sul telefono (2026-11-10)
+
+Pixel 7a, Vanadium (Chrome 157, 8 core, 8 GB). Stesse sette frasi, lette dall'utente.
+
+- **WebGPU:** «presente ma senza adattatore». Whisper con la scheda grafica non parte («Failed to get GPU adapter»). Vanadium non dà accesso alla scheda grafica alle pagine.
+- **Riconoscimento del browser:** presente, ma l'italiano senza Internet è «unavailable». «Controlla» non ha chiuso la pagina.
+- **Vosk 0.22 senza JIT** (impostazione di serie di Vanadium):
+  - caricamento 95 s, scaricamento compreso;
+  - testo 9–27 s dopo il rilascio, circa 5 volte la durata della frase.
+- **Vosk 0.22 con «JavaScript JIT» attivato solo per `alberico7.github.io`:**
+  - caricamento 4,7 s (modello già nel telefono);
+  - testo **0,05–0,15 s** dopo il rilascio.
+- **Precisione:** 6 frasi su 7 identiche al testo letto. Diametro ISO, virgola e punto, «otto virgola zero cinque», «tre quarti di pollice», «centoventicinque barra quattro» sono tutti giusti. «afkeur» → «a eur»: la parola non è nel vocabolario italiano di Vosk, quindi non verrà mai riconosciuta.
+- **Realme GT Master, Brave:** Whisper con la scheda grafica si carica, ma non riconosce niente. Non ho indagato oltre, visto che è stato scelto Vosk. Una causa probabile è il modello q8 sulla scheda grafica, che con alcuni driver dà risultati vuoti.
+- **Scelta dell'utente (2026-11-10): Vosk.** La dettatura nell'app è descritta in `docs/2026-11-10-dettatura.md`.

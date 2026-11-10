@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { createTar, entriesFromFiles, sha256Hex } from '@/prova-voce/tar';
+import { createTar, entriesFromFiles, sha256Hex } from '@/voice/tar';
 
 const enc = new TextEncoder();
 

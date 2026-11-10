@@ -3,7 +3,13 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const dir = 'dist/assets';
-const markers = ['SimulatedPrinterPort', 'Simulazione (solo sviluppo)', 'disconnect-on-print'];
+const markers = [
+  'SimulatedPrinterPort',
+  'Simulazione (solo sviluppo)',
+  'disconnect-on-print',
+  'SimulatedVoice',
+  '__simVoice',
+];
 const found = [];
 for (const file of readdirSync(dir)) {
   if (!file.endsWith('.js')) continue;
