@@ -48,7 +48,7 @@ Vosk scrive tutto in lettere minuscole («tubo diametro iso venti virgola cinqua
 - **Decimali:** dopo «virgola» o «punto», ogni numero detto si scrive così com'è, uno dopo l'altro. «Cinquanta» → 50, «zero cinque» → 05, «settantacinque» → 75. Il separatore resta quello detto.
 - **Numeri dopo «diametro» e «diametro ISO»** (scelta dell'utente, 2026-11-10): formato 00.00 se non si detta diversamente.
   - Solo intero: si aggiunge «.00», col punto («diametro otto» → ∅8.00). Le cifre intere restano quelle dette, senza zero davanti.
-  - «virgola» o «punto» senza decimali dopo sceglie il separatore: «diametro venti virgola» → ∅20,00 (scelta dell'utente). Senza «diametro», «venti virgola» resta «20 VIRGOLA».
+  - «virgola» o «punto» senza decimali dopo sceglie il separatore: «diametro venti virgola» → ∅20,00 (scelta dell'utente). Senza «diametro», «venti virgola» diventa «20,» e «venti punto» diventa «20.»: il segno attaccato al numero (scelta dell'utente, 2026-11-10).
   - Un solo decimale: si completa a due, con il separatore detto («punto cinque» → .50, «virgola cinque» → ,50).
   - Due decimali: restano come detti. Tre o più decimali: restano come detti, senza tagliare.
   - Senza «diametro» i numeri restano come detti («dodici punto cinque» → 12.5).

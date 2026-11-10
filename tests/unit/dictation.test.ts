@@ -141,7 +141,12 @@ describe('dalle parole al testo dell’etichetta (docs/2026-11-10-dettatura.md)'
     expect(dictationToText('per pompa')).toBe('PER POMPA');
     expect(dictationToText('pompa per venti')).toBe('POMPA PER 20');
     expect(dictationToText('punto di prelievo')).toBe('PUNTO DI PRELIEVO');
-    expect(dictationToText('venti virgola')).toBe('20 VIRGOLA');
+    // «virgola» dopo un numero, senza decimali: la virgola, attaccata al numero.
+    expect(dictationToText('venti virgola')).toBe('20,');
+    expect(dictationToText('venti virgola tubo')).toBe('20, TUBO');
+    // Anche «punto»: il punto, attaccato al numero.
+    expect(dictationToText('venti punto')).toBe('20.');
+    expect(dictationToText('venti punto tubo')).toBe('20. TUBO');
   });
 
   it('«un» e «una» restano articoli; spazi in più e testo vuoto', () => {
