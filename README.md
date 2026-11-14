@@ -200,6 +200,7 @@ Annota per ogni punto ✅ / ❌ e, se qualcosa non va, una foto dell'etichetta.
 - **Non si può**, senza il permesso dell'autore: venderla né usarla in un'attività a scopo di lucro, per esempio in un'officina o in un'azienda per il lavoro. L'autore può concedere il permesso a parte.
 - Chi la ridistribuisce deve includere la licenza e la riga «Required Notice».
 - Non è «open source» nel senso della Open Source Initiative: il codice è consultabile, con questi limiti.
+- La storia del repository è stata riscritta (il 2026-11-10 e il 2026-11-14) perché ogni versione abbia questa licenza. Chi aveva già scaricato una copia la tiene con la licenza di allora: MIT fino al 2026-11-10, MIT con Commons Clause fino al 2026-11-14.
 
 Il carattere «Tecnico ISO 3098» è [osifont](https://github.com/hikikomori82/osifont), distribuito sotto GNU LGPL 3 con *font exception*. È incluso senza modifiche, con la licenza in [public/licenses/osifont](public/licenses/osifont). Le etichette stampate con questo carattere non hanno vincoli di licenza.
 
