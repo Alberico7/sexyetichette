@@ -296,7 +296,7 @@ export function buildDiameterFont() {
     ascender: 800,
     descender: -200,
     designer: 'Andrea Carletti',
-    license: 'MIT + Commons Clause (vedi LICENSE)',
+    license: 'PolyForm Noncommercial 1.0.0 (vedi LICENSE)',
     version: '1.000',
     glyphs: [notdef, diameter, diameter45, heart, emptyHeart],
   });
