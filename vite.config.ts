@@ -4,6 +4,7 @@ import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
 import { VitePWA } from 'vite-plugin-pwa';
+import { VOICE_CACHE_NAME, VOICE_MODEL_FILE } from './src/voice/model-cache';
 import { playwright } from '@vitest/browser-playwright';
 
 function gitCommit(): string {
@@ -43,6 +44,13 @@ export default defineConfig({
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
         runtimeCaching: [
+          {
+            // Modello della dettatura all'indirizzo fisso: solo dalla cache della dettatura,
+            // mai dalla rete (docs/2026-11-24-vosk-copie-del-modello.md). Nomi da model-cache.ts.
+            urlPattern: new RegExp(`/${VOICE_MODEL_FILE.replace(/\./g, '\\.')}$`),
+            handler: 'CacheOnly',
+            options: { cacheName: VOICE_CACHE_NAME },
+          },
           {
             urlPattern: ({ url }) => /\/assets\/vosk[^/]*\.js$/.test(url.pathname),
             handler: 'CacheFirst',

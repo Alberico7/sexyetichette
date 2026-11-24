@@ -54,12 +54,26 @@ const unzipAsync = (data: Uint8Array) =>
 const gzipAsync = (data: Uint8Array) =>
   new Promise<Uint8Array>((res, rej) => gzip(data, { level: 1 }, (err, out) => (err ? rej(err) : res(out))));
 
-export async function loadVoskModelFile(onProgress: Progress): Promise<VoskModelFile> {
+export interface VoskModelData {
+  /** Byte scaricati da Internet (0 se il modello era già nel browser). */
+  downloadedBytes: number;
+  /** Il modello è nella cache della dettatura (il service worker lo può servire). */
+  inCache: boolean;
+  /** Il file del modello, se richiesto o se non si è potuto conservare. */
+  blob?: Blob;
+}
+
+/**
+ * Assicura il modello nella cache della dettatura, scaricandolo e convertendolo se serve.
+ * Con `needBlob` restituisce anche il file; lo restituisce comunque se non si è potuto
+ * conservare (spazio esaurito), così non si riscarica.
+ */
+export async function ensureVoskModel(onProgress: Progress, needBlob = false): Promise<VoskModelData> {
   const cache = await openVoiceCache();
   const cached = await cache?.match(VOICE_MODEL_KEY);
   if (cached) {
     onProgress('Modello già nel browser, caricamento…');
-    return { url: URL.createObjectURL(await cached.blob()), downloadedBytes: 0 };
+    return { downloadedBytes: 0, inCache: true, blob: needBlob ? await cached.blob() : undefined };
   }
   const zip = await download(onProgress);
   onProgress('Controllo dell’impronta…');
@@ -68,10 +82,20 @@ export async function loadVoskModelFile(onProgress: Progress): Promise<VoskModel
   onProgress('Conversione del modello…');
   const tar = createTar(entriesFromFiles(await unzipAsync(zip)));
   const blob = new Blob([(await gzipAsync(tar)) as Uint8Array<ArrayBuffer>], { type: 'application/gzip' });
+  let inCache = false;
   try {
-    await cache?.put(VOICE_MODEL_KEY, new Response(blob));
+    if (cache) {
+      await cache.put(VOICE_MODEL_KEY, new Response(blob));
+      inCache = true;
+    }
   } catch {
     // spazio esaurito o cache non disponibile: si va avanti senza conservarlo
   }
-  return { url: URL.createObjectURL(blob), downloadedBytes: zip.length };
+  return { downloadedBytes: zip.length, inCache, blob: needBlob || !inCache ? blob : undefined };
+}
+
+/** Il modello come indirizzo blob: (strada di riserva e test). */
+export async function loadVoskModelFile(onProgress: Progress): Promise<VoskModelFile> {
+  const data = await ensureVoskModel(onProgress, true);
+  return { url: URL.createObjectURL(data.blob!), downloadedBytes: data.downloadedBytes };
 }

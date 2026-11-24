@@ -66,3 +66,40 @@ test('il manifest apre l’app a schermo intero col nuovo nome', async ({ page }
   await page.goto('/');
   await expect(page).toHaveTitle('Rubeculabel');
 });
+
+test('modello della dettatura all’indirizzo fisso: solo dalla cache, anche per un worker blob:', async ({ page }) => {
+  // Vedi docs/2026-11-24-vosk-copie-del-modello.md.
+  await page.goto('/');
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+
+  /** Il worker di Vosk nasce da un indirizzo blob:: qui uno uguale, che chiede il modello. */
+  const fetchFromBlobWorker = () =>
+    page.evaluate(async () => {
+      const url = new URL('./vosk-model-small-it-0.22.tar.gz', location.href).href;
+      const code = `fetch(${JSON.stringify(url)}).then(async (r) => postMessage({ status: r.status, text: await r.text() }), (e) => postMessage({ failed: String(e) }))`;
+      const w = new Worker(URL.createObjectURL(new Blob([code], { type: 'text/javascript' })));
+      type Out = { status?: number; text?: string; failed?: string };
+      const out = await new Promise<Out>((r) => (w.onmessage = (e: MessageEvent<Out>) => r(e.data)));
+      w.terminate();
+      return out;
+    });
+
+  // Senza modello in cache: la richiesta fallisce, senza arrivare al server
+  // (il server risponderebbe con una pagina, non con un errore di rete).
+  const missing = await fetchFromBlobWorker();
+  expect(missing.failed, JSON.stringify(missing)).toBeTruthy();
+  // Il server invece risponde (pagina o 404): l'errore viene dal service worker.
+  const direct = await page.request.get('/vosk-model-small-it-0.22.tar.gz');
+  expect(direct.status()).toBeGreaterThan(0);
+  expect(await direct.text()).not.toBe('MODELLO-FINTO');
+
+  // Con un modello (finto) nella cache della dettatura, risponde quello.
+  await page.evaluate(async () => {
+    const c = await caches.open('etichettatrice-prova-voce');
+    await c.put('./vosk-model-small-it-0.22.tar.gz', new Response('MODELLO-FINTO'));
+  });
+  const found = await fetchFromBlobWorker();
+  expect(found).toEqual({ status: 200, text: 'MODELLO-FINTO' });
+});

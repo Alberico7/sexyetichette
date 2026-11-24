@@ -3,10 +3,14 @@
  * Caricato solo alla prima dettatura: vosk-browser pesa 5,8 MB.
  * Vedi docs/2026-11-10-dettatura.md.
  */
-import { createModel, type Model } from 'vosk-browser';
+import { Model } from 'vosk-browser';
+import { diagLog } from '@/diagnostics/log';
 import { TARGET_RATE, durationMs, resample } from './audio';
 import type { VoiceEngine, VoiceProgress, VoiceResult } from './engine';
-import { loadVoskModelFile } from './vosk-model';
+import { voiceModelUrl } from './model-cache';
+import { pruneVoskArchive } from './vosk-archive';
+import { ensureVoskModel } from './vosk-model';
+import { openVoskModel, openVoskModelSource, type VoskModelLike } from './vosk-source';
 
 type Recognizer = InstanceType<Model['KaldiRecognizer']>;
 
@@ -64,10 +68,20 @@ export class VoskVoice implements VoiceEngine {
   }
 
   private async load(onProgress: VoiceProgress): Promise<void> {
-    const file = await loadVoskModelFile(onProgress);
-    onProgress('Preparazione del riconoscimento…');
-    const model = await createModel(file.url, -1);
-    URL.revokeObjectURL(file.url);
+    // Indirizzo fisso e pulizia dell'archivio: niente copie accumulate del modello
+    // (docs/2026-11-24-vosk-copie-del-modello.md).
+    const { model } = await openVoskModelSource<Model>(
+      {
+        fixedUrl: voiceModelUrl(),
+        prune: (keep) => pruneVoskArchive(keep),
+        serviceWorkerControls: () => !!navigator.serviceWorker?.controller,
+        ensureInCache: (p) => ensureVoskModel(p),
+        modelBlob: async (p) => (await ensureVoskModel(p, true)).blob!,
+        open: (url) => openVoskModel(new Model(url, -1) as Model & VoskModelLike),
+        log: (text) => diagLog.add('app', text),
+      },
+      onProgress,
+    );
     const rec = new model.KaldiRecognizer(TARGET_RATE);
     rec.on('partialresult', (m) => {
       const partial = (m as { result: { partial: string } }).result.partial;
