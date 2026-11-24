@@ -98,6 +98,10 @@ test('dettatura nel codice: il testo dettato si attacca senza spazio', async ({ 
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
   await expect(mic).toHaveAttribute('aria-pressed', 'true');
+  // Il testo provvisorio fa crescere il pannello: il microfono si sposta sotto il puntatore.
+  // Il rilascio deve arrivargli lo stesso (cattura del puntatore), anche con il mouse.
+  await expect(page.getByTestId('dictation-status')).toHaveText('dodici');
+  expect((await mic.boundingBox())!.y, 'il microfono si è spostato').toBeLessThan(box.y);
   await page.mouse.up();
   await expect(input).toHaveValue('ART-12');
 });

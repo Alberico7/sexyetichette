@@ -14,6 +14,21 @@ const emit = defineEmits<{ text: [text: string] }>();
 const { state, partial, message, progress, press, release, confirmDownload, cancelDownload } = useDictation((t) =>
   emit('text', t),
 );
+
+/**
+ * Pressione del microfono: il pulsante «cattura» il puntatore, così il rilascio gli arriva
+ * anche se nel frattempo si è spostato (il testo provvisorio fa crescere il pannello verso
+ * l'alto). Con il dito il browser lo fa da solo; con mouse o penna no, e la dettatura non
+ * finiva mai.
+ */
+function onPointerDown(e: PointerEvent): void {
+  try {
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  } catch {
+    // puntatore già rilasciato: si va avanti lo stesso
+  }
+  void press();
+}
 </script>
 
 <template>
@@ -28,9 +43,10 @@ const { state, partial, message, progress, press, release, confirmDownload, canc
     data-testid="dictate"
     aria-label="Tieni premuto per dettare"
     :aria-pressed="state === 'listening'"
-    @pointerdown.prevent="press()"
+    @pointerdown.prevent="onPointerDown"
     @pointerup="release()"
     @pointercancel="release()"
+    @lostpointercapture="release()"
     @contextmenu.prevent
     @touchstart.prevent
   >
