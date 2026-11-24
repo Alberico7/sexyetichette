@@ -6,8 +6,10 @@
  * scalata; la stampa la esporta a scala 1. Nessun riferimento a Vue o USB.
  */
 import Konva, { type Group } from './konva';
-import type { LabelElement, TextElement } from '@/model/types';
-import { mmToDotsExact, ptToMm } from '@/model/units';
+import type { BarcodeElement, LabelElement, TextElement } from '@/model/types';
+import { READER_WINDOW_MM, checkBarcodeValue, code128Widths, layoutBarcode } from '@/model/barcode';
+import { ISO_FONT } from '@/model/fonts';
+import { dotsToMm, mmToDotsExact, ptToMm } from '@/model/units';
 import { TEXT_LINE_HEIGHT, fitFontSize, type FitResult } from './fit';
 import { usesSymbolFont } from '@/model/text';
 import { ensureDiameterFont, fontStack, onDiameterFontReady } from './diameter-font';
@@ -144,21 +146,159 @@ function buildText(group: Group, el: TextElement, w: number, h: number): void {
   );
 }
 
+/** Carattere e stile del testo sotto i codici a barre. */
+const BARCODE_TEXT_FONT = ISO_FONT;
+const BARCODE_TEXT_STYLE = 'bold';
+
+/** Misure del testo sotto il codice, in punti, per un riquadro alto `h`. */
+export function barcodeTextMetrics(h: number): { fontSize: number; block: number } {
+  const fontSize = Math.round(Math.min(48, Math.max(18, h * 0.2)));
+  return { fontSize, block: Math.round(fontSize * 1.15) + Math.round(fontSize * 0.25) };
+}
+
+/** Grigio chiaro: si vede nell'editor, ma la conversione a 1 bit lo rende bianco (non si stampa). */
+const HINT_COLOR = '#b0b0b0';
+
+/**
+ * Codice a barre: barre larghe un numero intero di punti, centrate, con le zone di quiete,
+ * e il contenuto scritto sotto. Il riquadro è già allineato ai punti (vedi buildElementNode).
+ * Vedi docs/2026-11-24-codici-a-barre.md.
+ */
+function buildBarcode(group: Group, el: BarcodeElement, w: number, h: number): void {
+  const problem = checkBarcodeValue(el.value);
+  const layout = problem ? null : layoutBarcode(code128Widths(el.value), w);
+  if (!layout?.fits) {
+    // Solo un'indicazione nell'editor; la stampa è bloccata finché il codice ha un problema.
+    const hint = problem?.kind === 'empty' ? 'codice vuoto' : problem ? 'codice non valido' : 'il codice non entra';
+    group.add(
+      new Konva.Rect({
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+        stroke: HINT_COLOR,
+        strokeWidth: 2,
+        dash: [8, 6],
+        listening: false,
+      }),
+    );
+    group.add(
+      new Konva.Text({
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+        text: hint,
+        align: 'center',
+        verticalAlign: 'middle',
+        fontSize: Math.max(18, Math.min(40, h / 4)),
+        fill: HINT_COLOR,
+        listening: false,
+      }),
+    );
+    return;
+  }
+  const text = el.showText ? barcodeTextMetrics(h) : null;
+  if (text) requestFont(BARCODE_TEXT_FONT, BARCODE_TEXT_STYLE);
+  const barsHeight = Math.max(12, h - (text?.block ?? 0));
+  const widths = code128Widths(el.value);
+  const { module, barsX } = layout;
+  group.add(
+    new Konva.Shape({
+      listening: false,
+      fill: '#000',
+      sceneFunc: (ctx, shape) => {
+        ctx.beginPath();
+        let x = barsX;
+        widths.forEach((modules, i) => {
+          const width = modules * module;
+          if (i % 2 === 0) ctx.rect(x, 0, width, barsHeight);
+          x += width;
+        });
+        ctx.closePath();
+        ctx.fillShape(shape);
+      },
+    }),
+  );
+  if (text) {
+    group.add(
+      new Konva.Text({
+        x: 0,
+        y: barsHeight + Math.round(text.fontSize * 0.25),
+        width: w,
+        text: el.value,
+        fontFamily: fontStack(BARCODE_TEXT_FONT),
+        fontStyle: BARCODE_TEXT_STYLE,
+        fontSize: text.fontSize,
+        align: 'center',
+        wrap: 'none',
+        padding: 0,
+        fill: '#000',
+        listening: false,
+      }),
+    );
+  }
+}
+
+/** Numero pari di punti più vicino: con un centro intero, i bordi restano su punti interi anche ruotando di 90°. */
+const evenDots = (mm: number) => Math.max(2, 2 * Math.round(mmToDotsExact(mm) / 2));
+
+export interface BarcodeStatus {
+  /** Messaggio che blocca la stampa, o null se il codice è a posto. */
+  error: string | null;
+  /** Larghezza del codice con le zone di quiete, in mm (0 se non si disegna). */
+  widthMm: number;
+  /** Più largo della finestra del lettore dell'officina (avviso, non blocca). */
+  wideForReader: boolean;
+}
+
+/** Stato di un codice a barre: usato dal pannello e dai controlli prima della stampa. */
+export function barcodeStatus(el: BarcodeElement): BarcodeStatus {
+  const problem = checkBarcodeValue(el.value);
+  if (problem?.kind === 'empty') return { error: 'Scrivi il contenuto del codice.', widthMm: 0, wideForReader: false };
+  if (problem) {
+    return {
+      error: `«${problem.char}» non si può mettere in un codice a barre: solo lettere senza accento, cifre, spazio e segni come - . / _`,
+      widthMm: 0,
+      wideForReader: false,
+    };
+  }
+  const layout = layoutBarcode(code128Widths(el.value), evenDots(el.width));
+  if (!layout.fits) {
+    return {
+      error: 'Il codice non entra: allarga il riquadro o accorcia il contenuto.',
+      widthMm: 0,
+      wideForReader: false,
+    };
+  }
+  const widthMm = dotsToMm(layout.totalWidth);
+  return { error: null, widthMm, wideForReader: widthMm > READER_WINDOW_MM };
+}
+
+/** Rotazione di un codice a barre: solo multipli di 90°, perché le barre restino nette. */
+export function barcodeRotation(rotation: number): number {
+  return (((Math.round(rotation / 90) * 90) % 360) + 360) % 360;
+}
+
 /**
  * Nodo di un elemento: un gruppo centrato sul riquadro, così la rotazione
- * avviene attorno al centro come nel modello.
+ * avviene attorno al centro come nel modello. I codici a barre sono allineati ai punti
+ * della testina (centro intero, lati pari) perché le barre non vengano sfumate.
  */
 export function buildElementNode(el: LabelElement): Group {
-  const w = mmToDotsExact(el.width);
-  const h = mmToDotsExact(el.height);
+  const barcode = el.type === 'barcode';
+  const w = barcode ? evenDots(el.width) : mmToDotsExact(el.width);
+  const h = barcode ? evenDots(el.height) : mmToDotsExact(el.height);
+  const cx = mmToDotsExact(el.x + el.width / 2);
+  const cy = mmToDotsExact(el.y + el.height / 2);
   const group = new Konva.Group({
-    x: mmToDotsExact(el.x) + w / 2,
-    y: mmToDotsExact(el.y) + h / 2,
+    x: barcode ? Math.round(cx) : cx,
+    y: barcode ? Math.round(cy) : cy,
     width: w,
     height: h,
     offsetX: w / 2,
     offsetY: h / 2,
-    rotation: el.rotation,
+    rotation: barcode ? barcodeRotation(el.rotation) : el.rotation,
   });
   group.setAttr(ELEMENT_ID_ATTR, el.id);
   // Area trasparente per poter toccare l'elemento anche dove non c'è inchiostro.
@@ -166,6 +306,9 @@ export function buildElementNode(el: LabelElement): Group {
   switch (el.type) {
     case 'text':
       buildText(group, el, w, h);
+      break;
+    case 'barcode':
+      buildBarcode(group, el, w, h);
       break;
   }
   return group;
@@ -189,6 +332,7 @@ export async function waitForFonts(elements: readonly LabelElement[]): Promise<v
   const loads = new Set<string>();
   for (const el of elements) {
     if (el.type === 'text') loads.add(`${fontStyle(el).replace('normal', '')} 20px ${el.fontFamily}`.trim());
+    if (el.type === 'barcode' && el.showText) loads.add(`${BARCODE_TEXT_STYLE} 20px ${BARCODE_TEXT_FONT}`);
   }
   await Promise.all([...loads].map((f) => document.fonts.load(f).catch(() => [])));
   // Mini-font del diametro ISO per i testi che contengono ⌀.

@@ -5,6 +5,7 @@ import {
   type LabelDocument,
   type LabelElement,
   type MediaFormat,
+  type BarcodeElement,
   type TextElement,
 } from './types';
 import { DEFAULT_FONT } from './fonts';
@@ -72,6 +73,29 @@ export function createTextElement(area: AreaMm, text = 'Testo'): TextElement {
     verticalAlign: 'middle',
     invert: false,
     autoFit: true,
+  };
+}
+
+/**
+ * Nuovo codice a barre: largo quanto l'area stampabile ma al massimo 85 mm (la finestra
+ * del lettore dell'officina), alto circa 6/10 dell'area, al centro.
+ * Vedi docs/2026-11-24-codici-a-barre.md.
+ */
+export function createBarcodeElement(area: AreaMm, value = ''): BarcodeElement {
+  const margin = Math.min(2, area.width / 10, area.height / 10);
+  const width = Math.max(10, Math.min(85, area.width - margin * 2));
+  const height = Math.max(6, Math.min(area.height - margin * 2, area.height * 0.6));
+  return {
+    id: newId(),
+    type: 'barcode',
+    x: area.x + (area.width - width) / 2,
+    y: area.y + (area.height - height) / 2,
+    width,
+    height,
+    rotation: 0,
+    symbology: 'code128',
+    value,
+    showText: true,
   };
 }
 

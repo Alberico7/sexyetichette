@@ -180,6 +180,8 @@ function rebuildAll(): void {
 
 function attachTransformer(): void {
   const node = store.selectedId ? (nodes.get(store.selectedId)?.group ?? null) : null;
+  // Codici a barre: niente rotazione libera, solo «Ruota 90°» (barre nette). Vedi docs/2026-11-24-codici-a-barre.md.
+  transformer.rotateEnabled(store.selected?.type !== 'barcode');
   transformer.nodes(node ? [node] : []);
   uiLayer.batchDraw();
 }

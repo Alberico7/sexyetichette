@@ -1,11 +1,15 @@
 <script setup lang="ts">
-/** Pannello Testo agganciato in basso: l'etichetta resta visibile sopra mentre si scrive. */
+/**
+ * Pannello agganciato in basso per il testo o il codice a barre selezionato:
+ * l'etichetta resta visibile sopra mentre si scrive.
+ */
+import BarcodeProperties from '@/components/BarcodeProperties.vue';
 import PrintButtons from '@/components/PrintButtons.vue';
 import TextProperties from '@/components/TextProperties.vue';
-import type { TextElement } from '@/model/types';
+import type { LabelElement } from '@/model/types';
 
 defineProps<{
-  element: TextElement;
+  element: LabelElement;
   /** Aperto da «+ Testo»: la tastiera compare subito. */
   autofocus: boolean;
   printing: boolean;
@@ -14,12 +18,24 @@ const emit = defineEmits<{ remove: []; done: []; print: []; copies: [] }>();
 </script>
 
 <template>
-  <section class="dock" aria-label="Testo" data-testid="text-panel">
+  <section
+    class="dock"
+    :aria-label="element.type === 'text' ? 'Testo' : 'Codice a barre'"
+    :data-testid="element.type === 'text' ? 'text-panel' : 'barcode-panel'"
+  >
     <div class="dock-body">
-      <TextProperties :key="element.id" :element="element" :autofocus="autofocus" />
+      <TextProperties v-if="element.type === 'text'" :key="element.id" :element="element" :autofocus="autofocus" />
+      <BarcodeProperties v-else :key="element.id" :element="element" :autofocus="autofocus" />
     </div>
     <div class="dock-actions">
-      <button type="button" class="danger" aria-label="Elimina il testo" @click="emit('remove')">Elimina</button>
+      <button
+        type="button"
+        class="danger"
+        :aria-label="element.type === 'text' ? 'Elimina il testo' : 'Elimina il codice'"
+        @click="emit('remove')"
+      >
+        Elimina
+      </button>
       <button type="button" data-testid="text-done" @click="emit('done')">Fine</button>
       <PrintButtons testid="text" :printing="printing" @print="emit('print')" @copies="emit('copies')" />
     </div>

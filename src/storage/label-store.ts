@@ -2,7 +2,15 @@
  * Etichetta attuale ed etichette recenti, salvate solo su questo dispositivo (localStorage).
  * Vedi docs/2026-11-03-etichetta-salvata-recenti-ristampa.md.
  */
-import { DOCUMENT_FORMAT, DOCUMENT_VERSION, type LabelDocument, type TextElement } from '@/model/types';
+import {
+  DOCUMENT_FORMAT,
+  DOCUMENT_VERSION,
+  type BarcodeElement,
+  type LabelDocument,
+  type LabelElement,
+  type TextElement,
+} from '@/model/types';
+import { elementContent } from '@/model/elements';
 import { isMedia } from '@/settings';
 
 export const CURRENT_LABEL_KEY = 'etichettatrice.etichetta';
@@ -70,6 +78,31 @@ function parseText(v: unknown): TextElement | null {
   return el;
 }
 
+/** Codice a barre salvato (docs/2026-11-24-codici-a-barre.md). */
+function parseBarcode(v: unknown): BarcodeElement | null {
+  if (typeof v !== 'object' || v === null) return null;
+  const e = v as Record<string, unknown>;
+  if (e.type !== 'barcode' || !isStr(e.id) || !isStr(e.value) || e.symbology !== 'code128') return null;
+  if (![e.x, e.y, e.width, e.height, e.rotation].every(isNum)) return null;
+  if ((e.width as number) <= 0 || (e.height as number) <= 0 || !isBool(e.showText)) return null;
+  return {
+    id: e.id,
+    type: 'barcode',
+    x: e.x as number,
+    y: e.y as number,
+    width: e.width as number,
+    height: e.height as number,
+    rotation: e.rotation as number,
+    symbology: 'code128',
+    value: e.value,
+    showText: e.showText,
+  };
+}
+
+function parseElement(v: unknown): LabelElement | null {
+  return parseText(v) ?? parseBarcode(v);
+}
+
 /**
  * Controlla un documento letto dallo storage. Dati non validi o di una versione
  * sconosciuta → `null`. Gli elementi non validi e i testi vuoti vengono scartati.
@@ -82,7 +115,9 @@ export function parseDocument(v: unknown): LabelDocument | null {
   if (d.direction !== 'along' && d.direction !== 'across') return null;
   if (!isNum(d.continuousLengthMm) || d.continuousLengthMm <= 0) return null;
   if (!Array.isArray(d.elements)) return null;
-  const elements = d.elements.map(parseText).filter((e): e is TextElement => e !== null && e.text.trim() !== '');
+  const elements = d.elements
+    .map(parseElement)
+    .filter((e): e is LabelElement => e !== null && elementContent(e).trim() !== '');
   const now = new Date().toISOString();
   return {
     format: DOCUMENT_FORMAT,
@@ -170,24 +205,28 @@ export function labelSignature(doc: LabelDocument): string {
     ld: doc.media.lengthDots ?? null,
     c: doc.media.lengthMm === undefined ? doc.continuousLengthMm : null,
     dir: doc.direction,
-    el: doc.elements.map((e) => [
-      e.type,
-      e.x,
-      e.y,
-      e.width,
-      e.height,
-      e.rotation,
-      e.text,
-      e.fontFamily,
-      e.fontSizePt,
-      e.bold,
-      e.italic,
-      e.underline ?? false,
-      e.align,
-      e.verticalAlign,
-      e.invert,
-      e.autoFit ?? false,
-    ]),
+    el: doc.elements.map((e) =>
+      e.type === 'text'
+        ? [
+            e.type,
+            e.x,
+            e.y,
+            e.width,
+            e.height,
+            e.rotation,
+            e.text,
+            e.fontFamily,
+            e.fontSizePt,
+            e.bold,
+            e.italic,
+            e.underline ?? false,
+            e.align,
+            e.verticalAlign,
+            e.invert,
+            e.autoFit ?? false,
+          ]
+        : [e.type, e.x, e.y, e.width, e.height, e.rotation, e.symbology, e.value, e.showText],
+    ),
   });
 }
 
@@ -200,7 +239,10 @@ export function addRecent(list: readonly RecentLabel[], entry: RecentLabel): Rec
 /** Testi dell'etichetta su una riga, per l'elenco. */
 export function recentSummary(doc: LabelDocument, max = 60): string {
   const text = doc.elements
-    .map((e) => e.text.replace(/\s+/g, ' ').trim())
+    .map((e) => {
+      const t = elementContent(e).replace(/\s+/g, ' ').trim();
+      return e.type === 'barcode' && t ? `[codice] ${t}` : t;
+    })
     .filter(Boolean)
     .join(' · ');
   if (!text) return '(etichetta vuota)';

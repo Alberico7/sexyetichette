@@ -54,12 +54,21 @@ const sheet = ref<Sheet>(new URLSearchParams(location.search).has('diagnostica')
 const focusText = ref(false);
 const envError = checkEnvironment();
 
-const selectedText = computed(() => (store.selected?.type === 'text' ? store.selected : null));
+/** Elemento con il pannello in basso: testo o codice a barre (docs/2026-11-24-codici-a-barre.md). */
+const selectedText = computed(() => store.selected);
 const textOpen = computed(() => sheet.value === 'text' && !!selectedText.value);
 
 function addText(): void {
   if (textOpen.value) store.removeIfEmpty(store.selectedId);
   store.addText();
+  focusText.value = true;
+  sheet.value = 'text';
+}
+
+/** Nuovo codice a barre, con il pannello aperto (docs/2026-11-24-codici-a-barre.md). */
+function addBarcode(): void {
+  if (textOpen.value) store.removeIfEmpty(store.selectedId);
+  store.addBarcode();
   focusText.value = true;
   sheet.value = 'text';
 }
@@ -199,6 +208,7 @@ function reprintRecent(doc: LabelDocument): void {
         :can-edit="!!selectedText"
         :printing="quick.printing.value"
         @add-text="addText"
+        @add-barcode="addBarcode"
         @recent="sheet = 'recent'"
         @edit="store.selectedId && openEdit(store.selectedId)"
         @remove="removeSelected"

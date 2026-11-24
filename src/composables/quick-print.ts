@@ -11,7 +11,7 @@ import { sameMediaSize } from '@/printer/media';
 import { clampCopies } from '@/printer/print-flow';
 import { countBlack } from '@/printer/raster';
 import type { PreparedLabel } from '@/render/export';
-import { resolveFontSize } from '@/render/scene';
+import { resolveFontSize, barcodeStatus } from '@/render/scene';
 import { useDocumentStore } from '@/stores/document';
 import { usePreviewStore } from '@/stores/preview';
 import { usePrinterStore } from '@/stores/printer';
@@ -30,7 +30,16 @@ export function usePrintWarnings() {
   const overflow = computed(() =>
     store.doc.elements.some((el) => el.type === 'text' && el.autoFit && resolveFontSize(el).overflow),
   );
-  return { mismatch, overflow };
+  /** Primo codice a barre con un problema: blocca la stampa (docs/2026-11-24-codici-a-barre.md). */
+  const barcodeError = computed(() => {
+    for (const el of store.doc.elements) {
+      if (el.type !== 'barcode') continue;
+      const { error } = barcodeStatus(el);
+      if (error) return error;
+    }
+    return null;
+  });
+  return { mismatch, overflow, barcodeError };
 }
 
 export function useQuickPrint() {
@@ -38,14 +47,20 @@ export function useQuickPrint() {
   const printer = usePrinterStore();
   const preview = usePreviewStore();
   const recent = useRecentStore();
-  const { mismatch, overflow } = usePrintWarnings();
+  const { mismatch, overflow, barcodeError } = usePrintWarnings();
   const printing = computed(() => busy.value || printer.state === 'printing');
 
   async function print(copies = 1): Promise<QuickPrintResult> {
     if (printing.value) return 'busy';
     busy.value = true;
     try {
-      if (printer.state !== 'connected' || printer.blockingProblems.length > 0 || mismatch.value || overflow.value) {
+      if (
+        printer.state !== 'connected' ||
+        printer.blockingProblems.length > 0 ||
+        mismatch.value ||
+        overflow.value ||
+        barcodeError.value
+      ) {
         return 'preview';
       }
       const snapshot = JSON.parse(JSON.stringify(store.doc)) as LabelDocument;

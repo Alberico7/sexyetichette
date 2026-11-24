@@ -77,6 +77,24 @@ for (const size of SIZES) {
       await page.screenshot({ path: `test-results/land-${size.name}-01-editor.png` });
     });
 
+    test('codice a barre: pannello a destra, pulsanti interi', async ({ page }) => {
+      // Vedi docs/2026-11-24-codici-a-barre.md.
+      await connectSimulated(page, { waitForRoll: true });
+      await hideDevPanel(page);
+      await page.getByTestId('add-barcode').tap();
+      await page.getByTestId('barcode-input').tap();
+      await page.keyboard.type('ART-12345');
+      for (const b of [
+        page.getByTestId('text-done'),
+        page.getByTestId('text-print'),
+        page.getByTestId('barcode-input'),
+        page.getByTestId('barcode-rotate'),
+      ])
+        await fullyVisible(page, b);
+      await noHorizontalScroll(page);
+      await page.screenshot({ path: `test-results/land-${size.name}-codice.png` });
+    });
+
     test('testo: pannello a destra, pulsanti interi, etichetta visibile a sinistra', async ({ page }) => {
       await connectSimulated(page, { waitForRoll: true });
       await hideDevPanel(page);

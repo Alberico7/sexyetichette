@@ -1,16 +1,25 @@
 import { defineStore } from 'pinia';
 import { computed, ref, watch } from 'vue';
-import { areaFromDots, createDocument, createTextElement, touch } from '@/model/document';
+import { areaFromDots, createBarcodeElement, createDocument, createTextElement, touch } from '@/model/document';
 import { defaultDirection, documentGeometry } from '@/model/geometry';
-import type { ContentDirection, LabelDocument, LabelElement, MediaFormat } from '@/model/types';
+import type {
+  BarcodeElement,
+  ContentDirection,
+  LabelDocument,
+  LabelElement,
+  MediaFormat,
+  TextElement,
+} from '@/model/types';
 import { LW550_HEAD, defaultMedia } from '@/printer/media';
+import { elementContent } from '@/model/elements';
 import { loadSettings, saveSettings } from '@/settings';
 import { loadCurrentLabel, saveCurrentLabel } from '@/storage/label-store';
 
 /** Ritardo del salvataggio automatico dopo l'ultima modifica. */
 export const AUTOSAVE_DELAY_MS = 500;
 
-type ElementPatch = Partial<Omit<LabelElement, 'id' | 'type'>>;
+/** Modifiche a un elemento: i campi del suo tipo (testo o codice a barre). */
+type ElementPatch = Partial<Omit<TextElement, 'id' | 'type'>> | Partial<Omit<BarcodeElement, 'id' | 'type'>>;
 
 function initialDocument(): LabelDocument {
   const saved = loadSettings();
@@ -59,6 +68,15 @@ export const useDocumentStore = defineStore('document', () => {
     return el;
   }
 
+  /** Nuovo codice a barre vuoto, pronto da scrivere (docs/2026-11-24-codici-a-barre.md). */
+  function addBarcode(value = ''): LabelElement {
+    const el = createBarcodeElement(areaFromDots(geometry.value.safe), value);
+    doc.value.elements.push(el);
+    selectedId.value = el.id;
+    touch(doc.value);
+    return el;
+  }
+
   function updateElement(id: string, patch: ElementPatch): void {
     const el = doc.value.elements.find((e) => e.id === id);
     if (!el) return;
@@ -72,11 +90,11 @@ export const useDocumentStore = defineStore('document', () => {
     touch(doc.value);
   }
 
-  /** Elimina il testo se è rimasto vuoto (es. pannello chiuso senza scrivere). */
+  /** Elimina il testo o il codice se è rimasto vuoto (es. pannello chiuso senza scrivere). */
   function removeIfEmpty(id: string | null): void {
     if (!id) return;
     const el = doc.value.elements.find((e) => e.id === id);
-    if (el?.type === 'text' && el.text.trim() === '') removeElement(id);
+    if (el && elementContent(el).trim() === '') removeElement(id);
   }
 
   function replaceDocument(next: LabelDocument): void {
@@ -118,6 +136,7 @@ export const useDocumentStore = defineStore('document', () => {
     setDirection,
     setContinuousLength,
     addText,
+    addBarcode,
     updateElement,
     removeElement,
     removeIfEmpty,

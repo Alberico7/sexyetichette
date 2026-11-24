@@ -39,8 +39,9 @@ test('testo lasciato vuoto viene eliminato', async ({ page }) => {
   await page.getByTestId('add-text').tap();
   await page.getByTestId('text-done').tap();
   await expect(page.getByText('Tocca «+ Testo» per scrivere')).toBeVisible();
-  // Barra senza selezione: «+ Testo», «Recenti», 👁, «Stampa» e «×1».
-  await expect(page.getByRole('navigation', { name: 'Azioni' }).getByRole('button')).toHaveCount(5);
+  await page.getByRole('navigation', { name: 'Azioni' }).screenshot({ path: 'test-results/43-barra.png' });
+  // Barra senza selezione: «+ Testo», codice a barre, «Recenti», 👁, «Stampa» e «×1».
+  await expect(page.getByRole('navigation', { name: 'Azioni' }).getByRole('button')).toHaveCount(6);
 });
 
 test('barra contestuale e secondo tocco per modificare', async ({ page }) => {
@@ -48,9 +49,10 @@ test('barra contestuale e secondo tocco per modificare', async ({ page }) => {
   await page.getByTestId('add-text').tap();
   await page.keyboard.type('Sale');
   await page.getByTestId('text-done').tap();
-  // Il testo resta selezionato: la barra mostra anche Modifica ed Elimina.
+  // Il testo resta selezionato: la barra mostra Modifica ed Elimina al posto di codice a barre e Recenti.
   const nav = page.getByRole('navigation', { name: 'Azioni' });
   await expect(nav.getByRole('button')).toHaveCount(6);
+  await nav.screenshot({ path: 'test-results/43-barra-selezione.png' });
   // Un tocco sul testo già selezionato apre il pannello di modifica.
   const box = (await page.getByTestId('editor').boundingBox())!;
   await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);

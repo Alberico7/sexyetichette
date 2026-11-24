@@ -54,7 +54,7 @@ watch(
 const rendering = computed(() => !preview.ready);
 const isEmpty = computed(() => preview.ready && preview.inkDots === 0);
 // Gli stessi avvisi fermano la stampa rapida (vedi composables/quick-print.ts).
-const { mismatch, overflow } = usePrintWarnings();
+const { mismatch, overflow, barcodeError } = usePrintWarnings();
 const sizeText = computed(() => {
   const g = store.geometry;
   const mm = (d: number) => dotsToMm(d).toFixed(1).replace('.', ',');
@@ -62,7 +62,12 @@ const sizeText = computed(() => {
 });
 
 const canPrint = computed(
-  () => printer.state === 'connected' && printer.blockingProblems.length === 0 && preview.prepared !== null,
+  () =>
+    printer.state === 'connected' &&
+    printer.blockingProblems.length === 0 &&
+    preview.prepared !== null &&
+    // Un codice a barre con un problema non si stampa (docs/2026-11-24-codici-a-barre.md).
+    !barcodeError.value,
 );
 
 /** Stampa da più copie in corso: il pulsante diventa «Ferma». */
@@ -110,6 +115,7 @@ async function doPrint(): Promise<void> {
       <p v-if="overflow" class="warn" data-testid="overflow-warning">
         Un testo non entra nel suo riquadro ed è stampato alla dimensione minima.
       </p>
+      <p v-if="barcodeError" class="error" data-testid="barcode-warning">Codice a barre: {{ barcodeError }}</p>
       <p v-if="mismatch" class="warn" data-testid="mismatch-warning">
         Il formato scelto ({{ store.doc.media.name }}) non corrisponde al rotolo inserito ({{
           printer.detected?.media.name

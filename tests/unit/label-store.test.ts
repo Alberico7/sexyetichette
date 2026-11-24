@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createTextElement } from '@/model/document';
-import type { LabelDocument } from '@/model/types';
+import type { LabelDocument, TextElement } from '@/model/types';
 import {
   CURRENT_LABEL_KEY,
   MAX_RECENT,
@@ -18,6 +18,9 @@ import {
   type RecentLabel,
 } from '@/storage/label-store';
 import { addressDoc } from './helpers';
+
+/** Il primo elemento, che in questi test è sempre un testo. */
+const textAt = (doc: LabelDocument) => doc.elements[0] as TextElement;
 
 class MemoryStorage implements KeyValueStorage {
   data = new Map<string, string>();
@@ -73,7 +76,7 @@ describe('etichetta attuale salvata', () => {
     raw.elements[2]!.align = 'giustificato';
     raw.elements.push({ type: 'image', id: 'x' });
     const parsed = parseDocument(raw)!;
-    expect(parsed.elements.map((e) => e.text)).toEqual(['Buono']);
+    expect(parsed.elements.map((e) => (e as TextElement).text)).toEqual(['Buono']);
   });
 
   it('storage assente o pieno: nessun errore', () => {
@@ -96,7 +99,7 @@ describe('etichette recenti', () => {
   it('contenuto diverso = etichetta diversa', () => {
     const a = docWith('A');
     const b = structuredClone(a);
-    b.elements[0]!.bold = !b.elements[0]!.bold;
+    textAt(b).bold = !textAt(b).bold;
     const c = structuredClone(a);
     c.direction = c.direction === 'along' ? 'across' : 'along';
     expect(labelSignature(a)).not.toBe(labelSignature(b));
@@ -150,15 +153,15 @@ describe('sottolineato (docs/2026-11-06-sottolineato.md)', () => {
     delete (doc.elements[0] as { underline?: boolean }).underline;
     saveCurrentLabel(doc, s);
     const loaded = loadCurrentLabel(s)!;
-    expect(loaded.elements[0]!.underline ?? false).toBe(false);
+    expect(textAt(loaded).underline ?? false).toBe(false);
   });
 
   it('il sottolineato si salva e si rilegge; valore non valido → elemento scartato', () => {
     const s = new MemoryStorage();
     const doc = docWith('Sotto');
-    doc.elements[0]!.underline = true;
+    textAt(doc).underline = true;
     saveCurrentLabel(doc, s);
-    expect(loadCurrentLabel(s)!.elements[0]!.underline).toBe(true);
+    expect(textAt(loadCurrentLabel(s)!).underline).toBe(true);
     const bad = docWith('Rotto');
     (bad.elements[0] as unknown as { underline: string }).underline = 'sì';
     saveCurrentLabel(bad, s);
@@ -168,7 +171,7 @@ describe('sottolineato (docs/2026-11-06-sottolineato.md)', () => {
   it('Recenti: stessa etichetta con e senza sottolineato non sono doppioni', () => {
     const a = docWith('Uguale');
     const b = structuredClone(a);
-    b.elements[0]!.underline = true;
+    textAt(b).underline = true;
     expect(labelSignature(a)).not.toBe(labelSignature(b));
   });
 });

@@ -67,7 +67,19 @@ export interface TextElement extends BaseElement {
   autoFit?: boolean;
 }
 
-export type LabelElement = TextElement;
+/** Tipi di codice a barre. Per ora solo Code 128 (docs/2026-11-24-codici-a-barre.md). */
+export type BarcodeSymbology = 'code128';
+
+export interface BarcodeElement extends BaseElement {
+  type: 'barcode';
+  symbology: BarcodeSymbology;
+  /** Contenuto del codice. */
+  value: string;
+  /** Il contenuto scritto sotto il codice, nel carattere tecnico ISO 3098. */
+  showText: boolean;
+}
+
+export type LabelElement = TextElement | BarcodeElement;
 export type ElementType = LabelElement['type'];
 
 export const DOCUMENT_FORMAT = 'etichettatrice';
