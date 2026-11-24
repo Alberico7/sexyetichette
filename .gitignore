@@ -7,3 +7,5 @@ __screenshots__/
 *.log
 .claude/
 .vitest/
+# Documenti di progetto: privati, solo sul computer dell'autore.
+docs/

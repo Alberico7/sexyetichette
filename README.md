@@ -13,16 +13,19 @@ Web app per uso non commerciale (vedi [Licenza](#licenza)) per progettare e stam
 - lettura del rotolo via NFC, con scelta manuale del formato se la lettura fallisce;
 - elementi di testo (spostamento, ridimensionamento, rotazione, allineamento, grassetto, corsivo, sottolineato, bianco su nero), con il carattere tecnico **ISO 3098** come predefinito e **Noto Sans** come alternativa;
 - simboli: ⌀ ISO, ∅ a 45°, AFKEUR e NON RIPARABILE (N.R.) con un tocco; cuori nascosti `#<3*` → ♥ e `#<3-` → ♡;
-- **dettatura** sul telefono con Vosk, senza mandare l'audio fuori: numeri in cifre, «diametro» → ∅ e «diametro ISO» → ⌀ con formato 00.00, «scarto» → AFKEUR ([documento](docs/2026-11-10-dettatura.md));
+- **dettatura** sul telefono con Vosk, senza mandare l'audio fuori: numeri in cifre, «diametro» → ∅ e «diametro ISO» → ⌀ con formato 00.00, «scarto» → AFKEUR;
+- **codici a barre Code 128** (per esempio codici articolo), con barre a punti interi della testina e il contenuto scritto sotto;
 - anteprima a 300 dpi in bianco e nero, stampa rapida, copie e densità;
 - etichetta salvata da sola sul telefono, elenco delle ultime 20 etichette stampate, da riaprire o ristampare;
 - uso in orizzontale e tema chiaro/scuro;
-- **app installabile (PWA):** schermo intero dall'icona, funziona senza rete, avviso «Aggiorna» per le versioni nuove, tasto indietro che chiude i pannelli ([documento](docs/2026-11-10-pwa.md));
+- **app installabile (PWA):** schermo intero dall'icona, funziona senza rete, avviso «Aggiorna» per le versioni nuove, tasto indietro che chiude i pannelli;
 - diagnostica USB e della stampante, errori in italiano.
 
-Immagini, codici a barre e QR, modelli salvati e import/export JSON arriveranno nella fase 2 (vedi [docs/2026-11-02-app-etichette-webusb.md](docs/2026-11-02-app-etichette-webusb.md)).
+Immagini, codici QR, altri tipi di codice a barre (EAN-13, Code 39), modelli salvati e import/export JSON arriveranno nella fase 2.
 
 Con la LabelWriter 550 vera sono stati provati il 2026-11-04 collegamento, lettura del rotolo e una prima stampa, tutti riusciti. Il 2026-11-05 la stampa di prova ha mostrato uno spostamento di 0,4–0,5 mm attraverso il rotolo, già corretto ma da riverificare. Copie, densità ed errori sono **ancora da provare**: vedi la [checklist](#checklist-per-la-prova-con-la-stampante-vera).
+
+I documenti di progetto (cartella `docs`) sono privati: restano sul computer dell'autore e non sono nel repository.
 
 ## Requisiti
 
@@ -158,7 +161,7 @@ Il registro sta solo in memoria. Il testo non contiene dati personali: il numero
   - firmware 0002.0020, hardware LW550B_PPB_00002;
   - l'avviso della libreria «read filled exactly 64 bytes» è **innocuo**: 6 letture del rotolo sono identiche byte per byte e le risposte di stato successive non sono sfasate;
   - stampa di prova corretta per verso, lato che esce per primo, zona iniziale di 6 mm, tacche lungo l'etichetta e nitidezza;
-  - **contenuto spostato di 0,4–0,5 mm** attraverso il rotolo, misurato con il calibro. Il catalogo dà il rotolo largo 25 mm, il chip 25,4 mm, e la stampante allinea l'immagine al bordo basso. **Corretto:** l'app usa la larghezza letta dal chip e lascia un margine di sicurezza di 0,5 mm sui bordi lunghi ([documento](docs/2026-11-05-margine-bordo-testina.md));
+  - **contenuto spostato di 0,4–0,5 mm** attraverso il rotolo, misurato con il calibro. Il catalogo dà il rotolo largo 25 mm, il chip 25,4 mm, e la stampante allinea l'immagine al bordo basso. **Corretto:** l'app usa la larghezza letta dal chip e lascia un margine di sicurezza di 0,5 mm sui bordi lunghi;
   - l'avviso «codice interno 0x3832» della diagnostica era un falso allarme: la 550 scrive il codice «28» come testo. Corretto.
 
   Resta da rifare la *Stampa di prova* dopo la correzione, più i punti qui sotto.
@@ -182,7 +185,7 @@ Annota per ogni punto ✅ / ❌ e, se qualcosa non va, una foto dell'etichetta.
 6. **Allineamento lungo il rotolo.** Aggiungi un testo vicino al bordo sinistro dell'area tratteggiata e uno vicino al bordo destro. Sono entrambi stampati interi? Il bordo sinistro è il primo che esce dalla stampante?
 7. **Allineamento attraverso il rotolo.** Con un'etichetta stretta (es. 28×89), metti un rettangolo «bianco su nero» in alto e uno in basso. Sono stampati sull'etichetta e non fuori? Il testo è dritto o capovolto?
 8. **Verso «Attraverso il rotolo».** Ripeti la prova 5 con questo verso.
-9. **Copie.** Il 2026-11-06, con 7 copie, la 550 ha stampato 1 etichetta e poi è andata in errore. Causa probabile: la libreria aspetta la risposta di stato fra un'etichetta e l'altra prima di spedire la successiva, mentre il driver ufficiale DYMO la legge dopo. Ora le copie usano l'ordine DYMO ([docs/2026-11-06-copie-multiple-550.md](docs/2026-11-06-copie-multiple-550.md)). **Da rifare:**
+9. **Copie.** Il 2026-11-06, con 7 copie, la 550 ha stampato 1 etichetta e poi è andata in errore. Causa probabile: la libreria aspetta la risposta di stato fra un'etichetta e l'altra prima di spedire la successiva, mentre il driver ufficiale DYMO la legge dopo. Ora le copie usano l'ordine DYMO. **Da rifare:**
    - 2 e poi 5 copie: escono tutte, nessun lampeggio, il contatore del rotolo scende di 2 e poi di 5;
    - 10 copie con «Ferma» dopo 2 o 3.
 
