@@ -20,15 +20,31 @@ export interface VoskModelLike {
 }
 
 /**
- * Aspetta che il modello sia pronto. A differenza di `createModel` di vosk-browser,
- * ascolta anche `error`: senza, un errore del worker lascerebbe la preparazione appesa.
+ * Tempo massimo per aprire il modello: largo, perché su Vanadium senza JIT la
+ * preparazione può durare più di un minuto (docs/2026-11-24-vosk-copie-del-modello.md).
  */
-export function openVoskModel<M extends VoskModelLike>(model: M): Promise<M> {
+export const OPEN_TIMEOUT_MS = 180_000;
+
+/**
+ * Aspetta che il modello sia pronto. A differenza di `createModel` di vosk-browser,
+ * ascolta anche `error` e ha un tempo massimo: senza, un worker che non risponde
+ * lascerebbe la preparazione appesa per sempre. In caso di errore il worker si chiude.
+ */
+export function openVoskModel<M extends VoskModelLike>(model: M, timeoutMs = OPEN_TIMEOUT_MS): Promise<M> {
   return new Promise((resolve, reject) => {
     let settled = false;
+    const timer = setTimeout(
+      () =>
+        fail(
+          `il riconoscimento non si è preparato in ${Math.round(timeoutMs / 1000)} s. ` +
+            'Su Vanadium attiva «JavaScript JIT» per questo sito.',
+        ),
+      timeoutMs,
+    );
     const fail = (reason: string) => {
       if (settled) return;
       settled = true;
+      clearTimeout(timer);
       model.terminate();
       reject(new Error(reason));
     };
@@ -36,6 +52,7 @@ export function openVoskModel<M extends VoskModelLike>(model: M): Promise<M> {
       if (settled) return;
       if (m.result) {
         settled = true;
+        clearTimeout(timer);
         resolve(model);
       } else fail('il modello non si è caricato');
     });

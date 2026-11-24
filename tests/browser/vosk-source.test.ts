@@ -45,6 +45,22 @@ describe('apertura del modello', () => {
     expect(m.terminate).toHaveBeenCalledTimes(1);
   });
 
+  it('nessuna risposta dal worker: errore dopo il tempo massimo, worker chiuso', async () => {
+    const m = new FakeModel();
+    const p = openVoskModel(m, 50);
+    await expect(p).rejects.toThrow('JavaScript JIT');
+    expect(m.terminate).toHaveBeenCalledTimes(1);
+  });
+
+  it('una risposta arrivata in tempo ferma il conto alla rovescia', async () => {
+    const m = new FakeModel();
+    const p = openVoskModel(m, 50);
+    m.emit('load', { result: true });
+    await p;
+    await new Promise((r) => setTimeout(r, 100));
+    expect(m.terminate).not.toHaveBeenCalled();
+  });
+
   it('un «error» dopo che il modello è pronto non lo chiude', async () => {
     const m = new FakeModel();
     const p = openVoskModel(m);
