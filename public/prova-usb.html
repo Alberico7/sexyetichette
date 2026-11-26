@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Prova USB – Rubeculabel</title>
+    <!--
+      Pagina di prova separata dall'app, per browser vecchi (Android KitKat, Bromite/Chromium 83):
+      dice se WebUSB vede la LabelWriter e se risponde al comando di sola lettura ESC A (stato).
+      JavaScript semplice, senza moduli né costrutti più recenti di Chromium 83.
+      Non stampa e non fa avanzare la carta.
+    -->
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        font-family: sans-serif;
+        font-size: 17px;
+        line-height: 1.4;
+        background: #f8f6f1;
+        color: #2e2c29;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 8px;
+      }
+      p {
+        margin: 8px 0;
+      }
+      button {
+        display: block;
+        width: 100%;
+        min-height: 52px;
+        margin: 10px 0;
+        font-size: 18px;
+        border: 1px solid #cfcac0;
+        border-radius: 10px;
+        background: #ffffff;
+        color: #2e2c29;
+      }
+      button.primario {
+        background: #274e76;
+        border-color: #274e76;
+        color: #ffffff;
+      }
+      button:disabled {
+        opacity: 0.5;
+      }
+      textarea {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 260px;
+        font-family: monospace;
+        font-size: 14px;
+        padding: 8px;
+        border: 1px solid #cfcac0;
+        border-radius: 10px;
+        background: #ffffff;
+        color: #2e2c29;
+      }
+      .nota {
+        color: #4f4c46;
+        font-size: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Prova USB</h1>
+    <p class="nota">
+      Pagina di prova di Rubeculabel per i browser vecchi. Collega la LabelWriter con il tablet sbloccato, poi
+      premi i pulsanti in ordine. Non stampa e non fa avanzare la carta.
+    </p>
+
+    <button type="button" class="primario" id="cerca" data-testid="cerca">1. Cerca la stampante</button>
+    <button type="button" id="stato" data-testid="stato" disabled>2. Leggi lo stato</button>
+    <button type="button" id="copia" data-testid="copia">3. Copia risultati</button>
+
+    <textarea id="risultati" data-testid="risultati" readonly></textarea>
+
+    <script>
+      (function () {
+        'use strict';
+        var DYMO = 0x0922;
+        var STATO = [0x1b, 0x41, 0x00]; // ESC A: stato, sola lettura
+        var area = document.getElementById('risultati');
+        var bottoneStato = document.getElementById('stato');
+        var dispositivo = null;
+
+        function scrivi(riga) {
+          area.value += riga + '\n';
+          area.scrollTop = area.scrollHeight;
+        }
+
+        function messaggio(e) {
+          if (e && e.name && e.message) return e.name + ': ' + e.message;
+          return String(e);
+        }
+
+        function esadecimale(dati) {
+          var out = [];
+          for (var i = 0; i < dati.byteLength; i++) {
+            var h = dati.getUint8(i).toString(16);
+            out.push(h.length < 2 ? '0' + h : h);
+          }
+          return out.join(' ');
+        }
+
+        function hex4(n) {
+          var h = n.toString(16);
+          while (h.length < 4) h = '0' + h;
+          return '0x' + h;
+        }
+
+        /** Promessa che fallisce dopo `ms` millisecondi: nessuna attesa infinita. */
+        function conTempoMassimo(promessa, ms, cosa) {
+          var timer;
+          var scadenza = new Promise(function (_, rifiuta) {
+            timer = setTimeout(function () {
+              rifiuta(new Error(cosa + ': nessuna risposta in ' + ms / 1000 + ' s'));
+            }, ms);
+          });
+          return Promise.race([promessa, scadenza]).then(
+            function (v) {
+              clearTimeout(timer);
+              return v;
+            },
+            function (e) {
+              clearTimeout(timer);
+              throw e;
+            },
+          );
+        }
+
+        // Informazioni sul browser.
+        var ua = navigator.userAgent;
+        var versione = /Chrome\/(\d+)/.exec(ua);
+        scrivi('Rubeculabel – prova USB ' + new Date().toISOString().slice(0, 16).replace('T', ' '));
+        scrivi('Browser: ' + ua);
+        scrivi('Versione di Chromium: ' + (versione ? versione[1] : 'non riconosciuta'));
+        scrivi('Contesto sicuro (HTTPS): ' + (window.isSecureContext ? 'sì' : 'no'));
+        scrivi('WebUSB (navigator.usb): ' + (navigator.usb ? 'presente' : 'ASSENTE'));
+        if (!navigator.usb) {
+          scrivi('→ Questo browser non ha WebUSB: la stampa via USB non può funzionare.');
+          document.getElementById('cerca').disabled = true;
+        }
+
+        document.getElementById('cerca').addEventListener('click', function () {
+          scrivi('');
+          scrivi('Cerca la stampante…');
+          navigator.usb.requestDevice({ filters: [{ vendorId: DYMO }] }).then(
+            function (d) {
+              dispositivo = d;
+              scrivi('Scelta: ' + (d.manufacturerName || '?') + ' ' + (d.productName || '?'));
+              scrivi('  vendorId ' + hex4(d.vendorId) + ', productId ' + hex4(d.productId));
+              scrivi('  numero di serie: ' + (d.serialNumber ? d.serialNumber.slice(0, 4) + '…' : 'non disponibile'));
+              bottoneStato.disabled = false;
+            },
+            function (e) {
+              scrivi('Nessuna stampante scelta: ' + messaggio(e));
+            },
+          );
+        });
+
+        /** Interfaccia con un endpoint bulk in e uno out (come la LabelWriter). */
+        function trovaInterfaccia(d) {
+          var interfacce = d.configuration ? d.configuration.interfaces : [];
+          for (var i = 0; i < interfacce.length; i++) {
+            var alt = interfacce[i].alternates[0];
+            if (!alt) continue;
+            var dentro = null;
+            var fuori = null;
+            for (var j = 0; j < alt.endpoints.length; j++) {
+              var ep = alt.endpoints[j];
+              if (ep.type !== 'bulk') continue;
+              if (ep.direction === 'in') dentro = ep;
+              else fuori = ep;
+            }
+            if (dentro && fuori) return { numero: interfacce[i].interfaceNumber, dentro: dentro, fuori: fuori };
+          }
+          return null;
+        }
+
+        bottoneStato.addEventListener('click', function () {
+          var d = dispositivo;
+          if (!d) return;
+          var presa = null;
+          bottoneStato.disabled = true;
+          scrivi('');
+          scrivi('Leggi lo stato…');
+          Promise.resolve()
+            .then(function () {
+              return conTempoMassimo(d.open(), 5000, 'apertura');
+            })
+            .then(function () {
+              scrivi('  apertura: ok');
+              if (d.configuration) return null;
+              return conTempoMassimo(d.selectConfiguration(1), 5000, 'configurazione');
+            })
+            .then(function () {
+              var i = trovaInterfaccia(d);
+              if (!i) throw new Error('nessuna interfaccia con endpoint bulk in e out');
+              scrivi(
+                '  interfaccia ' + i.numero + ': endpoint out ' + i.fuori.endpointNumber + ', in ' + i.dentro.endpointNumber,
+              );
+              return conTempoMassimo(d.claimInterface(i.numero), 5000, 'presa di controllo').then(function () {
+                presa = i;
+                scrivi('  presa di controllo: ok');
+              });
+            })
+            .then(function () {
+              return conTempoMassimo(
+                d.transferOut(presa.fuori.endpointNumber, new Uint8Array(STATO)),
+                5000,
+                'invio di ESC A',
+              );
+            })
+            .then(function (r) {
+              scrivi('  invio di ESC A (1b 41 00): ' + r.status + ', ' + r.bytesWritten + ' byte');
+              return conTempoMassimo(d.transferIn(presa.dentro.endpointNumber, 64), 5000, 'risposta');
+            })
+            .then(function (r) {
+              var n = r.data ? r.data.byteLength : 0;
+              scrivi('  risposta: ' + r.status + ', ' + n + ' byte');
+              if (r.data) scrivi('    ' + esadecimale(r.data));
+              scrivi('→ La stampante risponde: WebUSB funziona su questo tablet.');
+            })
+            .catch(function (e) {
+              scrivi('  ERRORE: ' + messaggio(e));
+            })
+            .then(function () {
+              // Si rilascia e si chiude sempre, anche dopo un errore.
+              var rilascio = presa ? d.releaseInterface(presa.numero).catch(function () {}) : Promise.resolve();
+              return rilascio
+                .then(function () {
+                  return d.opened ? d.close() : null;
+                })
+                .then(
+                  function () {
+                    scrivi('  chiusura: ok');
+                  },
+                  function (e) {
+                    scrivi('  chiusura: ' + messaggio(e));
+                  },
+                );
+            })
+            .then(function () {
+              bottoneStato.disabled = false;
+            });
+        });
+
+        document.getElementById('copia').addEventListener('click', function () {
+          area.removeAttribute('readonly');
+          area.focus();
+          area.select();
+          var ok = false;
+          try {
+            ok = document.execCommand('copy');
+          } catch (e) {
+            ok = false;
+          }
+          area.setAttribute('readonly', '');
+          scrivi(ok ? '(risultati copiati)' : '(copia non riuscita: seleziona il testo e copialo a mano)');
+        });
+      })();
+    </script>
+  </body>
+</html>
