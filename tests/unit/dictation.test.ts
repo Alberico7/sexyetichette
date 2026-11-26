@@ -23,6 +23,14 @@ describe('numeri italiani in una parola (docs/2026-11-10-dettatura.md)', () => {
     ['cento', 100],
     ['centouno', 101],
     ['centotto', 108],
+    // Da x80 a x89 Vosk toglie la «o» di cento (docs/2026-11-27-dettatura-numeri-ottanta.md).
+    ['centottanta', 180],
+    ['centoottanta', 180],
+    ['centottantuno', 181],
+    ['centottantotto', 188],
+    ['duecentottantotto', 288],
+    ['novecentottantanove', 989],
+    ['millecentottanta', 1180],
     ['centoventicinque', 125],
     ['duecento', 200],
     ['trecentoquarantadue', 342],
@@ -80,7 +88,8 @@ describe('numeri italiani in una parola (docs/2026-11-10-dettatura.md)', () => {
       const r = n % 100;
       const head = h === 0 ? '' : h === 1 ? 'cento' : units[h] + 'cento';
       const tail = say99(r);
-      return h && tail === 'otto' ? head.slice(0, -1) + tail : head + tail;
+      // Come Vosk: la «o» di cento cade davanti a «otto» (centotto) e a «ottanta…» (centottanta).
+      return h && (r === 8 || (r >= 80 && r <= 89)) ? head.slice(0, -1) + tail : head + tail;
     };
     const say = (n: number): string => {
       if (n === 0) return 'zero';
@@ -106,6 +115,7 @@ describe('dalle parole al testo dell’etichetta (docs/2026-11-10-dettatura.md)'
     ['cento venticinque', '125'],
     ['diametro mille duecento', '∅1200.00'],
     ['venti virgola zero zero', '20,00'],
+    ['centottanta virgola cinque', '180,5'],
     ['venti millimetri', '20 MILLIMETRI'],
   ])('«%s» → «%s»', (spoken, text) => {
     expect(dictationToText(spoken)).toBe(text);

@@ -77,6 +77,12 @@ function upTo999(w: string): number | null {
   if (hundreds < 1 || (head !== '' && hundreds === 1)) return null;
   let rest = w.slice(at + 4);
   if (rest === 'otto') return hundreds * 100 + 8; // centotto
+  // Da x80 a x89 Vosk toglie la «o» di cento: «centottanta», «duecentottantotto».
+  // Vedi docs/2026-11-27-dettatura-numeri-ottanta.md.
+  if (rest.startsWith('ott')) {
+    const eighty = upTo99(rest);
+    if (eighty !== null && eighty >= 80 && eighty <= 89) return hundreds * 100 + eighty;
+  }
   if (!rest.startsWith('o')) return null;
   rest = rest.slice(1);
   if (rest === '') return hundreds * 100;
