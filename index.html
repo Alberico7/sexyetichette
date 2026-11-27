@@ -29,6 +29,40 @@
   </head>
   <body>
     <div id="app"></div>
+    <script>
+      // Browser troppo vecchio (senza light-dark(), cioè prima di Chromium 123): un messaggio
+      // al posto della pagina bianca, e src/main.ts non avvia l'app.
+      // JavaScript semplice: deve funzionare anche su Chromium 83. Vedi docs/2026-11-27-browser-troppo-vecchio.md.
+      (function () {
+        var ok = false;
+        try {
+          ok = !!(window.CSS && CSS.supports && CSS.supports('color', 'light-dark(#000, #fff)'));
+        } catch (e) {
+          ok = false;
+        }
+        if (ok) return;
+        document.documentElement.setAttribute('data-browser-vecchio', '');
+        var versione = /Chrome\/(\d+)/.exec(navigator.userAgent);
+        var p = 'margin:12px 0;font-size:17px;line-height:1.45;';
+        document.getElementById('app').innerHTML =
+          // Scorre da solo: base.css blocca lo scorrimento di html e body.
+          '<div data-testid="browser-vecchio" style="box-sizing:border-box;height:100%;overflow-y:auto;padding:24px 16px;' +
+          'font-family:sans-serif;background:#f8f6f1;color:#2e2c29;">' +
+          '<h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:#843131;">' +
+          'Questo browser è troppo vecchio per Rubeculabel</h1>' +
+          '<p style="' +
+          p +
+          '">Serve Chrome, Vanadium, Brave o un altro browser basato su ' +
+          '<strong>Chromium 123 o più recente</strong> (da marzo 2024).</p>' +
+          (versione
+            ? '<p style="' + p + '" data-testid="browser-versione">Questo browser: Chromium ' + versione[1] + '.</p>'
+            : '') +
+          '<p style="' +
+          p +
+          'color:#4f4c46;">Su Android 4.4 e sui sistemi molto vecchi non esiste un browser ' +
+          'abbastanza recente: in quel caso serve un altro dispositivo.</p></div>';
+      })();
+    </script>
     <noscript>Questa app richiede JavaScript.</noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>

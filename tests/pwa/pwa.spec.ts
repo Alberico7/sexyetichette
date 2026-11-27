@@ -103,3 +103,21 @@ test('modello della dettatura all’indirizzo fisso: solo dalla cache, anche per
   const found = await fetchFromBlobWorker();
   expect(found).toEqual({ status: 200, text: 'MODELLO-FINTO' });
 });
+
+test('browser troppo vecchio: il service worker non si registra (docs/2026-11-27-browser-troppo-vecchio.md)', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const real = CSS.supports.bind(CSS);
+    CSS.supports = (...args: [string, string?]) =>
+      args.join(' ').includes('light-dark(') ? false : real(...(args as [string, string]));
+  });
+  await page.goto('/');
+  await expect(page.getByTestId('browser-vecchio')).toBeVisible();
+  await page.waitForLoadState('load');
+  // Su un browser recente la registrazione parte subito all'avvio (primo test): qui si lascia
+  // un po' di tempo e si controlla che non sia arrivata.
+  await page.waitForTimeout(1500);
+  expect(await page.evaluate(() => navigator.serviceWorker.getRegistrations().then((r) => r.length))).toBe(0);
+  await expect(page.getByTestId('status-logo')).toHaveCount(0);
+});
